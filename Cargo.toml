@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "crates/mithras-crypto",
+]
+resolver = "3"
+
