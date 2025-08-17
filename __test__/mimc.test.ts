@@ -20,7 +20,10 @@ describe("MiMC Circuit Tests", () => {
       defaultSender: await algorand.account.localNetDispenser(),
     });
 
-    const { appClient } = await factory.deploy();
+    // use random app name for deployment
+    const { appClient } = await factory.deploy({
+      appName: `mimc-test-${Math.random().toString(36).substring(2, 15)}`,
+    });
     client = appClient;
   });
 
@@ -93,27 +96,20 @@ describe("MiMC Circuit Tests", () => {
     expect(output).toBeDefined();
   });
 
-  function bytesToBigInt(bytes: Uint8Array): bigint {
-    let result = BigInt(0);
-    for (let i = 0; i < bytes.length; i++) {
-      result = (result << BigInt(8)) | BigInt(bytes[i]);
-    }
-    return result;
-  }
-
   it("should match AVM output", async () => {
     const input = {
       msg: 7n,
     };
 
+    const expectedOutput = {
+      out: 40532824337300057834369007957196770494721240172463531514189093709732581999836n,
+    };
+
+    const avmResult = await client.send.mimcTest({ args: input });
     const witness = await circuit.calculateWitness(input);
     await circuit.checkConstraints(witness);
 
-    const output = witness[1];
-    expect(output).toBeDefined();
-
-    const result = await client.send.mimcTest({ args: { v: 7n } });
-
-    expect(bytesToBigInt(result.return!)).toEqual(output);
+    await circuit.assertOut(witness, expectedOutput);
+    expect(avmResult.return!).toEqual(expectedOutput);
   });
 });

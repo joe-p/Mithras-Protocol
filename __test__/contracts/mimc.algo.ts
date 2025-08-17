@@ -1,4 +1,6 @@
 import {
+  BigUint,
+  Bytes,
   bytes,
   Contract,
   contract,
@@ -6,9 +8,16 @@ import {
 } from "@algorandfoundation/algorand-typescript";
 import { Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 
+type Output = {
+  out: Uint256;
+};
+
 @contract({ avmVersion: 11 })
 export class MimcTest extends Contract {
-  mimcTest(v: Uint256): bytes<32> {
-    return op.mimc(op.MimcConfigurations.BLS12_381Mp111, v.bytes);
+  mimcTest(msg: Uint256): Output {
+    const hash = op.mimc(op.MimcConfigurations.BLS12_381Mp111, msg.bytes);
+    return {
+      out: new Uint256(BigUint(hash)),
+    };
   }
 }
