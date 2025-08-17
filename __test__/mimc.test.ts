@@ -27,6 +27,23 @@ describe("MiMC Circuit Tests", () => {
     client = appClient;
   });
 
+  it("should match AVM output", async () => {
+    const input = {
+      msg: 7n,
+    };
+
+    const expectedOutput = {
+      out: 40532824337300057834369007957196770494721240172463531514189093709732581999836n,
+    };
+
+    const avmResult = await client.send.mimcTest({ args: input });
+    const witness = await circuit.calculateWitness(input);
+    await circuit.checkConstraints(witness);
+
+    await circuit.assertOut(witness, expectedOutput);
+    expect(avmResult.return!).toEqual(expectedOutput);
+  });
+
   it("should compute MiMC_MP_111 correctly", async () => {
     const input = {
       msg: "123456789",
@@ -94,22 +111,5 @@ describe("MiMC Circuit Tests", () => {
 
     const output = witness[1];
     expect(output).toBeDefined();
-  });
-
-  it("should match AVM output", async () => {
-    const input = {
-      msg: 7n,
-    };
-
-    const expectedOutput = {
-      out: 40532824337300057834369007957196770494721240172463531514189093709732581999836n,
-    };
-
-    const avmResult = await client.send.mimcTest({ args: input });
-    const witness = await circuit.calculateWitness(input);
-    await circuit.checkConstraints(witness);
-
-    await circuit.assertOut(witness, expectedOutput);
-    expect(avmResult.return!).toEqual(expectedOutput);
   });
 });
