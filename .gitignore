@@ -2,6 +2,7 @@
 node_modules/
 __test__/contracts/out/*
 contracts/out/*
+*.dmypy
 
 # Keep approval programs so they have a record of past versions
 !contracts/out/*.approval.teal
