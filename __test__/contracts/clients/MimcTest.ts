@@ -23,7 +23,7 @@ import { TransactionComposer, AppCallMethodCall, AppMethodCallTransactionArgumen
 import { SendParams, SendSingleTransactionResult, SendAtomicTransactionComposerResults } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Address, encodeAddress, modelsv2, OnApplicationComplete, Transaction, TransactionSigner } from 'algosdk'
 
-export const APP_SPEC: Arc56Contract = {"name":"MimcTest","structs":{"Output":[{"name":"out","type":"uint256"}]},"methods":[{"name":"mimcTest","args":[{"type":"uint256","name":"msg"}],"returns":{"type":"(uint256)","struct":"Output"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}}],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":0,"bytes":0},"local":{"ints":0,"bytes":0}},"keys":{"global":{},"local":{},"box":{}},"maps":{"global":{},"local":{},"box":{}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[{"pc":[23],"errorMessage":"OnCompletion is not NoOp"},{"pc":[53],"errorMessage":"can only call when creating"},{"pc":[26],"errorMessage":"can only call when not creating"}],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICAvLyBfX3Rlc3RfXy9jb250cmFjdHMvbWltYy5hbGdvLnRzOjE1LTE2CiAgICAvLyBAY29udHJhY3QoeyBhdm1WZXJzaW9uOiAxMSB9KQogICAgLy8gZXhwb3J0IGNsYXNzIE1pbWNUZXN0IGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE51bUFwcEFyZ3MKICAgIGJ6IG1haW5fYmFyZV9yb3V0aW5nQDYKICAgIHB1c2hieXRlcyAweGYxNWY0ZWVmIC8vIG1ldGhvZCAibWltY1Rlc3QodWludDI1NikodWludDI1NikiCiAgICB0eG5hIEFwcGxpY2F0aW9uQXJncyAwCiAgICBtYXRjaCBtYWluX21pbWNUZXN0X3JvdXRlQDMKCm1haW5fYWZ0ZXJfaWZfZWxzZUAxMDoKICAgIGVycgoKbWFpbl9taW1jVGVzdF9yb3V0ZUAzOgogICAgLy8gX190ZXN0X18vY29udHJhY3RzL21pbWMuYWxnby50czoxNwogICAgLy8gbWltY1Rlc3QobXNnOiBVaW50MjU2KTogT3V0cHV0IHsKICAgIHR4biBPbkNvbXBsZXRpb24KICAgICEKICAgIGFzc2VydCAvLyBPbkNvbXBsZXRpb24gaXMgbm90IE5vT3AKICAgIHR4biBBcHBsaWNhdGlvbklECiAgICBhc3NlcnQgLy8gY2FuIG9ubHkgY2FsbCB3aGVuIG5vdCBjcmVhdGluZwogICAgLy8gX190ZXN0X18vY29udHJhY3RzL21pbWMuYWxnby50czoxNS0xNgogICAgLy8gQGNvbnRyYWN0KHsgYXZtVmVyc2lvbjogMTEgfSkKICAgIC8vIGV4cG9ydCBjbGFzcyBNaW1jVGVzdCBleHRlbmRzIENvbnRyYWN0IHsKICAgIHR4bmEgQXBwbGljYXRpb25BcmdzIDEKICAgIC8vIF9fdGVzdF9fL2NvbnRyYWN0cy9taW1jLmFsZ28udHM6MTcKICAgIC8vIG1pbWNUZXN0KG1zZzogVWludDI1Nik6IE91dHB1dCB7CiAgICBjYWxsc3ViIG1pbWNUZXN0CiAgICBwdXNoYnl0ZXMgMHgxNTFmN2M3NQogICAgc3dhcAogICAgY29uY2F0CiAgICBsb2cKICAgIHB1c2hpbnQgMSAvLyAxCiAgICByZXR1cm4KCm1haW5fYmFyZV9yb3V0aW5nQDY6CiAgICAvLyBfX3Rlc3RfXy9jb250cmFjdHMvbWltYy5hbGdvLnRzOjE1LTE2CiAgICAvLyBAY29udHJhY3QoeyBhdm1WZXJzaW9uOiAxMSB9KQogICAgLy8gZXhwb3J0IGNsYXNzIE1pbWNUZXN0IGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE9uQ29tcGxldGlvbgogICAgYm56IG1haW5fYWZ0ZXJfaWZfZWxzZUAxMAogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgICEKICAgIGFzc2VydCAvLyBjYW4gb25seSBjYWxsIHdoZW4gY3JlYXRpbmcKICAgIHB1c2hpbnQgMSAvLyAxCiAgICByZXR1cm4KCgovLyBfX3Rlc3RfXy9jb250cmFjdHMvbWltYy5hbGdvLnRzOjpNaW1jVGVzdC5taW1jVGVzdChtc2c6IGJ5dGVzKSAtPiBieXRlczoKbWltY1Rlc3Q6CiAgICAvLyBfX3Rlc3RfXy9jb250cmFjdHMvbWltYy5hbGdvLnRzOjE3CiAgICAvLyBtaW1jVGVzdChtc2c6IFVpbnQyNTYpOiBPdXRwdXQgewogICAgcHJvdG8gMSAxCiAgICAvLyBfX3Rlc3RfXy9jb250cmFjdHMvbWltYy5hbGdvLnRzOjE4CiAgICAvLyBjb25zdCBoYXNoID0gb3AubWltYyhvcC5NaW1jQ29uZmlndXJhdGlvbnMuQkxTMTJfMzgxTXAxMTEsIG1zZy5ieXRlcyk7CiAgICBmcmFtZV9kaWcgLTEKICAgIG1pbWMgQkxTMTJfMzgxTXAxMTEKICAgIC8vIF9fdGVzdF9fL2NvbnRyYWN0cy9taW1jLmFsZ28udHM6MjAKICAgIC8vIG91dDogbmV3IFVpbnQyNTYoQmlnVWludChoYXNoKSksCiAgICBwdXNoaW50IDMyIC8vIDMyCiAgICBiemVybwogICAgYnwKICAgIC8vIF9fdGVzdF9fL2NvbnRyYWN0cy9taW1jLmFsZ28udHM6MTktMjEKICAgIC8vIHJldHVybiB7CiAgICAvLyAgIG91dDogbmV3IFVpbnQyNTYoQmlnVWludChoYXNoKSksCiAgICAvLyB9OwogICAgcmV0c3ViCg==","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCg=="},"byteCode":{"approval":"CzEbQQAngATxX07vNhoAjgEAAQAxGRREMRhENhoBiAAYgAQVH3x1TFCwgQFDMRlA/+ExGBREgQFDigEBi//mAYEgr6uJ","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
+export const APP_SPEC: Arc56Contract = {"name":"MimcTest","structs":{"Output":[{"name":"out","type":"uint256"}]},"methods":[{"name":"mimcTest","args":[{"type":"uint256[2]","name":"msgs"}],"returns":{"type":"(uint256)","struct":"Output"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}}],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":0,"bytes":0},"local":{"ints":0,"bytes":0}},"keys":{"global":{},"local":{},"box":{}},"maps":{"global":{},"local":{},"box":{}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[{"pc":[29],"errorMessage":"OnCompletion is not NoOp"},{"pc":[59],"errorMessage":"can only call when creating"},{"pc":[32],"errorMessage":"can only call when not creating"},{"pc":[100,105],"errorMessage":"index access is out of bounds"}],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBieXRlY2Jsb2NrIDB4MDY4MTAxCiAgICAvLyBfX3Rlc3RfXy9jb250cmFjdHMvbWltYy5hbGdvLnRzOjE1LTE2CiAgICAvLyBAY29udHJhY3QoeyBhdm1WZXJzaW9uOiAxMSB9KQogICAgLy8gZXhwb3J0IGNsYXNzIE1pbWNUZXN0IGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE51bUFwcEFyZ3MKICAgIGJ6IG1haW5fYmFyZV9yb3V0aW5nQDYKICAgIHB1c2hieXRlcyAweDE5ZWMxNjBlIC8vIG1ldGhvZCAibWltY1Rlc3QodWludDI1NlsyXSkodWludDI1NikiCiAgICB0eG5hIEFwcGxpY2F0aW9uQXJncyAwCiAgICBtYXRjaCBtYWluX21pbWNUZXN0X3JvdXRlQDMKCm1haW5fYWZ0ZXJfaWZfZWxzZUAxMDoKICAgIGVycgoKbWFpbl9taW1jVGVzdF9yb3V0ZUAzOgogICAgLy8gX190ZXN0X18vY29udHJhY3RzL21pbWMuYWxnby50czoxNwogICAgLy8gbWltY1Rlc3QobXNnczogRml4ZWRBcnJheTxVaW50MjU2LCAyPik6IE91dHB1dCB7CiAgICB0eG4gT25Db21wbGV0aW9uCiAgICAhCiAgICBhc3NlcnQgLy8gT25Db21wbGV0aW9uIGlzIG5vdCBOb09wCiAgICB0eG4gQXBwbGljYXRpb25JRAogICAgYXNzZXJ0IC8vIGNhbiBvbmx5IGNhbGwgd2hlbiBub3QgY3JlYXRpbmcKICAgIC8vIF9fdGVzdF9fL2NvbnRyYWN0cy9taW1jLmFsZ28udHM6MTUtMTYKICAgIC8vIEBjb250cmFjdCh7IGF2bVZlcnNpb246IDExIH0pCiAgICAvLyBleHBvcnQgY2xhc3MgTWltY1Rlc3QgZXh0ZW5kcyBDb250cmFjdCB7CiAgICB0eG5hIEFwcGxpY2F0aW9uQXJncyAxCiAgICAvLyBfX3Rlc3RfXy9jb250cmFjdHMvbWltYy5hbGdvLnRzOjE3CiAgICAvLyBtaW1jVGVzdChtc2dzOiBGaXhlZEFycmF5PFVpbnQyNTYsIDI+KTogT3V0cHV0IHsKICAgIGNhbGxzdWIgbWltY1Rlc3QKICAgIHB1c2hieXRlcyAweDE1MWY3Yzc1CiAgICBzd2FwCiAgICBjb25jYXQKICAgIGxvZwogICAgcHVzaGludCAxIC8vIDEKICAgIHJldHVybgoKbWFpbl9iYXJlX3JvdXRpbmdANjoKICAgIC8vIF9fdGVzdF9fL2NvbnRyYWN0cy9taW1jLmFsZ28udHM6MTUtMTYKICAgIC8vIEBjb250cmFjdCh7IGF2bVZlcnNpb246IDExIH0pCiAgICAvLyBleHBvcnQgY2xhc3MgTWltY1Rlc3QgZXh0ZW5kcyBDb250cmFjdCB7CiAgICB0eG4gT25Db21wbGV0aW9uCiAgICBibnogbWFpbl9hZnRlcl9pZl9lbHNlQDEwCiAgICB0eG4gQXBwbGljYXRpb25JRAogICAgIQogICAgYXNzZXJ0IC8vIGNhbiBvbmx5IGNhbGwgd2hlbiBjcmVhdGluZwogICAgcHVzaGludCAxIC8vIDEKICAgIHJldHVybgoKCi8vIF9fdGVzdF9fL2NvbnRyYWN0cy9taW1jLmFsZ28udHM6Ok1pbWNUZXN0Lm1pbWNUZXN0KG1zZ3M6IGJ5dGVzKSAtPiBieXRlczoKbWltY1Rlc3Q6CiAgICAvLyBfX3Rlc3RfXy9jb250cmFjdHMvbWltYy5hbGdvLnRzOjE3CiAgICAvLyBtaW1jVGVzdChtc2dzOiBGaXhlZEFycmF5PFVpbnQyNTYsIDI+KTogT3V0cHV0IHsKICAgIHByb3RvIDEgMQoKbWltY1Rlc3Rfd2hpbGVfdG9wQDI6CiAgICBwdXNoaW50IDE0MTAgLy8gMTQxMAogICAgZ2xvYmFsIE9wY29kZUJ1ZGdldAogICAgPgogICAgYnogbWltY1Rlc3RfYWZ0ZXJfd2hpbGVANwogICAgaXR4bl9iZWdpbgogICAgcHVzaGludCA2IC8vIGFwcGwKICAgIGl0eG5fZmllbGQgVHlwZUVudW0KICAgIHB1c2hpbnQgNSAvLyBEZWxldGVBcHBsaWNhdGlvbgogICAgaXR4bl9maWVsZCBPbkNvbXBsZXRpb24KICAgIGJ5dGVjXzAgLy8gMHgwNjgxMDEKICAgIGl0eG5fZmllbGQgQXBwcm92YWxQcm9ncmFtCiAgICBieXRlY18wIC8vIDB4MDY4MTAxCiAgICBpdHhuX2ZpZWxkIENsZWFyU3RhdGVQcm9ncmFtCiAgICBwdXNoaW50IDAgLy8gMAogICAgaXR4bl9maWVsZCBGZWUKICAgIGl0eG5fc3VibWl0CiAgICBiIG1pbWNUZXN0X3doaWxlX3RvcEAyCgptaW1jVGVzdF9hZnRlcl93aGlsZUA3OgogICAgLy8gX190ZXN0X18vY29udHJhY3RzL21pbWMuYWxnby50czoyMQogICAgLy8gbXNnc1swXS5ieXRlcy5jb25jYXQobXNnc1sxXS5ieXRlcyksCiAgICBmcmFtZV9kaWcgLTEKICAgIGV4dHJhY3QgMCAzMiAvLyBvbiBlcnJvcjogaW5kZXggYWNjZXNzIGlzIG91dCBvZiBib3VuZHMKICAgIGZyYW1lX2RpZyAtMQogICAgZXh0cmFjdCAzMiAzMiAvLyBvbiBlcnJvcjogaW5kZXggYWNjZXNzIGlzIG91dCBvZiBib3VuZHMKICAgIGNvbmNhdAogICAgLy8gX190ZXN0X18vY29udHJhY3RzL21pbWMuYWxnby50czoxOS0yMgogICAgLy8gY29uc3QgaGFzaCA9IG9wLm1pbWMoCiAgICAvLyAgIG9wLk1pbWNDb25maWd1cmF0aW9ucy5CTFMxMl8zODFNcDExMSwKICAgIC8vICAgbXNnc1swXS5ieXRlcy5jb25jYXQobXNnc1sxXS5ieXRlcyksCiAgICAvLyApOwogICAgbWltYyBCTFMxMl8zODFNcDExMQogICAgLy8gX190ZXN0X18vY29udHJhY3RzL21pbWMuYWxnby50czoyNAogICAgLy8gb3V0OiBuZXcgVWludDI1NihCaWdVaW50KGhhc2gpKSwKICAgIHB1c2hpbnQgMzIgLy8gMzIKICAgIGJ6ZXJvCiAgICBifAogICAgLy8gX190ZXN0X18vY29udHJhY3RzL21pbWMuYWxnby50czoyMy0yNQogICAgLy8gcmV0dXJuIHsKICAgIC8vICAgb3V0OiBuZXcgVWludDI1NihCaWdVaW50KGhhc2gpKSwKICAgIC8vIH07CiAgICByZXRzdWIK","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCg=="},"byteCode":{"approval":"CyYBAwaBATEbQQAngAQZ7BYONhoAjgEAAQAxGRREMRhENhoBiAAYgAQVH3x1TFCwgQFDMRlA/+ExGBREgQFDigEBgYILMgwNQQAXsYEGshCBBbIZKLIeKLIfgQCyAbNC/+CL/1cAIIv/VyAgUOYBgSCvq4k=","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
 
 /**
  * A state record containing binary data
@@ -84,15 +84,15 @@ export type MimcTestArgs = {
    * The object representation of the arguments for each method
    */
   obj: {
-    'mimcTest(uint256)(uint256)': {
-      msg: bigint | number
+    'mimcTest(uint256[2])(uint256)': {
+      msgs: [bigint | number, bigint | number]
     }
   }
   /**
    * The tuple representation of the arguments for each method
    */
   tuple: {
-    'mimcTest(uint256)(uint256)': [msg: bigint | number]
+    'mimcTest(uint256[2])(uint256)': [msgs: [bigint | number, bigint | number]]
   }
 }
 
@@ -100,7 +100,7 @@ export type MimcTestArgs = {
  * The return type for each method
  */
 export type MimcTestReturns = {
-  'mimcTest(uint256)(uint256)': Output
+  'mimcTest(uint256[2])(uint256)': Output
 }
 
 /**
@@ -111,10 +111,10 @@ export type MimcTestTypes = {
    * Maps method signatures / names to their argument and return types.
    */
   methods:
-    & Record<'mimcTest(uint256)(uint256)' | 'mimcTest', {
-      argsObj: MimcTestArgs['obj']['mimcTest(uint256)(uint256)']
-      argsTuple: MimcTestArgs['tuple']['mimcTest(uint256)(uint256)']
-      returns: MimcTestReturns['mimcTest(uint256)(uint256)']
+    & Record<'mimcTest(uint256[2])(uint256)' | 'mimcTest', {
+      argsObj: MimcTestArgs['obj']['mimcTest(uint256[2])(uint256)']
+      argsTuple: MimcTestArgs['tuple']['mimcTest(uint256[2])(uint256)']
+      returns: MimcTestReturns['mimcTest(uint256[2])(uint256)']
     }>
 }
 
@@ -167,16 +167,16 @@ export type MimcTestDeployParams = Expand<Omit<AppFactoryDeployParams, 'createPa
  */
 export abstract class MimcTestParamsFactory {
   /**
-   * Constructs a no op call for the mimcTest(uint256)(uint256) ABI method
+   * Constructs a no op call for the mimcTest(uint256[2])(uint256) ABI method
    *
    * @param params Parameters for the call
    * @returns An `AppClientMethodCallParams` object for the call
    */
-  static mimcTest(params: CallParams<MimcTestArgs['obj']['mimcTest(uint256)(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256)(uint256)']> & CallOnComplete): AppClientMethodCallParams & CallOnComplete {
+  static mimcTest(params: CallParams<MimcTestArgs['obj']['mimcTest(uint256[2])(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256[2])(uint256)']> & CallOnComplete): AppClientMethodCallParams & CallOnComplete {
     return {
       ...params,
-      method: 'mimcTest(uint256)(uint256)' as const,
-      args: Array.isArray(params.args) ? params.args : [params.args.msg],
+      method: 'mimcTest(uint256[2])(uint256)' as const,
+      args: Array.isArray(params.args) ? params.args : [params.args.msgs],
     }
   }
 }
@@ -420,12 +420,12 @@ export class MimcTestClient {
     },
 
     /**
-     * Makes a call to the MimcTest smart contract using the `mimcTest(uint256)(uint256)` ABI method.
+     * Makes a call to the MimcTest smart contract using the `mimcTest(uint256[2])(uint256)` ABI method.
      *
      * @param params The params for the smart contract call
      * @returns The call params
      */
-    mimcTest: (params: CallParams<MimcTestArgs['obj']['mimcTest(uint256)(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256)(uint256)']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+    mimcTest: (params: CallParams<MimcTestArgs['obj']['mimcTest(uint256[2])(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256[2])(uint256)']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       return this.appClient.params.call(MimcTestParamsFactory.mimcTest(params))
     },
 
@@ -446,12 +446,12 @@ export class MimcTestClient {
     },
 
     /**
-     * Makes a call to the MimcTest smart contract using the `mimcTest(uint256)(uint256)` ABI method.
+     * Makes a call to the MimcTest smart contract using the `mimcTest(uint256[2])(uint256)` ABI method.
      *
      * @param params The params for the smart contract call
      * @returns The call transaction
      */
-    mimcTest: (params: CallParams<MimcTestArgs['obj']['mimcTest(uint256)(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256)(uint256)']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+    mimcTest: (params: CallParams<MimcTestArgs['obj']['mimcTest(uint256[2])(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256[2])(uint256)']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       return this.appClient.createTransaction.call(MimcTestParamsFactory.mimcTest(params))
     },
 
@@ -472,14 +472,14 @@ export class MimcTestClient {
     },
 
     /**
-     * Makes a call to the MimcTest smart contract using the `mimcTest(uint256)(uint256)` ABI method.
+     * Makes a call to the MimcTest smart contract using the `mimcTest(uint256[2])(uint256)` ABI method.
      *
      * @param params The params for the smart contract call
      * @returns The call result
      */
-    mimcTest: async (params: CallParams<MimcTestArgs['obj']['mimcTest(uint256)(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256)(uint256)']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+    mimcTest: async (params: CallParams<MimcTestArgs['obj']['mimcTest(uint256[2])(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256[2])(uint256)']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(MimcTestParamsFactory.mimcTest(params))
-      return {...result, return: result.return as unknown as (undefined | MimcTestReturns['mimcTest(uint256)(uint256)'])}
+      return {...result, return: result.return as unknown as (undefined | MimcTestReturns['mimcTest(uint256[2])(uint256)'])}
     },
 
   }
@@ -507,11 +507,11 @@ export class MimcTestClient {
     const resultMappers: Array<undefined | ((x: ABIReturn | undefined) => any)> = []
     return {
       /**
-       * Add a mimcTest(uint256)(uint256) method call against the MimcTest contract
+       * Add a mimcTest(uint256[2])(uint256) method call against the MimcTest contract
        */
-      mimcTest(params: CallParams<MimcTestArgs['obj']['mimcTest(uint256)(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256)(uint256)']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
+      mimcTest(params: CallParams<MimcTestArgs['obj']['mimcTest(uint256[2])(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256[2])(uint256)']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
         promiseChain = promiseChain.then(async () => composer.addAppCallMethodCall(await client.params.mimcTest(params)))
-        resultMappers.push((v) => client.decodeReturnValue('mimcTest(uint256)(uint256)', v))
+        resultMappers.push((v) => client.decodeReturnValue('mimcTest(uint256[2])(uint256)', v))
         return this
       },
       /**
@@ -550,13 +550,13 @@ export class MimcTestClient {
 }
 export type MimcTestComposer<TReturns extends [...any[]] = []> = {
   /**
-   * Calls the mimcTest(uint256)(uint256) ABI method.
+   * Calls the mimcTest(uint256[2])(uint256) ABI method.
    *
    * @param args The arguments for the contract call
    * @param params Any additional parameters for the call
    * @returns The typed transaction composer so you can fluently chain multiple calls or call execute to execute all queued up transactions
    */
-  mimcTest(params?: CallParams<MimcTestArgs['obj']['mimcTest(uint256)(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256)(uint256)']>): MimcTestComposer<[...TReturns, MimcTestReturns['mimcTest(uint256)(uint256)'] | undefined]>
+  mimcTest(params?: CallParams<MimcTestArgs['obj']['mimcTest(uint256[2])(uint256)'] | MimcTestArgs['tuple']['mimcTest(uint256[2])(uint256)']>): MimcTestComposer<[...TReturns, MimcTestReturns['mimcTest(uint256[2])(uint256)'] | undefined]>
 
   /**
    * Makes a clear_state call to an existing instance of the MimcTest smart contract.
