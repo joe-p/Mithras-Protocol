@@ -1,9 +1,8 @@
-import { AlgorandClient } from "@algorandfoundation/algokit-utils/types/algorand-client";
 import { microAlgos } from "@algorandfoundation/algokit-utils";
 import {
-  MimcMerkleContractFactory,
-  MimcMerkleContractClient,
-} from "../../contracts/clients/MimcMerkleContract";
+  MimcMerkleFactory,
+  MimcMerkleClient,
+} from "../../contracts/clients/MimcMerkle";
 import { MimcTestClient, MimcTestFactory } from "../contracts/clients/MimcTest";
 import { AlgorandTestUtils } from "./test-utils";
 
@@ -23,10 +22,10 @@ export class MimcTestHelper {
   }
 }
 
-export class MimcMerkleContractHelper {
-  static async deployContract(): Promise<MimcMerkleContractClient> {
+export class MimcMerkleHelper {
+  static async deployContract(): Promise<MimcMerkleClient> {
     const algorand = AlgorandTestUtils.createLocalClient();
-    const factory = new MimcMerkleContractFactory({
+    const factory = new MimcMerkleFactory({
       algorand,
       defaultSender: await AlgorandTestUtils.getDispenser(algorand),
     });
@@ -50,7 +49,7 @@ export class MimcMerkleContractHelper {
   }
 
   static async addLeaf(
-    appClient: MimcMerkleContractClient,
+    appClient: MimcMerkleClient,
     leafHash: Uint8Array,
   ): Promise<void> {
     await appClient.send.addLeaf({
@@ -59,7 +58,7 @@ export class MimcMerkleContractHelper {
     });
   }
 
-  static async getContractState(appClient: MimcMerkleContractClient) {
+  static async getContractState(appClient: MimcMerkleClient) {
     const subtree = await appClient.state.box.subtree();
     const zeroHashes = await appClient.state.box.zeroHashes();
 
@@ -71,7 +70,7 @@ export class MimcMerkleContractHelper {
   }
 
   static async verifyRoot(
-    appClient: MimcMerkleContractClient,
+    appClient: MimcMerkleClient,
     root: Uint8Array,
   ): Promise<boolean> {
     const { return: isValid } = await appClient.send.isValidRoot({

@@ -16,7 +16,7 @@ const ROOT_CACHE_SIZE = 50;
 const TREE_HEIGHT = 32;
 
 @contract({ avmVersion: 11 })
-export class MimcMerkleContract extends Contract {
+export class MimcMerkle extends Contract {
   rootCache = Box<FixedArray<bytes<32>, typeof ROOT_CACHE_SIZE>>({ key: "r" });
 
   rootCounter = GlobalState<uint64>({ key: "c" });

@@ -5,7 +5,7 @@ import {
   MerkleTestHelpers,
   TestDataBuilder,
 } from "./utils/test-utils";
-import { MimcMerkleContractHelper } from "./utils/contract-helpers";
+import { MimcMerkleHelper } from "./utils/contract-helpers";
 
 describe("Merkle Path Verify Circuit Tests", () => {
   let circuit: any;
@@ -105,14 +105,13 @@ describe("Merkle Path Verify Circuit Tests", () => {
   });
 
   it("should generate root with contract and verify with circuit - single leaf", async () => {
-    const appClient = await MimcMerkleContractHelper.deployContract();
+    const appClient = await MimcMerkleHelper.deployContract();
 
     const leafHash = new Uint8Array(32);
     leafHash.set([0x12, 0x34, 0x56, 0x78], 0);
 
-    await MimcMerkleContractHelper.addLeaf(appClient, leafHash);
-    const { zeroHashes } =
-      await MimcMerkleContractHelper.getContractState(appClient);
+    await MimcMerkleHelper.addLeaf(appClient, leafHash);
+    const { zeroHashes } = await MimcMerkleHelper.getContractState(appClient);
 
     const leaf = MerkleTestHelpers.bytesToBigInt(leafHash);
     const pathElements: bigint[] = [];
@@ -139,7 +138,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
   });
 
   it("should generate root with contract and verify with circuit - multiple leaves", async () => {
-    const appClient = await MimcMerkleContractHelper.deployContract();
+    const appClient = await MimcMerkleHelper.deployContract();
 
     const leaves = [
       TestDataBuilder.createTestLeaf(0x11223344),
@@ -148,11 +147,11 @@ describe("Merkle Path Verify Circuit Tests", () => {
     ];
 
     for (const leaf of leaves) {
-      await MimcMerkleContractHelper.addLeaf(appClient, leaf);
+      await MimcMerkleHelper.addLeaf(appClient, leaf);
     }
 
     const { subtree, zeroHashes } =
-      await MimcMerkleContractHelper.getContractState(appClient);
+      await MimcMerkleHelper.getContractState(appClient);
 
     const leafToVerify = leaves[1];
     const leafIndex = 1;
@@ -189,13 +188,12 @@ describe("Merkle Path Verify Circuit Tests", () => {
   });
 
   it("should verify contract-generated root using isValidRoot", async () => {
-    const appClient = await MimcMerkleContractHelper.deployContract();
+    const appClient = await MimcMerkleHelper.deployContract();
 
     const leafHash = TestDataBuilder.createTestLeaf(0xdeadbeef);
 
-    await MimcMerkleContractHelper.addLeaf(appClient, leafHash);
-    const { zeroHashes } =
-      await MimcMerkleContractHelper.getContractState(appClient);
+    await MimcMerkleHelper.addLeaf(appClient, leafHash);
+    const { zeroHashes } = await MimcMerkleHelper.getContractState(appClient);
 
     const leaf = MerkleTestHelpers.bytesToBigInt(leafHash);
     const pathElements: bigint[] = [];
@@ -212,7 +210,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
     );
     const computedRootBytes = MerkleTestHelpers.bigIntToBytes(root);
 
-    const isValid = await MimcMerkleContractHelper.verifyRoot(
+    const isValid = await MimcMerkleHelper.verifyRoot(
       appClient,
       computedRootBytes,
     );

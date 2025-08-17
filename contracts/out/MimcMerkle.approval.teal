@@ -7,7 +7,7 @@ main:
     bytecblock "c" "i" "r" "t" 0x068101
     // contracts/mimc_merkle.algo.ts:18-19
     // @contract({ avmVersion: 11 })
-    // export class MimcMerkleContract extends Contract {
+    // export class MimcMerkle extends Contract {
     txn NumAppArgs
     bz main_bare_routing@9
     pushbytess 0xbec76d87 0x8c294051 0xdd3375a8 0x0e53f306 // method "bootstrap()void", method "addLeaf(byte[32])void", method "isValidRoot(byte[32])bool", method "addRoot(byte[32])void"
@@ -27,7 +27,7 @@ main_addRoot_route@6:
     assert // can only call when not creating
     // contracts/mimc_merkle.algo.ts:18-19
     // @contract({ avmVersion: 11 })
-    // export class MimcMerkleContract extends Contract {
+    // export class MimcMerkle extends Contract {
     txna ApplicationArgs 1
     // contracts/mimc_merkle.algo.ts:96
     // addRoot(rootHash: bytes<32>): void {
@@ -45,7 +45,7 @@ main_isValidRoot_route@5:
     assert // can only call when not creating
     // contracts/mimc_merkle.algo.ts:18-19
     // @contract({ avmVersion: 11 })
-    // export class MimcMerkleContract extends Contract {
+    // export class MimcMerkle extends Contract {
     txna ApplicationArgs 1
     // contracts/mimc_merkle.algo.ts:86
     // isValidRoot(root: bytes<32>): boolean {
@@ -71,7 +71,7 @@ main_addLeaf_route@4:
     assert // can only call when not creating
     // contracts/mimc_merkle.algo.ts:18-19
     // @contract({ avmVersion: 11 })
-    // export class MimcMerkleContract extends Contract {
+    // export class MimcMerkle extends Contract {
     txna ApplicationArgs 1
     // contracts/mimc_merkle.algo.ts:50
     // addLeaf(leafHash: bytes<32>): void {
@@ -94,7 +94,7 @@ main_bootstrap_route@3:
 main_bare_routing@9:
     // contracts/mimc_merkle.algo.ts:18-19
     // @contract({ avmVersion: 11 })
-    // export class MimcMerkleContract extends Contract {
+    // export class MimcMerkle extends Contract {
     txn OnCompletion
     bnz main_after_if_else@13
     txn ApplicationID
@@ -146,7 +146,7 @@ ensure_budget_after_while@7:
     retsub
 
 
-// contracts/mimc_merkle.algo.ts::MimcMerkleContract.bootstrap() -> void:
+// contracts/mimc_merkle.algo.ts::MimcMerkle.bootstrap() -> void:
 bootstrap:
     // contracts/mimc_merkle.algo.ts:30
     // bootstrap(): void {
@@ -252,7 +252,7 @@ bootstrap_after_while@3:
     retsub
 
 
-// contracts/mimc_merkle.algo.ts::MimcMerkleContract.addLeaf(leafHash: bytes) -> void:
+// contracts/mimc_merkle.algo.ts::MimcMerkle.addLeaf(leafHash: bytes) -> void:
 addLeaf:
     // contracts/mimc_merkle.algo.ts:50
     // addLeaf(leafHash: bytes<32>): void {
@@ -406,7 +406,7 @@ addLeaf_after_while@6:
     retsub
 
 
-// contracts/mimc_merkle.algo.ts::MimcMerkleContract.isValidRoot(root: bytes) -> uint64:
+// contracts/mimc_merkle.algo.ts::MimcMerkle.isValidRoot(root: bytes) -> uint64:
 isValidRoot:
     // contracts/mimc_merkle.algo.ts:86
     // isValidRoot(root: bytes<32>): boolean {
@@ -460,7 +460,7 @@ isValidRoot_after_for@6:
     retsub
 
 
-// contracts/mimc_merkle.algo.ts::MimcMerkleContract.addRoot(rootHash: bytes) -> void:
+// contracts/mimc_merkle.algo.ts::MimcMerkle.addRoot(rootHash: bytes) -> void:
 addRoot:
     // contracts/mimc_merkle.algo.ts:96
     // addRoot(rootHash: bytes<32>): void {
