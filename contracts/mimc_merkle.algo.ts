@@ -10,10 +10,14 @@ import {
   uint64,
   contract,
   ensureBudget,
+  Global,
 } from "@algorandfoundation/algorand-typescript";
 
 const ROOT_CACHE_SIZE = 50;
 const TREE_HEIGHT = 32;
+
+// Base cost for mimc is 10 uALGO, and each bytes<32> costs 550 uALGO
+const MIMC_OPCODE_COST = 1100 * TREE_HEIGHT;
 
 @contract({ avmVersion: 11 })
 export class MimcMerkle extends Contract {
@@ -28,7 +32,7 @@ export class MimcMerkle extends Contract {
   zeroHashes = Box<FixedArray<bytes<32>, typeof TREE_HEIGHT>>({ key: "z" });
 
   bootstrap(): void {
-    ensureBudget(700 * 200);
+    ensureBudget(MIMC_OPCODE_COST);
     const tree = new FixedArray<bytes<32>, typeof TREE_HEIGHT>();
 
     tree[0] = op.bzero(32).toFixed({ length: 32 });
@@ -48,7 +52,8 @@ export class MimcMerkle extends Contract {
   }
 
   addLeaf(leafHash: bytes<32>): void {
-    ensureBudget(700 * 200);
+    // Some extra budget needed for the loop logic opcodes
+    ensureBudget(MIMC_OPCODE_COST + Global.minTxnFee * 2);
 
     let index = this.treeIndex.value;
 
