@@ -28,7 +28,7 @@ describe("MiMC Circuit Tests", () => {
   });
 
   it("should match AVM output", async () => {
-    const input = {
+    const args = {
       msg: 7n,
     };
 
@@ -36,8 +36,8 @@ describe("MiMC Circuit Tests", () => {
       out: 40532824337300057834369007957196770494721240172463531514189093709732581999836n,
     };
 
-    const avmResult = await client.send.mimcTest({ args: input });
-    const witness = await circuit.calculateWitness(input);
+    const avmResult = await client.send.mimcTest({ args });
+    const witness = await circuit.calculateWitness(args);
     await circuit.checkConstraints(witness);
 
     await circuit.assertOut(witness, expectedOutput);
