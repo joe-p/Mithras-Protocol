@@ -20,6 +20,9 @@ importers:
       '@types/node':
         specifier: ^24.3.0
         version: 24.3.0
+      algosdk:
+        specifier: ^3.4.0
+        version: 3.4.0
       circom_tester:
         specifier: ^0.0.24
         version: 0.0.24
