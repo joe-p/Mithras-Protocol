@@ -9,6 +9,7 @@ import {
   op,
   uint64,
   contract,
+  ensureBudget,
 } from "@algorandfoundation/algorand-typescript";
 
 const ROOT_CACHE_SIZE = 50;
@@ -27,6 +28,7 @@ export class MimcMerkleContract extends Contract {
   zeroHashes = Box<FixedArray<bytes<32>, typeof TREE_HEIGHT>>({ key: "z" });
 
   bootstrap(): void {
+    ensureBudget(700 * 200);
     const tree = new FixedArray<bytes<32>, typeof TREE_HEIGHT>();
 
     tree[0] = op.bzero(32).toFixed({ length: 32 });
@@ -38,12 +40,16 @@ export class MimcMerkleContract extends Contract {
       );
     }
 
+    this.rootCounter.value = 0;
+    this.treeIndex.value = 0;
     this.rootCache.create();
     this.zeroHashes.value = clone(tree);
     this.subtree.value = clone(tree);
   }
 
   addLeaf(leafHash: bytes<32>): void {
+    ensureBudget(700 * 200);
+
     let index = this.treeIndex.value;
 
     assert(index < 2 ** TREE_HEIGHT, "Tree is full");

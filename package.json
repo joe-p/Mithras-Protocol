@@ -21,6 +21,7 @@
     "@algorandfoundation/algokit-utils": "^9.1.2",
     "@algorandfoundation/algorand-typescript": "1.0.0-alpha.77",
     "@algorandfoundation/puya-ts": "1.0.0-alpha.77",
+    "@types/node": "^24.3.0",
     "circom_tester": "^0.0.24",
     "vitest": "^3.2.4"
   }
