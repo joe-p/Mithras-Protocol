@@ -1,1 +1,3 @@
 /target
+node_modules/
+__test__/contracts/out

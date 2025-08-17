@@ -1,0 +1,23 @@
+{
+  "name": "mithras-protocol",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "build:test-contracts": "algokit compile ts __test__/contracts",
+    "build:test-clients": "algokit generate client __test__/contracts/out --output __test__/contracts/clients/{contract_name}.ts",
+    "build:test": "pnpm build:test-contracts && pnpm build:test-clients"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.9.0",
+  "devDependencies": {
+    "@algorandfoundation/algokit-utils": "^9.1.2",
+    "@algorandfoundation/algorand-typescript": "1.0.0-alpha.77",
+    "@algorandfoundation/puya-ts": "1.0.0-alpha.77",
+    "circom_tester": "^0.0.24",
+    "vitest": "^3.2.4"
+  }
+}
