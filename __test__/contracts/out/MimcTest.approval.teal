@@ -1,0 +1,71 @@
+#pragma version 11
+#pragma typetrack false
+
+// @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
+main:
+    // __test__/contracts/mimc.algo.ts:15-16
+    // @contract({ avmVersion: 11 })
+    // export class MimcTest extends Contract {
+    txn NumAppArgs
+    bz main_bare_routing@6
+    pushbytes 0xf15f4eef // method "mimcTest(uint256)(uint256)"
+    txna ApplicationArgs 0
+    match main_mimcTest_route@3
+
+main_after_if_else@10:
+    err
+
+main_mimcTest_route@3:
+    // __test__/contracts/mimc.algo.ts:17
+    // mimcTest(msg: Uint256): Output {
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // __test__/contracts/mimc.algo.ts:15-16
+    // @contract({ avmVersion: 11 })
+    // export class MimcTest extends Contract {
+    txna ApplicationArgs 1
+    // __test__/contracts/mimc.algo.ts:17
+    // mimcTest(msg: Uint256): Output {
+    callsub mimcTest
+    pushbytes 0x151f7c75
+    swap
+    concat
+    log
+    pushint 1 // 1
+    return
+
+main_bare_routing@6:
+    // __test__/contracts/mimc.algo.ts:15-16
+    // @contract({ avmVersion: 11 })
+    // export class MimcTest extends Contract {
+    txn OnCompletion
+    bnz main_after_if_else@10
+    txn ApplicationID
+    !
+    assert // can only call when creating
+    pushint 1 // 1
+    return
+
+
+// __test__/contracts/mimc.algo.ts::MimcTest.mimcTest(msg: bytes) -> bytes:
+mimcTest:
+    // __test__/contracts/mimc.algo.ts:17
+    // mimcTest(msg: Uint256): Output {
+    proto 1 1
+    // __test__/contracts/mimc.algo.ts:18
+    // const hash = op.mimc(op.MimcConfigurations.BLS12_381Mp111, msg.bytes);
+    frame_dig -1
+    mimc BLS12_381Mp111
+    // __test__/contracts/mimc.algo.ts:20
+    // out: new Uint256(BigUint(hash)),
+    pushint 32 // 32
+    bzero
+    b|
+    // __test__/contracts/mimc.algo.ts:19-21
+    // return {
+    //   out: new Uint256(BigUint(hash)),
+    // };
+    retsub
