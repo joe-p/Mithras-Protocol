@@ -229,6 +229,3 @@ template MiMC_Sum(n) {
 
     out <== checksum.out;
 }
-
-
-component main = MiMC_Sum(2);

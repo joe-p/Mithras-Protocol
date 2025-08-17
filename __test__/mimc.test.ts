@@ -14,7 +14,7 @@ describe("MiMC Circuit Tests", () => {
   let client: MimcTestClient;
 
   beforeAll(async () => {
-    circuit = await wasm_tester("circuits/mimc.circom", {
+    circuit = await wasm_tester("__test__/circuits/mimc.circom", {
       prime: "bls12381",
       recompile: true,
     });
