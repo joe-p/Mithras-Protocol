@@ -216,14 +216,14 @@ template Checksum(n) {
 // }
 
 template MiMC_Sum(n) {
-    signal input msg[n];
+    signal input msgs[n];
     signal output out;
     var h = 0;
 
     component checksum = Checksum(n);
 
     for (var i = 0; i < n; i++) {
-        checksum.data[i] <== msg[i];
+        checksum.data[i] <== msgs[i];
     }
     checksum.h <== h;
 
