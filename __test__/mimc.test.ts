@@ -2,6 +2,7 @@ import circom_tester from "circom_tester";
 import { describe, it, beforeAll, expect } from "vitest";
 import { MimcTestClient, MimcTestFactory } from "./contracts/clients/MimcTest";
 import { AlgorandClient } from "@algorandfoundation/algokit-utils/types/algorand-client";
+import { microAlgos } from "@algorandfoundation/algokit-utils";
 const wasm_tester = circom_tester.wasm;
 
 describe("MiMC Circuit Tests", () => {
@@ -29,24 +30,23 @@ describe("MiMC Circuit Tests", () => {
 
   it("should match AVM output", async () => {
     const args = {
-      msg: 7n,
+      msg: [13n, 37n] as [bigint, bigint],
     };
 
-    const expectedOutput = {
-      out: 40532824337300057834369007957196770494721240172463531514189093709732581999836n,
-    };
-
-    const avmResult = await client.send.mimcTest({ args });
+    const avmResult = await client.send.mimcTest({
+      args,
+      extraFee: microAlgos(2000),
+    });
     const witness = await circuit.calculateWitness(args);
     await circuit.checkConstraints(witness);
 
-    await circuit.assertOut(witness, expectedOutput);
-    expect(avmResult.return!).toEqual(expectedOutput);
+    console.debug("AVM Result:", avmResult.return);
+    await circuit.assertOut(witness, avmResult.return!);
   });
 
   it("should compute MiMC_MP_111 correctly", async () => {
     const input = {
-      msg: "123456789",
+      msg: ["123456789", 1n],
     };
 
     const witness = await circuit.calculateWitness(input);
@@ -59,7 +59,7 @@ describe("MiMC Circuit Tests", () => {
 
   it("should produce deterministic output for same inputs", async () => {
     const input = {
-      msg: "1000",
+      msg: ["1000", 1n],
     };
 
     const witness1 = await circuit.calculateWitness(input);
@@ -73,11 +73,11 @@ describe("MiMC Circuit Tests", () => {
 
   it("should produce different outputs for different inputs", async () => {
     const input1 = {
-      msg: "1000",
+      msg: ["1000", 1n],
     };
 
     const input2 = {
-      msg: "1001",
+      msg: ["1001", 1n],
     };
 
     const witness1 = await circuit.calculateWitness(input1);
@@ -91,7 +91,7 @@ describe("MiMC Circuit Tests", () => {
 
   it("should handle zero inputs", async () => {
     const input = {
-      msg: "0",
+      msg: ["0", 1n],
     };
 
     const witness = await circuit.calculateWitness(input);
@@ -103,7 +103,10 @@ describe("MiMC Circuit Tests", () => {
 
   it("should handle large field elements", async () => {
     const input = {
-      msg: "21888242871839275222246405745257275088548364400416034343698204186575808495617",
+      msg: [
+        "21888242871839275222246405745257275088548364400416034343698204186575808495617",
+        1n,
+      ],
     };
 
     const witness = await circuit.calculateWitness(input);
@@ -111,5 +114,19 @@ describe("MiMC Circuit Tests", () => {
 
     const output = witness[1];
     expect(output).toBeDefined();
+  });
+
+  it("should handle multiple data blocks", async () => {
+    // Test with a single block in array format
+    const singleBlockInput = {
+      msg: ["123", 1n],
+    };
+
+    const singleBlockWitness = await circuit.calculateWitness(singleBlockInput);
+    await circuit.checkConstraints(singleBlockWitness);
+
+    const output = singleBlockWitness[1];
+    expect(output).toBeDefined();
+    expect(typeof output).toBe("bigint");
   });
 });

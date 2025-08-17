@@ -181,21 +181,28 @@ template Encrypt() {
 // 	return d.h
 // }
 //
-// NOTE: The gnark impl allows for multiple data blocks. In our case we only support one (at least for now)
-template Checksum() {
-    signal input data;
+template Checksum(n) {
+    signal input data[n];
     signal input h;
-    signal r;
     signal output out;
 
-    component encrypt = Encrypt();
+    signal h_state[n+1];
+    signal r[n];
 
-    encrypt.m <== data;
-    encrypt.h <== h;
-   
-    r <== encrypt.out;
+    h_state[0] <== h;
 
-    out <== r + h + data;
+    component encrypt[n];
+
+    for (var i = 0; i < n; i++) {
+        encrypt[i] = Encrypt();
+        encrypt[i].m <== data[i];
+        encrypt[i].h <== h_state[i];
+        
+        r[i] <== encrypt[i].out;
+        h_state[i+1] <== r[i] + h_state[i] + data[i];
+    }
+
+    out <== h_state[n];
 }
 
 // func Sum(msg []byte) ([]byte, error) {
@@ -208,18 +215,20 @@ template Checksum() {
 // 	return bytes[:], nil
 // }
 
-template MiMC_Sum() {
-    signal input msg;
+template MiMC_Sum(n) {
+    signal input msg[n];
     signal output out;
     var h = 0;
 
-    component checksum = Checksum();
+    component checksum = Checksum(n);
 
-    checksum.data <== msg;
+    for (var i = 0; i < n; i++) {
+        checksum.data[i] <== msg[i];
+    }
     checksum.h <== h;
 
     out <== checksum.out;
 }
 
 
-component main = MiMC_Sum();
+component main = MiMC_Sum(2);

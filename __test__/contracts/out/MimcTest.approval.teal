@@ -3,12 +3,13 @@
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
-    // __test__/contracts/mimc.algo.ts:15-16
+    bytecblock 0x068101
+    // __test__/contracts/mimc.algo.ts:17-18
     // @contract({ avmVersion: 11 })
     // export class MimcTest extends Contract {
     txn NumAppArgs
     bz main_bare_routing@6
-    pushbytes 0xf15f4eef // method "mimcTest(uint256)(uint256)"
+    pushbytes 0x19ec160e // method "mimcTest(uint256[2])(uint256)"
     txna ApplicationArgs 0
     match main_mimcTest_route@3
 
@@ -16,19 +17,19 @@ main_after_if_else@10:
     err
 
 main_mimcTest_route@3:
-    // __test__/contracts/mimc.algo.ts:17
-    // mimcTest(msg: Uint256): Output {
+    // __test__/contracts/mimc.algo.ts:19
+    // mimcTest(msg: FixedArray<Uint256, 2>): Output {
     txn OnCompletion
     !
     assert // OnCompletion is not NoOp
     txn ApplicationID
     assert // can only call when not creating
-    // __test__/contracts/mimc.algo.ts:15-16
+    // __test__/contracts/mimc.algo.ts:17-18
     // @contract({ avmVersion: 11 })
     // export class MimcTest extends Contract {
     txna ApplicationArgs 1
-    // __test__/contracts/mimc.algo.ts:17
-    // mimcTest(msg: Uint256): Output {
+    // __test__/contracts/mimc.algo.ts:19
+    // mimcTest(msg: FixedArray<Uint256, 2>): Output {
     callsub mimcTest
     pushbytes 0x151f7c75
     swap
@@ -38,7 +39,7 @@ main_mimcTest_route@3:
     return
 
 main_bare_routing@6:
-    // __test__/contracts/mimc.algo.ts:15-16
+    // __test__/contracts/mimc.algo.ts:17-18
     // @contract({ avmVersion: 11 })
     // export class MimcTest extends Contract {
     txn OnCompletion
@@ -52,19 +53,49 @@ main_bare_routing@6:
 
 // __test__/contracts/mimc.algo.ts::MimcTest.mimcTest(msg: bytes) -> bytes:
 mimcTest:
-    // __test__/contracts/mimc.algo.ts:17
-    // mimcTest(msg: Uint256): Output {
+    // __test__/contracts/mimc.algo.ts:19
+    // mimcTest(msg: FixedArray<Uint256, 2>): Output {
     proto 1 1
-    // __test__/contracts/mimc.algo.ts:18
-    // const hash = op.mimc(op.MimcConfigurations.BLS12_381Mp111, msg.bytes);
+
+mimcTest_while_top@2:
+    pushint 1410 // 1410
+    global OpcodeBudget
+    >
+    bz mimcTest_after_while@7
+    itxn_begin
+    pushint 6 // appl
+    itxn_field TypeEnum
+    pushint 5 // DeleteApplication
+    itxn_field OnCompletion
+    bytec_0 // 0x068101
+    itxn_field ApprovalProgram
+    bytec_0 // 0x068101
+    itxn_field ClearStateProgram
+    pushint 0 // 0
+    itxn_field Fee
+    itxn_submit
+    b mimcTest_while_top@2
+
+mimcTest_after_while@7:
+    // __test__/contracts/mimc.algo.ts:23
+    // msg[0].bytes.concat(msg[1].bytes),
     frame_dig -1
+    extract 0 32 // on error: index access is out of bounds
+    frame_dig -1
+    extract 32 32 // on error: index access is out of bounds
+    concat
+    // __test__/contracts/mimc.algo.ts:21-24
+    // const hash = op.mimc(
+    //   op.MimcConfigurations.BLS12_381Mp111,
+    //   msg[0].bytes.concat(msg[1].bytes),
+    // );
     mimc BLS12_381Mp111
-    // __test__/contracts/mimc.algo.ts:20
+    // __test__/contracts/mimc.algo.ts:26
     // out: new Uint256(BigUint(hash)),
     pushint 32 // 32
     bzero
     b|
-    // __test__/contracts/mimc.algo.ts:19-21
+    // __test__/contracts/mimc.algo.ts:25-27
     // return {
     //   out: new Uint256(BigUint(hash)),
     // };
