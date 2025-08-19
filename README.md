@@ -10,7 +10,7 @@ This protocol, however, could also be used for any other use case that requires 
 
 ## Status
 
-Mithras is currently in development. The original proof-of-concept can be found [here](https://github.com/joe-p/Mithras-Protocol-POC). The proof of concept is a fork of [Hermes Vault](https://github.com/giuliop/HermesVault-smartcontracts) and uses [AlgoPlonk](https://github.com/giuliop/AlgoPlonk) for the circuits. The new implementation in this repo is being built from scratch and will use the [Algorand SnarkJS verifier](https://github.com/joe-p/snarkjs-algorand) for the ZKP circuits.
+Mithras is currently in development. The original proof-of-concept can be found [here](https://github.com/joe-p/Mithras-Protocol-POC). The proof of concept is a fork of [Hermes Vault](https://github.com/giuliop/HermesVault-smartcontracts) and uses [AlgoPlonk](https://github.com/giuliop/AlgoPlonk) for the circuits. The new implementation in this repo is being built from scratch and will use the [Algorand SnarkJS verifier](https://github.com/joe-p/snarkjs-algorand) for the ZKP circuits. The implementation for this new implementation will also differ significantly from the POC. In particular, the POC used in-circuit EDDSA signatures whereas the latest protocol is designed to only have assymetric cryptography outside of the circuit.
 
 ## Technical Details
 
