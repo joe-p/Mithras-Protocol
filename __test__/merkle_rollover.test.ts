@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { microAlgos } from "@algorandfoundation/algokit-utils";
-import { MimcCalculator, MerkleTestHelpers, TestDataBuilder } from "./utils/test-utils";
+import {
+  MimcCalculator,
+  MerkleTestHelpers,
+  TestDataBuilder,
+} from "./utils/test-utils";
 import { MimcMerkleHelper } from "./utils/contract-helpers";
 
 // These tests validate epoch rollover and sealed root verification
@@ -39,18 +43,25 @@ describe("Merkle rollover + sealed roots", () => {
     await MimcMerkleHelper.sealAndRotate(appClient);
 
     // Validate sealed root for epoch 0
-    const sealedOk = await MimcMerkleHelper.isValidSealedRoot(appClient, 0n, rootBytes);
+    const sealedOk = await MimcMerkleHelper.isValidSealedRoot(
+      appClient,
+      0n,
+      rootBytes,
+    );
     expect(sealedOk).toBe(true);
 
     // After rotate, empty-root must be in recent cache
     const emptyRootBytes = zeroHashes[31];
-    const { return: emptyOk } = await appClient.send.isValidRoot({ args: { root: emptyRootBytes } });
+    const { return: emptyOk } = await appClient.send.isValidRoot({
+      args: { root: emptyRootBytes },
+    });
     expect(emptyOk).toBe(true);
 
     // Add another leaf in new epoch (epoch 1)
     const leaf2 = TestDataBuilder.createTestLeaf(0x01020304);
     await MimcMerkleHelper.addLeaf(appClient, leaf2);
-    const { zeroHashes: zero2 } = await MimcMerkleHelper.getContractState(appClient);
+    const { zeroHashes: zero2 } =
+      await MimcMerkleHelper.getContractState(appClient);
 
     // Compute the expected new root for leaf2
     const pe2: bigint[] = [];
@@ -66,7 +77,9 @@ describe("Merkle rollover + sealed roots", () => {
     );
     const root2 = MerkleTestHelpers.bigIntToBytes(root2Big);
 
-    const { return: isValid2 } = await appClient.send.isValidRoot({ args: { root: root2 } });
+    const { return: isValid2 } = await appClient.send.isValidRoot({
+      args: { root: root2 },
+    });
     expect(isValid2).toBe(true);
   });
 });
