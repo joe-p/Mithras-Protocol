@@ -1,7 +1,17 @@
 import circom_tester from "circom_tester";
 import { AlgorandClient } from "@algorandfoundation/algokit-utils/types/algorand-client";
-import { microAlgos } from "@algorandfoundation/algokit-utils";
+import { microAlgos, Config } from "@algorandfoundation/algokit-utils";
 import algosdk from "algosdk";
+
+Config.configure({
+  logger: {
+    error: () => {},
+    warn: () => {},
+    info: () => {},
+    verbose: () => {},
+    debug: () => {},
+  },
+});
 
 const wasm_tester = circom_tester.wasm;
 
@@ -162,4 +172,3 @@ export class TestDataBuilder {
     return leaf;
   }
 }
-

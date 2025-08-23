@@ -5,6 +5,7 @@ import {
 } from "../../contracts/clients/MimcMerkle";
 import { MimcTestClient, MimcTestFactory } from "../contracts/clients/MimcTest";
 import { AlgorandTestUtils } from "./test-utils";
+import { AppClient } from "@algorandfoundation/algokit-utils/types/app-client";
 
 export class MimcTestHelper {
   static async deployContract(): Promise<MimcTestClient> {
@@ -37,7 +38,7 @@ export class MimcMerkleHelper {
     await AlgorandTestUtils.fundAccount(
       algorand,
       appClient.appAddress,
-      1567900,
+      4848000,
     );
 
     await appClient.send.bootstrap({
@@ -56,6 +57,25 @@ export class MimcMerkleHelper {
       args: { leafHash },
       extraFee: microAlgos(256 * 1000),
     });
+  }
+
+  static async sealAndRotate(appClient: MimcMerkleClient): Promise<void> {
+    await appClient.send.sealAndRotate({
+      args: {},
+      extraFee: microAlgos(256 * 1000),
+    });
+  }
+
+  static async isValidSealedRoot(
+    appClient: MimcMerkleClient,
+    epochId: bigint,
+    root: Uint8Array,
+  ): Promise<boolean> {
+    const result = await appClient.send.isValidSealedRoot({
+      args: { epochId, root },
+    });
+
+    return result.return!;
   }
 
   static async getContractState(appClient: MimcMerkleClient) {
@@ -79,4 +99,3 @@ export class MimcMerkleHelper {
     return isValid!;
   }
 }
-
