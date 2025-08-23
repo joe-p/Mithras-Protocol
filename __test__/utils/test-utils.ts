@@ -29,7 +29,6 @@ export interface MerklePathInput {
   leaf: bigint;
   pathElements: bigint[];
   pathSelectors: number[];
-  root: bigint;
 }
 
 export class CircuitTester {
@@ -48,7 +47,13 @@ export class CircuitTester {
 
   static async createMerklePathTester() {
     return await this.create({
-      circuitPath: "circuits/merkle_path_verify.circom",
+      circuitPath: "__test__/circuits/merkle_path_verify.circom",
+    });
+  }
+
+  static async createMimcSum4Tester() {
+    return await this.create({
+      circuitPath: "__test__/circuits/mimc_sum4.circom",
     });
   }
 }
@@ -80,20 +85,29 @@ export class AlgorandTestUtils {
 
 export class MimcCalculator {
   private circuit: any;
+  private sum4?: any;
 
-  constructor(circuit: any) {
+  constructor(circuit: any, sum4?: any) {
     this.circuit = circuit;
+    this.sum4 = sum4;
   }
 
   static async create(): Promise<MimcCalculator> {
     const circuit = await CircuitTester.createMimcTester();
-    return new MimcCalculator(circuit);
+    const sum4 = await CircuitTester.createMimcSum4Tester();
+    return new MimcCalculator(circuit, sum4);
   }
 
   async calculateHash(left: bigint, right: bigint): Promise<bigint> {
     const witness = await this.circuit.calculateWitness({
       msgs: [left, right],
     });
+    return witness[1];
+  }
+
+  async sum4Commit(msgs: [bigint, bigint, bigint, bigint]): Promise<bigint> {
+    if (!this.sum4) throw new Error("sum4 circuit not initialized");
+    const witness = await this.sum4.calculateWitness({ msgs });
     return witness[1];
   }
 
@@ -155,9 +169,8 @@ export class TestDataBuilder {
     leaf: bigint,
     pathElements: bigint[] = MerkleTestHelpers.createDefaultPathElements(),
     pathSelectors: number[] = MerkleTestHelpers.createDefaultPathSelectors(),
-    root: bigint = 0n,
   ): MerklePathInput {
-    return { leaf, pathElements, pathSelectors, root };
+    return { leaf, pathElements, pathSelectors };
   }
 
   static createTestLeaf(value: number): Uint8Array {
