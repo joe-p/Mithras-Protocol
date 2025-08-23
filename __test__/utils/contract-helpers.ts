@@ -1,11 +1,10 @@
 import { microAlgos } from "@algorandfoundation/algokit-utils";
 import {
-  MimcMerkleFactory,
-  MimcMerkleClient,
-} from "../../contracts/clients/MimcMerkle";
+  MimcMerkleTestFactory,
+  MimcMerkleTestClient,
+} from "../contracts/clients/MimcMerkleTest";
 import { MimcTestClient, MimcTestFactory } from "../contracts/clients/MimcTest";
 import { AlgorandTestUtils } from "./test-utils";
-import { AppClient } from "@algorandfoundation/algokit-utils/types/app-client";
 
 export class MimcTestHelper {
   static async deployContract(): Promise<MimcTestClient> {
@@ -24,9 +23,9 @@ export class MimcTestHelper {
 }
 
 export class MimcMerkleHelper {
-  static async deployContract(): Promise<MimcMerkleClient> {
+  static async deployContract(): Promise<MimcMerkleTestClient> {
     const algorand = AlgorandTestUtils.createLocalClient();
-    const factory = new MimcMerkleFactory({
+    const factory = new MimcMerkleTestFactory({
       algorand,
       defaultSender: await AlgorandTestUtils.getDispenser(algorand),
     });
@@ -41,7 +40,7 @@ export class MimcMerkleHelper {
       4848000,
     );
 
-    await appClient.send.bootstrap({
+    await appClient.send.bootstrapTest({
       args: {},
       extraFee: microAlgos(256 * 1000),
     });
@@ -50,35 +49,35 @@ export class MimcMerkleHelper {
   }
 
   static async addLeaf(
-    appClient: MimcMerkleClient,
+    appClient: MimcMerkleTestClient,
     leafHash: Uint8Array,
   ): Promise<void> {
-    await appClient.send.addLeaf({
+    await appClient.send.addLeafTest({
       args: { leafHash },
       extraFee: microAlgos(256 * 1000),
     });
   }
 
-  static async sealAndRotate(appClient: MimcMerkleClient): Promise<void> {
-    await appClient.send.sealAndRotate({
+  static async sealAndRotate(appClient: MimcMerkleTestClient): Promise<void> {
+    await appClient.send.sealAndRotateTest({
       args: {},
       extraFee: microAlgos(256 * 1000),
     });
   }
 
   static async isValidSealedRoot(
-    appClient: MimcMerkleClient,
+    appClient: MimcMerkleTestClient,
     epochId: bigint,
     root: Uint8Array,
   ): Promise<boolean> {
-    const result = await appClient.send.isValidSealedRoot({
+    const result = await appClient.send.isValidSealedRootTest({
       args: { epochId, root },
     });
 
     return result.return!;
   }
 
-  static async getContractState(appClient: MimcMerkleClient) {
+  static async getContractState(appClient: MimcMerkleTestClient) {
     const subtree = await appClient.state.box.subtree();
     const zeroHashes = await appClient.state.box.zeroHashes();
 
@@ -90,10 +89,10 @@ export class MimcMerkleHelper {
   }
 
   static async verifyRoot(
-    appClient: MimcMerkleClient,
+    appClient: MimcMerkleTestClient,
     root: Uint8Array,
   ): Promise<boolean> {
-    const { return: isValid } = await appClient.send.isValidRoot({
+    const { return: isValid } = await appClient.send.isValidRootTest({
       args: { root },
     });
     return isValid!;

@@ -42,7 +42,7 @@ export class MimcMerkle extends Contract {
     keyPrefix: "e",
   });
 
-  bootstrap(): void {
+  protected bootstrap(): void {
     ensureBudget(MIMC_OPCODE_COST);
     const tree = new FixedArray<bytes<32>, typeof TREE_HEIGHT>();
 
@@ -65,13 +65,18 @@ export class MimcMerkle extends Contract {
     this.lastComputedRoot.value = tree[TREE_HEIGHT - 1];
   }
 
-  addLeaf(leafHash: bytes<32>): void {
+  protected addLeaf(leafHash: bytes<32>): void {
     // Some extra budget needed for the loop logic opcodes
     ensureBudget(MIMC_OPCODE_COST + Global.minTxnFee * 2);
 
     let index = this.treeIndex.value;
 
-    assert(index < 2 ** TREE_HEIGHT, "Tree is full; call sealAndRotate");
+    if (!(index < 2 ** TREE_HEIGHT)) {
+      // tree is full — seal current epoch and rotate to a fresh tree
+      this.sealAndRotate();
+      // refresh local index after rotation
+      index = this.treeIndex.value;
+    }
 
     this.treeIndex.value += 1;
     let currentHash = leafHash;
@@ -104,7 +109,7 @@ export class MimcMerkle extends Contract {
   }
 
   // Seal the current full (or partial) tree as an epoch and reset to a new tree
-  sealAndRotate(): void {
+  protected sealAndRotate(): void {
     // Optional: require at least one leaf in the epoch
     assert(this.treeIndex.value > 0, "nothing to seal");
 
@@ -134,7 +139,7 @@ export class MimcMerkle extends Contract {
     this.addRoot(emptyRoot);
   }
 
-  isValidRoot(root: bytes<32>): boolean {
+  protected isValidRoot(root: bytes<32>): boolean {
     for (const validRoot of this.rootCache.value) {
       if (root === validRoot) {
         return true;
@@ -145,18 +150,16 @@ export class MimcMerkle extends Contract {
   }
 
   // Validate a sealed epoch final root by epochId
-  isValidSealedRoot(epochId: uint64, root: bytes<32>): boolean {
+  protected isValidSealedRoot(epochId: uint64, root: bytes<32>): boolean {
     const epochBoxId: uint64 = epochId / EPOCHS_PER_BOX;
     const index: uint64 = epochId % EPOCHS_PER_BOX;
     return this.epochBoxes(epochBoxId).value[index] === root;
   }
 
-  addRoot(rootHash: bytes<32>): void {
+  protected addRoot(rootHash: bytes<32>): void {
     const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
     this.rootCache.value[index] = rootHash;
 
     this.rootCounter.value += 1;
   }
-
-  _dummy(): void {}
 }

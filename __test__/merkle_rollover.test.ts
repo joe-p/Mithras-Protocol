@@ -52,7 +52,7 @@ describe("Merkle rollover + sealed roots", () => {
 
     // After rotate, empty-root must be in recent cache
     const emptyRootBytes = zeroHashes[31];
-    const { return: emptyOk } = await appClient.send.isValidRoot({
+    const { return: emptyOk } = await appClient.send.isValidRootTest({
       args: { root: emptyRootBytes },
     });
     expect(emptyOk).toBe(true);
@@ -77,7 +77,7 @@ describe("Merkle rollover + sealed roots", () => {
     );
     const root2 = MerkleTestHelpers.bigIntToBytes(root2Big);
 
-    const { return: isValid2 } = await appClient.send.isValidRoot({
+    const { return: isValid2 } = await appClient.send.isValidRootTest({
       args: { root: root2 },
     });
     expect(isValid2).toBe(true);
