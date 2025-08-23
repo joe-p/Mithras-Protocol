@@ -19,7 +19,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
   it("should verify a valid merkle path", async () => {
     const leaf = 123456789n;
     const pathElements = MerkleTestHelpers.createDefaultPathElements();
-    const pathIndices = MerkleTestHelpers.createDefaultPathIndices();
+    const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
 
     pathElements[0] = 987654321n;
     pathElements[1] = 555666777n;
@@ -27,12 +27,12 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const root = await mimcCalculator.calculateMerkleRoot(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
     );
     const input = TestDataBuilder.createMerklePathInput(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
       root,
     );
 
@@ -42,20 +42,20 @@ describe("Merkle Path Verify Circuit Tests", () => {
   it("should verify path with right branches", async () => {
     const leaf = 111222333n;
     const pathElements = MerkleTestHelpers.createDefaultPathElements();
-    const pathIndices = MerkleTestHelpers.createDefaultPathIndices();
+    const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
 
     pathElements[0] = 444555666n;
-    pathIndices[0] = 1;
+    pathSelectors[0] = 1;
 
     const root = await mimcCalculator.calculateMerkleRoot(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
     );
     const input = TestDataBuilder.createMerklePathInput(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
       root,
     );
 
@@ -65,12 +65,12 @@ describe("Merkle Path Verify Circuit Tests", () => {
   it("should fail with invalid root", async () => {
     const leaf = 123456789n;
     const pathElements = MerkleTestHelpers.createDefaultPathElements();
-    const pathIndices = MerkleTestHelpers.createDefaultPathIndices();
+    const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
 
     const input = TestDataBuilder.createMerklePathInput(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
       999999999n,
     );
 
@@ -82,22 +82,22 @@ describe("Merkle Path Verify Circuit Tests", () => {
   it("should handle mixed path directions", async () => {
     const leaf = 777888999n;
     const pathElements = MerkleTestHelpers.createDefaultPathElements();
-    const pathIndices = MerkleTestHelpers.createDefaultPathIndices();
+    const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
 
     pathElements[0] = 111n;
     pathElements[1] = 222n;
     pathElements[2] = 333n;
-    pathIndices[1] = 1;
+    pathSelectors[1] = 1;
 
     const root = await mimcCalculator.calculateMerkleRoot(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
     );
     const input = TestDataBuilder.createMerklePathInput(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
       root,
     );
 
@@ -115,22 +115,22 @@ describe("Merkle Path Verify Circuit Tests", () => {
 
     const leaf = MerkleTestHelpers.bytesToBigInt(leafHash);
     const pathElements: bigint[] = [];
-    const pathIndices: number[] = [];
+    const pathSelectors: number[] = [];
 
     for (let i = 0; i < 32; i++) {
       pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[i]));
-      pathIndices.push(0);
+      pathSelectors.push(0);
     }
 
     const root = await mimcCalculator.calculateMerkleRoot(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
     );
     const input = TestDataBuilder.createMerklePathInput(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
       root,
     );
 
@@ -157,16 +157,16 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const leafIndex = 1;
 
     const pathElements: bigint[] = [];
-    const pathIndices: number[] = [];
+    const pathSelectors: number[] = [];
 
     let index = leafIndex;
     for (let level = 0; level < 32; level++) {
       if (level === 0) {
         pathElements.push(MerkleTestHelpers.bytesToBigInt(subtree[0]));
-        pathIndices.push(1);
+        pathSelectors.push(1);
       } else {
         pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[level]));
-        pathIndices.push(0);
+        pathSelectors.push(0);
       }
       index >>= 1;
     }
@@ -175,12 +175,12 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const root = await mimcCalculator.calculateMerkleRoot(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
     );
     const input = TestDataBuilder.createMerklePathInput(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
       root,
     );
 
@@ -197,7 +197,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
 
     const leaf = MerkleTestHelpers.bytesToBigInt(leafHash);
     const pathElements: bigint[] = [];
-    const pathIndices = MerkleTestHelpers.createDefaultPathIndices();
+    const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
 
     for (let i = 0; i < 32; i++) {
       pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[i]));
@@ -206,7 +206,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const root = await mimcCalculator.calculateMerkleRoot(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
     );
     const computedRootBytes = MerkleTestHelpers.bigIntToBytes(root);
 
@@ -219,7 +219,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const input = TestDataBuilder.createMerklePathInput(
       leaf,
       pathElements,
-      pathIndices,
+      pathSelectors,
       root,
     );
     await MerkleTestHelpers.verifyCircuitWithInput(circuit, input);
