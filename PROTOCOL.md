@@ -24,14 +24,15 @@
 Ed25519 signatures remain standard, verifying under $P'$, by using the base key’s deterministic nonce `prefix` and the tweaked scalar `s'`:
 
 1. From the base seed, compute `(s, prefix)` via `digest = SHA512(seed)`; clamp `digest[0..32]` to get `s`, and set `prefix = digest[32..64]`.
-2. Derive `s' = (s + h) mod q` and `P' = P + h·G`.
-3. For message `m`:
+1. Derive `s' = (s + h) mod q` and `P' = P + h·G`.
+1. For message `m`:
    - `r = H(prefix || m) mod q`, `R = r·G`
    - `k = H(encode(R) || encode(P') || m) mod q`
    - `s_sig = r + k·s' (mod q)`
-4. Signature is `(encode(R), s_sig)` — a standard Ed25519 signature under public key `P'`.
+1. Signature is `(encode(R), s_sig)` — a standard Ed25519 signature under public key `P'`.
 
 Notes:
+
 - The nonce `r` depends only on `prefix` and `m`, not on `s'`. Reusing the same `prefix` across different one-time tweaked keys is safe because `k` binds each signature to its corresponding `P'`.
 
 ### Stealth Address *(Friendly Term)*
@@ -129,7 +130,7 @@ Notes:
 
 - `utxo_amount`: The amount available in the UTXO
 
-- `utxo_index`: The index of the UTXO in the merkle tree
+- `path_selectors`: Booleans indicating left/right child at each level of the Merkle path
 
 - `utxo_path`: The Merkle path to the UTXO in the tree with root `utxo_root`
 
