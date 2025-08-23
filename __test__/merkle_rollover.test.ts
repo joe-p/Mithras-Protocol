@@ -26,15 +26,15 @@ describe("Merkle rollover + sealed roots", () => {
     const { zeroHashes } = await MimcMerkleHelper.getContractState(appClient);
 
     const pathElements: bigint[] = [];
-    const pathIndices: number[] = [];
+    const pathSelectors: number[] = [];
     for (let i = 0; i < 32; i++) {
       pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[i]));
-      pathIndices.push(0);
+      pathSelectors.push(0);
     }
     const rootBig = await mimc.calculateMerkleRoot(
       MerkleTestHelpers.bytesToBigInt(leaf),
       pathElements,
-      pathIndices,
+      pathSelectors,
     );
     const rootBytes = MerkleTestHelpers.bigIntToBytes(rootBig);
 

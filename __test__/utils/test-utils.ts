@@ -28,7 +28,7 @@ export interface MimcInput {
 export interface MerklePathInput {
   leaf: bigint;
   pathElements: bigint[];
-  pathIndices: number[];
+  pathSelectors: number[];
   root: bigint;
 }
 
@@ -100,13 +100,13 @@ export class MimcCalculator {
   async calculateMerkleRoot(
     leaf: bigint,
     pathElements: bigint[],
-    pathIndices: number[],
+    pathSelectors: number[],
   ): Promise<bigint> {
     let currentHash = leaf;
 
     for (let i = 0; i < pathElements.length; i++) {
-      const left = pathIndices[i] === 0 ? currentHash : pathElements[i];
-      const right = pathIndices[i] === 0 ? pathElements[i] : currentHash;
+      const left = pathSelectors[i] === 0 ? currentHash : pathElements[i];
+      const right = pathSelectors[i] === 0 ? pathElements[i] : currentHash;
 
       currentHash = await this.calculateHash(left, right);
     }
@@ -120,7 +120,7 @@ export class MerkleTestHelpers {
     return new Array(size).fill(0n);
   }
 
-  static createDefaultPathIndices(size: number = 32): number[] {
+  static createDefaultPathSelectors(size: number = 32): number[] {
     return new Array(size).fill(0);
   }
 
@@ -154,10 +154,10 @@ export class TestDataBuilder {
   static createMerklePathInput(
     leaf: bigint,
     pathElements: bigint[] = MerkleTestHelpers.createDefaultPathElements(),
-    pathIndices: number[] = MerkleTestHelpers.createDefaultPathIndices(),
+    pathSelectors: number[] = MerkleTestHelpers.createDefaultPathSelectors(),
     root: bigint = 0n,
   ): MerklePathInput {
-    return { leaf, pathElements, pathIndices, root };
+    return { leaf, pathElements, pathSelectors, root };
   }
 
   static createTestLeaf(value: number): Uint8Array {
