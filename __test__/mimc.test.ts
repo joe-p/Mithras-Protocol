@@ -23,7 +23,6 @@ describe("MiMC Circuit Tests", () => {
     const witness = await circuit.calculateWitness(args);
     await circuit.checkConstraints(witness);
 
-    console.debug("AVM Result:", avmResult.return);
     await circuit.assertOut(witness, avmResult.return!);
   });
 
@@ -76,7 +75,7 @@ describe("MiMC Circuit Tests", () => {
   it("should handle large field elements", async () => {
     const input: MimcInput = TestDataBuilder.createMimcInput(
       21888242871839275222246405745257275088548364400416034343698204186575808495617n,
-      1n
+      1n,
     );
 
     const witness = await circuit.calculateWitness(input);

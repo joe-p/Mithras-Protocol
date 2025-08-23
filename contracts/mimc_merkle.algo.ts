@@ -11,10 +11,13 @@ import {
   contract,
   ensureBudget,
   Global,
+  BoxMap,
 } from "@algorandfoundation/algorand-typescript";
 
 const ROOT_CACHE_SIZE = 50;
 const TREE_HEIGHT = 32;
+
+const EPOCHS_PER_BOX = 32;
 
 // Base cost for mimc is 10 uALGO, and each bytes<32> costs 550 uALGO
 const MIMC_OPCODE_COST = 1100 * TREE_HEIGHT;
@@ -30,6 +33,14 @@ export class MimcMerkle extends Contract {
   treeIndex = GlobalState<uint64>({ key: "i" });
 
   zeroHashes = Box<FixedArray<bytes<32>, typeof TREE_HEIGHT>>({ key: "z" });
+
+  // Track epochs and cache the last computed root for sealing
+  epochId = GlobalState<uint64>({ key: "e" });
+  lastComputedRoot = GlobalState<bytes<32>>({ key: "lr" });
+
+  epochBoxes = BoxMap<uint64, FixedArray<bytes<32>, typeof EPOCHS_PER_BOX>>({
+    keyPrefix: "e",
+  });
 
   bootstrap(): void {
     ensureBudget(MIMC_OPCODE_COST);
@@ -49,6 +60,9 @@ export class MimcMerkle extends Contract {
     this.rootCache.create();
     this.zeroHashes.value = clone(tree);
     this.subtree.value = clone(tree);
+    this.epochId.value = 0;
+    // The empty tree root
+    this.lastComputedRoot.value = tree[TREE_HEIGHT - 1];
   }
 
   addLeaf(leafHash: bytes<32>): void {
@@ -57,7 +71,7 @@ export class MimcMerkle extends Contract {
 
     let index = this.treeIndex.value;
 
-    assert(index < 2 ** TREE_HEIGHT, "Tree is full");
+    assert(index < 2 ** TREE_HEIGHT, "Tree is full; call sealAndRotate");
 
     this.treeIndex.value += 1;
     let currentHash = leafHash;
@@ -85,7 +99,39 @@ export class MimcMerkle extends Contract {
     }
 
     this.subtree.value = clone(subtree);
+    this.lastComputedRoot.value = currentHash;
     this.addRoot(currentHash);
+  }
+
+  // Seal the current full (or partial) tree as an epoch and reset to a new tree
+  sealAndRotate(): void {
+    // Optional: require at least one leaf in the epoch
+    assert(this.treeIndex.value > 0, "nothing to seal");
+
+    const epoch = this.epochId.value;
+    const epochBoxKey: uint64 = epoch / EPOCHS_PER_BOX;
+    const index: uint64 = epoch % EPOCHS_PER_BOX;
+
+    const epochBox = this.epochBoxes(epochBoxKey);
+    epochBox.create();
+
+    epochBox.value[index] = this.lastComputedRoot.value;
+
+    // Prepare next epoch: reset tree state
+    this.epochId.value = epoch + 1;
+    this.treeIndex.value = 0;
+    const zeros = clone(this.zeroHashes.value);
+    this.subtree.value = clone(zeros);
+
+    // Reset recent root cache and seed with empty root
+    this.rootCounter.value = 0;
+
+    // Optionally clear existing cache by recreating
+    this.rootCache.delete();
+    this.rootCache.create();
+    const emptyRoot = zeros[TREE_HEIGHT - 1];
+    this.lastComputedRoot.value = emptyRoot;
+    this.addRoot(emptyRoot);
   }
 
   isValidRoot(root: bytes<32>): boolean {
@@ -98,10 +144,19 @@ export class MimcMerkle extends Contract {
     return false;
   }
 
+  // Validate a sealed epoch final root by epochId
+  isValidSealedRoot(epochId: uint64, root: bytes<32>): boolean {
+    const epochBoxId: uint64 = epochId / EPOCHS_PER_BOX;
+    const index: uint64 = epochId % EPOCHS_PER_BOX;
+    return this.epochBoxes(epochBoxId).value[index] === root;
+  }
+
   addRoot(rootHash: bytes<32>): void {
     const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
     this.rootCache.value[index] = rootHash;
 
     this.rootCounter.value += 1;
   }
+
+  _dummy(): void {}
 }
