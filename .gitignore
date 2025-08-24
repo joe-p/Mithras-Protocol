@@ -7,3 +7,5 @@ contracts/out/*
 # Keep approval programs so they have a record of past versions
 !contracts/out/*.approval.teal
 !__test__/contracts/out/*.approval.teal
+
+ceremonies/*/*.ptau

@@ -1,12 +1,16 @@
 import { describe, it, beforeAll, expect } from "vitest";
 import { CircuitTester, MimcCalculator } from "./utils/test-utils";
+import { AppVerifier } from "snarkjs-algorand";
+import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 
 describe("Deposit Circuit", () => {
   let circuit: any;
   let mimc: MimcCalculator;
 
   beforeAll(async () => {
-    circuit = await CircuitTester.create({ circuitPath: "circuits/deposit.circom" });
+    circuit = await CircuitTester.create({
+      circuitPath: "circuits/deposit.circom",
+    });
     mimc = await MimcCalculator.create();
   });
 
@@ -60,5 +64,34 @@ describe("Deposit Circuit", () => {
     });
     await circuit.checkConstraints(witness);
     expect(witness[1]).toBe(expected);
+  });
+
+  it("verifies on chain", async () => {
+    const algorand = AlgorandClient.defaultLocalNet();
+    const verifier = new AppVerifier(
+      algorand,
+      "circuits/deposit_test.zkey",
+      "circuits/deposit_js/deposit.wasm",
+    );
+
+    await verifier.deploy({
+      defaultSender: await algorand.account.localNetDispenser(),
+      onUpdate: "append",
+    });
+
+    const spending_secret = 111n;
+    const nullifier_secret = 222n;
+    const amount = 333n;
+    const receiver = 444n;
+
+    await verifier.simulateVerification(
+      {
+        spending_secret,
+        nullifier_secret,
+        amount,
+        receiver,
+      },
+      { extraOpcodeBudget: 20_000 * 16 },
+    );
   });
 });

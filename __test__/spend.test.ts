@@ -4,6 +4,8 @@ import {
   MimcCalculator,
   MerkleTestHelpers,
 } from "./utils/test-utils";
+import { AlgorandClient } from "@algorandfoundation/algokit-utils";
+import { AppVerifier } from "snarkjs-algorand";
 
 describe("Spend Circuit", () => {
   let circuit: any;
@@ -133,5 +135,60 @@ describe("Spend Circuit", () => {
       });
       await circuit.checkConstraints(witness);
     }).rejects.toThrow();
+  });
+
+  it("verifies on chain", async () => {
+    const fee = 7n;
+    const utxo_spender = 999n;
+    const utxo_spending_secret = 111n;
+    const utxo_nullifier_secret = 222n;
+    const utxo_amount = 1000n;
+
+    const out0_amount = 500n;
+    const out1_amount = 493n; // 500 + 493 + 7 = 1000
+    const out0_receiver = 1234n;
+    const out1_receiver = 5678n;
+    const out0_spending_secret = 333n;
+    const out0_nullifier_secret = 444n;
+    const out1_spending_secret = 555n;
+    const out1_nullifier_secret = 666n;
+
+    // Build a trivial path: all zeros to compute root
+    const pathElements = MerkleTestHelpers.createDefaultPathElements();
+    const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
+
+    const algorand = AlgorandClient.defaultLocalNet();
+    const verifier = new AppVerifier(
+      algorand,
+      "circuits/spend_test.zkey",
+      "circuits/spend_js/spend.wasm",
+    );
+
+    await verifier.deploy({
+      defaultSender: await algorand.account.localNetDispenser(),
+      onUpdate: "append",
+    });
+
+    const inputs = {
+      fee,
+      utxo_spender,
+      utxo_spending_secret,
+      utxo_nullifier_secret,
+      utxo_amount,
+      path_selectors: pathSelectors,
+      utxo_path: pathElements,
+      out0_amount,
+      out0_receiver,
+      out0_spending_secret,
+      out0_nullifier_secret,
+      out1_amount,
+      out1_receiver,
+      out1_spending_secret,
+      out1_nullifier_secret,
+    };
+
+    await verifier.simulateVerification(inputs, {
+      extraOpcodeBudget: 20_000 * 16,
+    });
   });
 });

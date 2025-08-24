@@ -4,14 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run --testTimeout=30000 --no-file-parallelism",
     "build:contracts": "algokit compile ts contracts",
     "build:clients": "algokit generate client contracts/out --output contracts/clients/{contract_name}.ts",
     "build": "pnpm build:contracts && pnpm build:clients && pnpm build:test",
     "build:all": "pnpm build && pnpm build:test",
     "build:test-contracts": "algokit compile ts __test__/contracts",
     "build:test-clients": "algokit generate client __test__/contracts/out --output __test__/contracts/clients/{contract_name}.ts",
-    "build:test": "pnpm build:test-contracts && pnpm build:test-clients"
+    "build:test": "pnpm build:test-contracts && pnpm build:test-clients",
+    "build:zkey": "cd circuits && bash zkey.sh"
   },
   "keywords": [],
   "author": "",
@@ -25,5 +26,8 @@
     "algosdk": "^3.4.0",
     "circom_tester": "^0.0.24",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "snarkjs-algorand": "^0.1.0"
   }
 }
