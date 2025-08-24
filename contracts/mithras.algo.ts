@@ -19,11 +19,13 @@ function getSignal(signals: bytes, idx: uint64): bytes<32> {
 }
 
 @contract({ avmVersion: 11 })
-class Mithras extends MimcMerkle {
-  verifierAppId = GlobalState<uint64>({ key: "v" });
+export class Mithras extends MimcMerkle {
+  depositVerifierId = GlobalState<uint64>({ key: "d" });
+  spendVerifierId = GlobalState<uint64>({ key: "s" });
 
-  createApplication(verifierAppId: uint64) {
-    this.verifierAppId.value = verifierAppId;
+  createApplication(depositVerifierId: uint64, spendVerifierId: uint64) {
+    this.depositVerifierId.value = depositVerifierId;
+    this.spendVerifierId.value = spendVerifierId;
   }
 
   bootstrapMerkleTree() {
@@ -47,7 +49,7 @@ class Mithras extends MimcMerkle {
   //        "type": "void"
   //    },
   deposit(verifierCall: gtxn.ApplicationCallTxn) {
-    assert(verifierCall.appId.id === this.verifierAppId.value);
+    assert(verifierCall.appId.id === this.depositVerifierId.value);
     assert(
       verifierCall.appArgs(0) ===
         methodSelector(
@@ -58,6 +60,34 @@ class Mithras extends MimcMerkle {
     const signals = verifierCall.appArgs(1);
     const commitment = getSignal(signals, 0);
     this.addLeaf(commitment);
+  }
+
+  // // Public inputs
+  //  signal input fee;
+  //  signal input utxo_spender; // P' (receiver of UTXO)
+  //
+  //  // Public outputs
+  //  signal output out0_commitment;
+  //  signal output out1_commitment;
+  //  signal output utxo_root;
+  //  signal output utxo_nullifier;
+  spend(verifierCall: gtxn.ApplicationCallTxn) {
+    assert(verifierCall.appId.id === this.spendVerifierId.value);
+    assert(
+      verifierCall.appArgs(0) ===
+        methodSelector(
+          "verify(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256))void",
+        ),
+    );
+
+    const signals = verifierCall.appArgs(1);
+    const out0Commitment = getSignal(signals, 2);
+    const out1Commitment = getSignal(signals, 3);
+    const utxoRoot = getSignal(signals, 4);
+    assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
+
+    this.addLeaf(out0Commitment);
+    this.addLeaf(out1Commitment);
   }
 
   ensureBudget() {
