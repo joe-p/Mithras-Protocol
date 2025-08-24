@@ -77,11 +77,9 @@ template Spend(DEPTH) {
     out1_commitment <== H_out1.out;
 
     // Compute nullifier for spent UTXO
-    component H_null = MiMC_Sum(4);
-    H_null.msgs[0] <== utxo_spending_secret;
+    component H_null = MiMC_Sum(2);
+    H_null.msgs[0] <== utxo_commitment;
     H_null.msgs[1] <== utxo_nullifier_secret;
-    H_null.msgs[2] <== utxo_amount;
-    H_null.msgs[3] <== utxo_spender;
     utxo_nullifier <== H_null.out;
 }
 

@@ -86,12 +86,10 @@ describe("Spend Circuit", () => {
     // Root
     expect(witness[3]).toBe(utxo_root);
     // Nullifier is MiMC_Sum(4) over the same tuple as utxo_commitment
-    const expected_nullifier = await mimc.sum4Commit([
-      utxo_spending_secret,
+    const expected_nullifier = await mimc.calculateHash(
+      utxo_commitment,
       utxo_nullifier_secret,
-      utxo_amount,
-      utxo_spender,
-    ]);
+    );
     expect(witness[4]).toBe(expected_nullifier);
   });
 

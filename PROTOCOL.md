@@ -155,7 +155,7 @@ Notes:
 - `out0_commitment`: `Hash(out0_spending_secret || out0_nullifier_secret || out0_amount || out0_receiver)`
 - `out1_commitment`: `Hash(out1_spending_secret || out1_nullifier_secret || out1_amount || out1_receiver)`
 - `utxo_root`: The root of the Merkle tree that contains the UTXO
-- `utxo_nullifier`: `Hash(utxo_spending_secret || utxo_nullifier_secret || utxo_amount || utxo_spender)`
+- `utxo_nullifier`: `Hash(utxo_commitment || utxo_nullifier_secret)`
 
 ### Constraints
 
