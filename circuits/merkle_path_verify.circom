@@ -6,7 +6,8 @@ template MerklePathVerify(depth) {
     signal input leaf;
     signal input pathElements[depth];
     signal input pathSelectors[depth];
-    signal input root;
+    // Change root to public output (was input)
+    signal output root;
 
     component mimcHashers[depth];
     signal computedHash[depth + 1];
@@ -37,7 +38,6 @@ template MerklePathVerify(depth) {
         computedHash[i + 1] <== mimcHashers[i].out;
     }
 
-    root === computedHash[depth];
+    root <== computedHash[depth];
 }
 
-component main = MerklePathVerify(32);

@@ -33,10 +33,11 @@ describe("Merkle Path Verify Circuit Tests", () => {
       leaf,
       pathElements,
       pathSelectors,
-      root,
     );
 
-    await MerkleTestHelpers.verifyCircuitWithInput(circuit, input);
+    const witness = await circuit.calculateWitness(input);
+    await circuit.checkConstraints(witness);
+    expect(witness[1]).toBe(root);
   });
 
   it("should verify path with right branches", async () => {
@@ -56,27 +57,11 @@ describe("Merkle Path Verify Circuit Tests", () => {
       leaf,
       pathElements,
       pathSelectors,
-      root,
     );
 
-    await MerkleTestHelpers.verifyCircuitWithInput(circuit, input);
-  });
-
-  it("should fail with invalid root", async () => {
-    const leaf = 123456789n;
-    const pathElements = MerkleTestHelpers.createDefaultPathElements();
-    const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
-
-    const input = TestDataBuilder.createMerklePathInput(
-      leaf,
-      pathElements,
-      pathSelectors,
-      999999999n,
-    );
-
-    await expect(async () => {
-      await MerkleTestHelpers.verifyCircuitWithInput(circuit, input);
-    }).rejects.toThrow();
+    const witness = await circuit.calculateWitness(input);
+    await circuit.checkConstraints(witness);
+    expect(witness[1]).toBe(root);
   });
 
   it("should handle mixed path directions", async () => {
@@ -98,10 +83,11 @@ describe("Merkle Path Verify Circuit Tests", () => {
       leaf,
       pathElements,
       pathSelectors,
-      root,
     );
 
-    await MerkleTestHelpers.verifyCircuitWithInput(circuit, input);
+    const witness = await circuit.calculateWitness(input);
+    await circuit.checkConstraints(witness);
+    expect(witness[1]).toBe(root);
   });
 
   it("should generate root with contract and verify with circuit - single leaf", async () => {
@@ -131,10 +117,11 @@ describe("Merkle Path Verify Circuit Tests", () => {
       leaf,
       pathElements,
       pathSelectors,
-      root,
     );
 
-    await MerkleTestHelpers.verifyCircuitWithInput(circuit, input);
+    const witness = await circuit.calculateWitness(input);
+    await circuit.checkConstraints(witness);
+    expect(witness[1]).toBe(root);
   });
 
   it("should generate root with contract and verify with circuit - multiple leaves", async () => {
@@ -181,10 +168,11 @@ describe("Merkle Path Verify Circuit Tests", () => {
       leaf,
       pathElements,
       pathSelectors,
-      root,
     );
 
-    await MerkleTestHelpers.verifyCircuitWithInput(circuit, input);
+    const witness = await circuit.calculateWitness(input);
+    await circuit.checkConstraints(witness);
+    expect(witness[1]).toBe(root);
   });
 
   it("should verify contract-generated root using isValidRoot", async () => {
@@ -220,7 +208,6 @@ describe("Merkle Path Verify Circuit Tests", () => {
       leaf,
       pathElements,
       pathSelectors,
-      root,
     );
     await MerkleTestHelpers.verifyCircuitWithInput(circuit, input);
   });
