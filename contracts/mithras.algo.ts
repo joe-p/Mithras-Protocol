@@ -13,6 +13,9 @@ import {
 import { MimcMerkle } from "./mimc_merkle.algo";
 import { methodSelector } from "@algorandfoundation/algorand-typescript/arc4";
 
+const VERIFY_SIG =
+  "verify(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256))void";
+
 function getSignal(signals: bytes, idx: uint64): bytes<32> {
   const start: uint64 = idx * 32;
   return op.extract(signals, 2 + start, 32).toFixed({ length: 32 });
@@ -50,12 +53,7 @@ export class Mithras extends MimcMerkle {
   //    },
   deposit(verifierCall: gtxn.ApplicationCallTxn) {
     assert(verifierCall.appId.id === this.depositVerifierId.value);
-    assert(
-      verifierCall.appArgs(0) ===
-        methodSelector(
-          "verify(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256))void",
-        ),
-    );
+    assert(verifierCall.appArgs(0) === methodSelector(VERIFY_SIG));
 
     const signals = verifierCall.appArgs(1);
     const commitment = getSignal(signals, 0);
@@ -73,12 +71,7 @@ export class Mithras extends MimcMerkle {
   //  signal output utxo_nullifier;
   spend(verifierCall: gtxn.ApplicationCallTxn) {
     assert(verifierCall.appId.id === this.spendVerifierId.value);
-    assert(
-      verifierCall.appArgs(0) ===
-        methodSelector(
-          "verify(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256))void",
-        ),
-    );
+    assert(verifierCall.appArgs(0) === methodSelector(VERIFY_SIG));
 
     const signals = verifierCall.appArgs(1);
     const out0Commitment = getSignal(signals, 2);
