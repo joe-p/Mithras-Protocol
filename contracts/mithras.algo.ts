@@ -1,9 +1,7 @@
 import {
-  assertMatch,
   gtxn,
   uint64,
   assert,
-  abimethod,
   GlobalState,
   contract,
   bytes,
@@ -35,22 +33,6 @@ export class Mithras extends MimcMerkle {
     this.bootstrap();
   }
 
-  //
-  // "name": "verify",
-  //    "args": [
-  //        {
-  //            "type": "uint256[]",
-  //            "name": "signals"
-  //        },
-  //        {
-  //            "type": "(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256)",
-  //            "struct": "Proof",
-  //            "name": "proof"
-  //        }
-  //    ],
-  //    "returns": {
-  //        "type": "void"
-  //    },
   deposit(verifierCall: gtxn.ApplicationCallTxn) {
     assert(verifierCall.appId.id === this.depositVerifierId.value);
     assert(verifierCall.appArgs(0) === methodSelector(VERIFY_SIG));
@@ -60,23 +42,17 @@ export class Mithras extends MimcMerkle {
     this.addLeaf(commitment);
   }
 
-  // // Public inputs
-  //  signal input fee;
-  //  signal input utxo_spender; // P' (receiver of UTXO)
-  //
-  //  // Public outputs
-  //  signal output out0_commitment;
-  //  signal output out1_commitment;
-  //  signal output utxo_root;
-  //  signal output utxo_nullifier;
   spend(verifierCall: gtxn.ApplicationCallTxn) {
     assert(verifierCall.appId.id === this.spendVerifierId.value);
     assert(verifierCall.appArgs(0) === methodSelector(VERIFY_SIG));
 
     const signals = verifierCall.appArgs(1);
+    // const fee = getSignal(signals, 0);
+    // const utxoSpender = getSignal(signals, 1);
     const out0Commitment = getSignal(signals, 2);
     const out1Commitment = getSignal(signals, 3);
     const utxoRoot = getSignal(signals, 4);
+    // const utxoNullifier = getSignal(signals, 5);
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 
     this.addLeaf(out0Commitment);
