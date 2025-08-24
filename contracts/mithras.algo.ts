@@ -90,7 +90,7 @@ export class Mithras extends MimcMerkle {
     this.addLeaf(out1Commitment);
   }
 
-  ensureBudget() {
-    ensureBudget(132283);
+  ensureBudget(budget: uint64) {
+    ensureBudget(budget);
   }
 }

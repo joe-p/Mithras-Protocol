@@ -5,6 +5,9 @@ import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers } from "./utils/test-utils";
 
+const DEPOSIT_BUDGET = 174541;
+const SPEND_BUDGET = 356664;
+
 describe("Mithras App", () => {
   let depositVerifier: AppVerifier;
   let spendVerifier: AppVerifier;
@@ -73,8 +76,10 @@ describe("Mithras App", () => {
 
     const group = appClient
       .newGroup()
-      // TODO: call ensure budget in the snarkjs app
-      .ensureBudget({ extraFee: microAlgos(256 * 1000), args: {} })
+      .ensureBudget({
+        extraFee: microAlgos(256 * 1000),
+        args: { budget: DEPOSIT_BUDGET },
+      })
       .deposit({ args: [verifierTxn] });
 
     const simRes = await group.simulate({
@@ -101,8 +106,10 @@ describe("Mithras App", () => {
 
     await appClient
       .newGroup()
-      // TODO: call ensure budget in the snarkjs app
-      .ensureBudget({ extraFee: microAlgos(256 * 1000), args: {} })
+      .ensureBudget({
+        extraFee: microAlgos(256 * 1000),
+        args: { budget: DEPOSIT_BUDGET },
+      })
       .deposit({ args: [depositVerifierTxn] })
       .send();
 
@@ -116,34 +123,9 @@ describe("Mithras App", () => {
     const out1_spending_secret = 555n;
     const out1_nullifier_secret = 666n;
 
-    // const utxo_commitment = await mimc.sum4Commit([
-    //   utxo_spending_secret,
-    //   utxo_nullifier_secret,
-    //   utxo_amount,
-    //   utxo_spender,
-    // ]);
-
     // Build a trivial path: all zeros to compute root
     const pathElements = MerkleTestHelpers.createDefaultPathElements();
     const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
-    // const utxo_root = await mimc.calculateMerkleRoot(
-    //   utxo_commitment,
-    //   pathElements,
-    //   pathSelectors,
-    // );
-
-    // const out0_commitment = await mimc.sum4Commit([
-    //   out0_spending_secret,
-    //   out0_nullifier_secret,
-    //   out0_amount,
-    //   out0_receiver,
-    // ]);
-    // const out1_commitment = await mimc.sum4Commit([
-    //   out1_spending_secret,
-    //   out1_nullifier_secret,
-    //   out1_amount,
-    //   out1_receiver,
-    // ]);
 
     const inputSignals = {
       fee,
@@ -168,8 +150,10 @@ describe("Mithras App", () => {
 
     const group = appClient
       .newGroup()
-      // TODO: call ensure budget in the snarkjs app
-      .ensureBudget({ extraFee: microAlgos(256 * 1000), args: {} })
+      .ensureBudget({
+        extraFee: microAlgos(256 * 1000),
+        args: { budget: SPEND_BUDGET },
+      })
       .spend({ args: [spendVerifierTxn] });
 
     const simRes = await group.simulate({
@@ -179,6 +163,6 @@ describe("Mithras App", () => {
 
     expect(
       simRes.simulateResponse.txnGroups[0].appBudgetConsumed,
-    ).toMatchSnapshot("deposit app budget");
+    ).toMatchSnapshot("spend app budget");
   });
 });
