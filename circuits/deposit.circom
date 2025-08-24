@@ -3,7 +3,6 @@ pragma circom 2.1.5;
 include "./mimc.circom";
 
 template Deposit() {
-    // Public inputs
     signal input amount;
     signal input receiver;
 
