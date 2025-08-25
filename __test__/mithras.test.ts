@@ -1,41 +1,33 @@
 import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
-import { AppVerifier } from "snarkjs-algorand";
+import { AppVerifier, LsigVerifier } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 
 import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers } from "./utils/test-utils";
 
-const DEPOSIT_BUDGET = 174541;
-const SPEND_BUDGET = 356664;
+const DEPOSIT_LSIGS = 6;
+const SPEND_LSIGS = 14;
 
 describe("Mithras App", () => {
-  let depositVerifier: AppVerifier;
-  let spendVerifier: AppVerifier;
+  let depositVerifier: LsigVerifier;
+  let spendVerifier: LsigVerifier;
   let appClient: MithrasClient;
+  let algorand: AlgorandClient;
 
   beforeAll(async () => {
-    const algorand = AlgorandClient.defaultLocalNet();
-    depositVerifier = new AppVerifier(
+    algorand = AlgorandClient.defaultLocalNet();
+    algorand.setSuggestedParamsCacheTimeout(0);
+    depositVerifier = new LsigVerifier(
       algorand,
       "circuits/deposit_test.zkey",
       "circuits/deposit_js/deposit.wasm",
     );
 
-    await depositVerifier.deploy({
-      defaultSender: await algorand.account.localNetDispenser(),
-      onUpdate: "append",
-    });
-
-    spendVerifier = new AppVerifier(
+    spendVerifier = new LsigVerifier(
       algorand,
       "circuits/spend_test.zkey",
       "circuits/spend_js/spend.wasm",
     );
-
-    await spendVerifier.deploy({
-      defaultSender: await algorand.account.localNetDispenser(),
-      onUpdate: "append",
-    });
 
     const factory = new MithrasFactory({
       algorand,
@@ -44,8 +36,8 @@ describe("Mithras App", () => {
 
     const { appClient: ac } = await factory.send.create.createApplication({
       args: {
-        depositVerifierId: depositVerifier.appClient!.appId,
-        spendVerifierId: spendVerifier.appClient!.appId,
+        depositVerifier: (await depositVerifier.lsigAccount()).addr.toString(),
+        spendVerifier: (await spendVerifier.lsigAccount()).addr.toString(),
       },
     });
 
@@ -67,20 +59,28 @@ describe("Mithras App", () => {
     const amount = 3n;
     const receiver = 4n;
 
-    const verifierTxn = await depositVerifier.verifyTransaction({
-      spending_secret,
-      nullifier_secret,
-      amount,
-      receiver,
+    const verifierGroup = await depositVerifier.proofAndSignalsComposer(
+      {
+        spending_secret,
+        nullifier_secret,
+        amount,
+        receiver,
+      },
+      DEPOSIT_LSIGS,
+      0n,
+      await algorand.account.localNetDispenser(),
+    );
+
+    const { transactions } = await verifierGroup.buildTransactions();
+
+    const group = appClient.newGroup().deposit({
+      args: [transactions[transactions.length - 1]],
+      extraFee: microAlgos(256 * 1000),
     });
 
-    const group = appClient
-      .newGroup()
-      .ensureBudget({
-        extraFee: microAlgos(256 * 1000),
-        args: { budget: DEPOSIT_BUDGET },
-      })
-      .deposit({ args: [verifierTxn] });
+    for (let i = 0; i < transactions.length - 1; i++) {
+      group.addTransaction(transactions[i]);
+    }
 
     const simRes = await group.simulate({
       allowUnnamedResources: true,
@@ -97,21 +97,31 @@ describe("Mithras App", () => {
     const utxo_amount = 33n;
     const utxo_spender = 44n;
 
-    const depositVerifierTxn = await depositVerifier.verifyTransaction({
-      spending_secret: utxo_spending_secret,
-      nullifier_secret: utxo_nullifier_secret,
-      amount: utxo_amount,
-      receiver: utxo_spender,
+    const depositVerifierGroup = await depositVerifier.proofAndSignalsComposer(
+      {
+        spending_secret: utxo_spending_secret,
+        nullifier_secret: utxo_nullifier_secret,
+        amount: utxo_amount,
+        receiver: utxo_spender,
+      },
+      DEPOSIT_LSIGS,
+      0n,
+      await algorand.account.localNetDispenser(),
+    );
+
+    const { transactions: depositTransactions } =
+      await depositVerifierGroup.buildTransactions();
+
+    const depositGroup = appClient.newGroup().deposit({
+      args: [depositTransactions[depositTransactions.length - 1]],
+      extraFee: microAlgos(256 * 1000),
     });
 
-    await appClient
-      .newGroup()
-      .ensureBudget({
-        extraFee: microAlgos(256 * 1000),
-        args: { budget: DEPOSIT_BUDGET },
-      })
-      .deposit({ args: [depositVerifierTxn] })
-      .send();
+    for (let i = 0; i < depositTransactions.length - 1; i++) {
+      depositGroup.addTransaction(depositTransactions[i]);
+    }
+
+    await depositGroup.send();
 
     const fee = 0n;
     const out0_amount = 11n;
@@ -145,19 +155,26 @@ describe("Mithras App", () => {
       out1_nullifier_secret,
     };
 
-    const spendVerifierTxn =
-      await spendVerifier.verifyTransaction(inputSignals);
+    const spendVerifierGroup = await spendVerifier.proofAndSignalsComposer(
+      inputSignals,
+      SPEND_LSIGS,
+      0n,
+      await algorand.account.localNetDispenser(),
+    );
 
-    const group = appClient
-      .newGroup()
-      .ensureBudget({
-        extraFee: microAlgos(256 * 1000),
-        args: { budget: SPEND_BUDGET },
-      })
-      .spend({ args: [spendVerifierTxn] });
+    const { transactions: spendTransactions } =
+      await spendVerifierGroup.buildTransactions();
 
-    const simRes = await group.simulate({
-      extraOpcodeBudget: 20_000 * 16,
+    const spendGroup = appClient.newGroup().spend({
+      args: [spendTransactions[spendTransactions.length - 1]],
+      extraFee: microAlgos(256 * 1000),
+    });
+
+    for (let i = 0; i < spendTransactions.length - 1; i++) {
+      spendGroup.addTransaction(spendTransactions[i]);
+    }
+
+    const simRes = await spendGroup.simulate({
       allowUnnamedResources: true,
     });
 
