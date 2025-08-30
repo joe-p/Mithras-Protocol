@@ -77,6 +77,7 @@ describe("Deposit Circuit", () => {
     await verifier.deploy({
       defaultSender: await algorand.account.localNetDispenser(),
       onUpdate: "append",
+      debugLogging: false,
     });
 
     const spending_secret = 111n;

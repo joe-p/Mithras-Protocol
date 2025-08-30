@@ -167,6 +167,7 @@ describe("Spend Circuit", () => {
     await verifier.deploy({
       defaultSender: await algorand.account.localNetDispenser(),
       onUpdate: "append",
+      debugLogging: false,
     });
 
     const inputs = {
