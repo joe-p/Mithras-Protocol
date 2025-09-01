@@ -188,8 +188,12 @@ describe("Spend Circuit", () => {
       out1_nullifier_secret,
     };
 
-    await verifier.simulateVerification(inputs, {
+    const simRes = await verifier.simulateVerification(inputs, {
       extraOpcodeBudget: 20_000 * 16,
     });
+
+    expect(
+      simRes.simulateResponse.txnGroups[0]!.appBudgetConsumed,
+    ).toMatchSnapshot("spend verification budget");
   });
 });
