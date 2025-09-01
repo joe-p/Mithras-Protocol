@@ -42,7 +42,9 @@ describe("Mithras App", () => {
       algorand,
     });
 
-    const { appClient: sapc } = await signalsAndProofFactory.deploy();
+    const { appClient: sapc } = await signalsAndProofFactory.deploy({
+      onUpdate: "append",
+    });
 
     signalsAndProofClient = sapc;
 

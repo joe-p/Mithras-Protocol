@@ -85,7 +85,7 @@ describe("Deposit Circuit", () => {
     const amount = 333n;
     const receiver = 444n;
 
-    await verifier.simulateVerification(
+    const simRes = await verifier.simulateVerification(
       {
         spending_secret,
         nullifier_secret,
@@ -94,5 +94,9 @@ describe("Deposit Circuit", () => {
       },
       { extraOpcodeBudget: 20_000 * 16 },
     );
+
+    expect(
+      simRes.simulateResponse.txnGroups[0]!.appBudgetConsumed,
+    ).toMatchSnapshot("deposit verification budget");
   });
 });
