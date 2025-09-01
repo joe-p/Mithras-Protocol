@@ -28,6 +28,6 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "snarkjs-algorand": "0.5.2"
+    "snarkjs-algorand": "0.6.0"
   }
 }
