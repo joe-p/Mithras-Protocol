@@ -9,6 +9,11 @@ import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers } from "./utils/test-utils";
 
+const SPEND_APP_FEE = 108n * 1000n;
+const DEPOSIT_APP_FEE = 53n * 1000n;
+const APP_MBR = 1567900n;
+const BOOTSTRAP_FEE = 51n * 1000n;
+
 describe("Mithras App", () => {
   let depositVerifier: LsigVerifier;
   let spendVerifier: LsigVerifier;
@@ -56,13 +61,11 @@ describe("Mithras App", () => {
 
     appClient = ac;
 
-    // TODO: determine the actual MBR needed
-    await appClient.appClient.fundAppAccount({ amount: microAlgos(4848000) });
+    await appClient.appClient.fundAppAccount({ amount: microAlgos(APP_MBR) });
 
     await appClient.send.bootstrapMerkleTree({
       args: {},
-      // TODO: determine the actual fee needed
-      extraFee: microAlgos(256 * 1000),
+      extraFee: microAlgos(BOOTSTRAP_FEE),
     });
   });
 
@@ -83,7 +86,7 @@ describe("Mithras App", () => {
         receiver,
       },
       paramsCallback: async (params) => {
-        const { appParams } = params;
+        const { appParams, lsigsFee } = params;
 
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
@@ -94,7 +97,7 @@ describe("Mithras App", () => {
 
         group.deposit({
           args: { signalsAndProofCall },
-          extraFee: microAlgos(256 * 1000),
+          extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos),
         });
       },
     });
@@ -125,7 +128,7 @@ describe("Mithras App", () => {
         receiver: utxo_spender,
       },
       paramsCallback: async (params) => {
-        const { appParams } = params;
+        const { appParams, lsigsFee } = params;
 
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
@@ -136,7 +139,7 @@ describe("Mithras App", () => {
 
         depositGroup.deposit({
           args: { signalsAndProofCall },
-          extraFee: microAlgos(256 * 1000),
+          extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos),
         });
       },
     });
@@ -181,7 +184,7 @@ describe("Mithras App", () => {
       composer: spendGroup,
       inputs: inputSignals,
       paramsCallback: async (params) => {
-        const { appParams } = params;
+        const { appParams, lsigsFee } = params;
 
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
@@ -192,7 +195,7 @@ describe("Mithras App", () => {
 
         spendGroup.spend({
           args: { verifierCall: signalsAndProofCall },
-          extraFee: microAlgos(256 * 1000),
+          extraFee: microAlgos(SPEND_APP_FEE + lsigsFee.microAlgos),
         });
       },
     });
