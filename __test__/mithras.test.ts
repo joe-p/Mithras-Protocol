@@ -1,6 +1,5 @@
 import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
 import {
-  AppVerifier,
   LsigVerifier,
   SignalsAndProofClient,
   SignalsAndProofFactory,
@@ -11,7 +10,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers } from "./utils/test-utils";
 
 const DEPOSIT_LSIGS = 6;
-const SPEND_LSIGS = 14;
+const SPEND_LSIGS = 6;
 
 describe("Mithras App", () => {
   let depositVerifier: LsigVerifier;
@@ -80,33 +79,28 @@ describe("Mithras App", () => {
 
     const group = appClient.newGroup();
 
-    await depositVerifier.verify({
-      inputs: {
-        spending_secret,
-        nullifier_secret,
-        amount,
-        receiver,
-      },
-      callback: async (arg) => {
-        const { appParams, extraLsigsTxns } = arg;
-
-        // App call from lsig to expose the signals and proof to our app
-        const signalsAndProofCall = (
-          await signalsAndProofClient.createTransaction.signalsAndProof(
-            appParams,
-          )
-        ).transactions[0];
-
-        group.deposit({
-          args: { signalsAndProofCall },
-          extraFee: microAlgos(256 * 1000),
-        });
-
-        for (const txn of extraLsigsTxns) {
-          group.addTransaction(txn);
-        }
-      },
+    const params = await depositVerifier.verificationParams({
+      spending_secret,
+      nullifier_secret,
+      amount,
+      receiver,
     });
+
+    const { appParams, extraLsigsTxns } = params;
+
+    // App call from lsig to expose the signals and proof to our app
+    const signalsAndProofCall = (
+      await signalsAndProofClient.createTransaction.signalsAndProof(appParams)
+    ).transactions[0];
+
+    group.deposit({
+      args: { signalsAndProofCall },
+      extraFee: microAlgos(256 * 1000),
+    });
+
+    for (const txn of extraLsigsTxns) {
+      group.addTransaction(txn);
+    }
 
     const simRes = await group.simulate({
       allowUnnamedResources: true,
@@ -125,33 +119,33 @@ describe("Mithras App", () => {
 
     const depositGroup = appClient.newGroup();
 
-    await depositVerifier.verify({
-      inputs: {
-        spending_secret: utxo_spending_secret,
-        nullifier_secret: utxo_nullifier_secret,
-        amount: utxo_amount,
-        receiver: utxo_spender,
-      },
-      callback: async (arg) => {
-        const { appParams, extraLsigsTxns } = arg;
-
-        // App call from lsig to expose the signals and proof to our app
-        const signalsAndProofCall = (
-          await signalsAndProofClient.createTransaction.signalsAndProof(
-            appParams,
-          )
-        ).transactions[0];
-
-        depositGroup.deposit({
-          args: { signalsAndProofCall },
-          extraFee: microAlgos(256 * 1000),
-        });
-
-        for (const txn of extraLsigsTxns) {
-          depositGroup.addTransaction(txn);
-        }
-      },
+    const depositParams = await depositVerifier.verificationParams({
+      spending_secret: utxo_spending_secret,
+      nullifier_secret: utxo_nullifier_secret,
+      amount: utxo_amount,
+      receiver: utxo_spender,
     });
+
+    const {
+      appParams: depositAppParams,
+      extraLsigsTxns: depositExtraLsigTxns,
+    } = depositParams;
+
+    // App call from lsig to expose the signals and proof to our app
+    const depositSignalsAndProofCall = (
+      await signalsAndProofClient.createTransaction.signalsAndProof(
+        depositAppParams,
+      )
+    ).transactions[0];
+
+    depositGroup.deposit({
+      args: { signalsAndProofCall: depositSignalsAndProofCall },
+      extraFee: microAlgos(256 * 1000),
+    });
+
+    for (const txn of depositExtraLsigTxns) {
+      depositGroup.addTransaction(txn);
+    }
 
     await depositGroup.send();
 
@@ -189,28 +183,23 @@ describe("Mithras App", () => {
 
     const spendGroup = appClient.newGroup();
 
-    await spendVerifier.verify({
-      inputs: inputSignals,
-      callback: async (arg) => {
-        const { appParams, extraLsigsTxns } = arg;
+    const params = await spendVerifier.verificationParams(inputSignals);
 
-        // App call from lsig to expose the signals and proof to our app
-        const signalsAndProofCall = (
-          await signalsAndProofClient.createTransaction.signalsAndProof(
-            appParams,
-          )
-        ).transactions[0];
+    const { appParams, extraLsigsTxns } = params;
 
-        spendGroup.spend({
-          args: { verifierCall: signalsAndProofCall },
-          extraFee: microAlgos(256 * 1000),
-        });
+    // App call from lsig to expose the signals and proof to our app
+    const signalsAndProofCall = (
+      await signalsAndProofClient.createTransaction.signalsAndProof(appParams)
+    ).transactions[0];
 
-        for (const txn of extraLsigsTxns) {
-          spendGroup.addTransaction(txn);
-        }
-      },
+    spendGroup.spend({
+      args: { verifierCall: signalsAndProofCall },
+      extraFee: microAlgos(256 * 1000),
     });
+
+    for (const txn of extraLsigsTxns) {
+      spendGroup.addTransaction(txn);
+    }
 
     const simRes = await spendGroup.simulate({
       allowUnnamedResources: true,

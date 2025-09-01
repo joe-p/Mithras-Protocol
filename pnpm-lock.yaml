@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       snarkjs-algorand:
-        specifier: ^0.4.1
-        version: 0.4.1(typescript@5.9.2)
+        specifier: 0.5.2
+        version: 0.5.2(typescript@5.9.2)
     devDependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.1.2
@@ -887,8 +887,8 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
-  snarkjs-algorand@0.4.1:
-    resolution: {integrity: sha512-VVOTJnrUzk3AMH0GVQF3jODB6e08FUZeNGMocrI2Te2MbQYwQSCai3WpQky+6jxQadOXCUuvBku32avUUaFrtQ==}
+  snarkjs-algorand@0.5.2:
+    resolution: {integrity: sha512-R7BRLvN/DZzhyMGsyJbjtd4bvRZyLQyaImIincMNd8JfjPVXXkqSE2/ILmQm3Frti1qJMLjRDfrdC0npI4192Q==}
     peerDependencies:
       typescript: ^5
 
@@ -1936,7 +1936,7 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  snarkjs-algorand@0.4.1(typescript@5.9.2):
+  snarkjs-algorand@0.5.2(typescript@5.9.2):
     dependencies:
       '@algorandfoundation/algokit-utils': 9.1.2(algosdk@3.4.0)
       algosdk: 3.4.0

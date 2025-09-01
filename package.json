@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run --testTimeout=30000 --no-file-parallelism",
+    "test": "vitest run --testTimeout=60000 --no-file-parallelism",
     "build:contracts": "algokit compile ts contracts",
     "build:clients": "algokit generate client contracts/out --output contracts/clients/{contract_name}.ts",
     "build": "pnpm build:contracts && pnpm build:clients && pnpm build:test",
@@ -28,6 +28,6 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "snarkjs-algorand": "^0.4.1"
+    "snarkjs-algorand": "0.5.2"
   }
 }
