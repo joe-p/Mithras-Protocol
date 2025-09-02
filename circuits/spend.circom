@@ -6,6 +6,16 @@ include "./merkle_path_verify.circom";
 
 // Default tree depth to 32 (matches MerklePathVerify main)
 template Spend(DEPTH) {
+    // Public outputs
+    signal output out0_commitment;
+    signal output out1_commitment;
+    signal output utxo_root;
+    signal output utxo_nullifier;
+
+    // Public inputs
+    signal input fee;
+    signal input utxo_spender; // P' (receiver of UTXO)
+
     // Private inputs
     signal input utxo_spending_secret;
     signal input utxo_nullifier_secret;
@@ -24,15 +34,7 @@ template Spend(DEPTH) {
     signal input out1_spending_secret;
     signal input out1_nullifier_secret;
 
-    // Public inputs
-    signal input fee;
-    signal input utxo_spender; // P' (receiver of UTXO)
 
-    // Public outputs
-    signal output out0_commitment;
-    signal output out1_commitment;
-    signal output utxo_root;
-    signal output utxo_nullifier;
 
 
 
