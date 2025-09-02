@@ -3,15 +3,17 @@ pragma circom 2.1.5;
 include "./mimc.circom";
 
 template Deposit() {
+    // Public outputs
+    signal output commitment;
+
+    // Public inputs
     signal input amount;
-    signal input receiver;
 
     // Private inputs
     signal input spending_secret;
     signal input nullifier_secret;
+    signal input receiver;
 
-    // Public output
-    signal output commitment;
 
     // Hash the 4-tuple in order using MiMC_Sum(4)
     component H = MiMC_Sum(4);
@@ -23,4 +25,4 @@ template Deposit() {
     commitment <== H.out;
 }
 
-component main = Deposit();
+component main {public [amount]}  = Deposit();

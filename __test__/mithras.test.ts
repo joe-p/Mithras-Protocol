@@ -96,7 +96,14 @@ describe("Mithras App", () => {
         ).transactions[0];
 
         group.deposit({
-          args: { signalsAndProofCall },
+          args: {
+            signalsAndProofCall,
+            deposit: algorand.createTransaction.payment({
+              sender: await algorand.account.localNetDispenser(),
+              receiver: appClient.appAddress,
+              amount: microAlgos(amount),
+            }),
+          },
           extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos),
         });
       },
@@ -130,6 +137,8 @@ describe("Mithras App", () => {
       paramsCallback: async (params) => {
         const { appParams, lsigsFee } = params;
 
+        console.debug(appParams.args.signals);
+
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
           await signalsAndProofClient.createTransaction.signalsAndProof(
@@ -138,7 +147,14 @@ describe("Mithras App", () => {
         ).transactions[0];
 
         depositGroup.deposit({
-          args: { signalsAndProofCall },
+          args: {
+            signalsAndProofCall,
+            deposit: algorand.createTransaction.payment({
+              sender: await algorand.account.localNetDispenser(),
+              receiver: appClient.appAddress,
+              amount: microAlgos(utxo_amount),
+            }),
+          },
           extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos),
         });
       },
@@ -185,6 +201,7 @@ describe("Mithras App", () => {
       inputs: inputSignals,
       paramsCallback: async (params) => {
         const { appParams, lsigsFee } = params;
+        console.debug(appParams.args.signals);
 
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
