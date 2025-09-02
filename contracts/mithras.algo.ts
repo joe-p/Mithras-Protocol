@@ -7,6 +7,8 @@ import {
   bytes,
   ensureBudget,
   op,
+  Global,
+  assertMatch,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "./mimc_merkle.algo";
 import { Address } from "@algorandfoundation/algorand-typescript/arc4";
@@ -30,12 +32,26 @@ export class Mithras extends MimcMerkle {
     this.bootstrap();
   }
 
-  deposit(signalsAndProofCall: gtxn.ApplicationCallTxn) {
+  deposit(
+    signalsAndProofCall: gtxn.ApplicationCallTxn,
+    deposit: gtxn.PaymentTxn,
+  ) {
     assert(signalsAndProofCall.sender === this.depositVerifier.value.native);
 
     const signals = signalsAndProofCall.appArgs(1);
     const commitment = getSignal(signals, 0);
     this.addLeaf(commitment);
+
+    const amount = op.extractUint64(getSignal(signals, 1), 24);
+
+    assertMatch(
+      deposit,
+      {
+        amount: amount,
+        receiver: Global.currentApplicationAddress,
+      },
+      "invalid deposit txn",
+    );
   }
 
   spend(verifierCall: gtxn.ApplicationCallTxn) {
