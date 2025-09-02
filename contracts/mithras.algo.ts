@@ -9,9 +9,19 @@ import {
   op,
   Global,
   assertMatch,
+  BigUint,
+  Txn,
+  Bytes,
+  biguint,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "./mimc_merkle.algo";
 import { Address } from "@algorandfoundation/algorand-typescript/arc4";
+
+const BLS12_381_SCALAR_MODULUS = BigUint(
+  Bytes.fromHex(
+    "73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+  ),
+);
 
 function getSignal(signals: bytes, idx: uint64): bytes<32> {
   const start: uint64 = idx * 32;
@@ -58,6 +68,12 @@ export class Mithras extends MimcMerkle {
     assert(verifierCall.sender === this.spendVerifier.value.native);
 
     const signals = verifierCall.appArgs(1);
+
+    const spender = getSignal(signals, 5);
+    const senderInScalarField: biguint =
+      BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
+
+    assert(BigUint(spender) === senderInScalarField);
 
     const out0Commitment = getSignal(signals, 0);
     const out1Commitment = getSignal(signals, 1);

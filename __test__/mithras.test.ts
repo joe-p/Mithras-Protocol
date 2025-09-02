@@ -8,11 +8,21 @@ import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 
 import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";
+import { Address } from "algosdk";
 
 const SPEND_APP_FEE = 108n * 1000n;
 const DEPOSIT_APP_FEE = 53n * 1000n;
 const APP_MBR = 1567900n;
 const BOOTSTRAP_FEE = 51n * 1000n;
+
+const BLS12_381_SCALAR_MODULUS = BigInt(
+  "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+);
+
+function addressInScalarField(addr: Address): bigint {
+  const asBigint = BigInt("0x" + Buffer.from(addr.publicKey).toString("hex"));
+  return asBigint % BLS12_381_SCALAR_MODULUS;
+}
 
 describe("Mithras App", () => {
   let depositVerifier: LsigVerifier;
@@ -21,9 +31,11 @@ describe("Mithras App", () => {
   let algorand: AlgorandClient;
   let signalsAndProofClient: SignalsAndProofClient;
   let mimcCalculator: MimcCalculator;
+  let spender: Address;
 
   beforeAll(async () => {
     algorand = AlgorandClient.defaultLocalNet();
+    spender = await algorand.account.localNetDispenser();
     algorand.setSuggestedParamsCacheTimeout(0);
     mimcCalculator = await MimcCalculator.create();
     depositVerifier = new LsigVerifier(
@@ -75,7 +87,7 @@ describe("Mithras App", () => {
     const spending_secret = 1n;
     const nullifier_secret = 2n;
     const amount = 3n;
-    const receiver = 4n;
+    const receiver = addressInScalarField(spender);
 
     const group = appClient.newGroup();
 
@@ -124,7 +136,7 @@ describe("Mithras App", () => {
     const utxo_spending_secret = 11n;
     const utxo_nullifier_secret = 22n;
     const utxo_amount = 33n;
-    const utxo_spender = 44n;
+    const utxo_spender = addressInScalarField(spender);
 
     const depositGroup = appClient.newGroup();
 
@@ -167,8 +179,8 @@ describe("Mithras App", () => {
     const fee = 0n;
     const out0_amount = 11n;
     const out1_amount = 22n;
-    const out0_receiver = 1234n;
-    const out1_receiver = 5678n;
+    const out0_receiver = addressInScalarField(algorand.account.random());
+    const out1_receiver = addressInScalarField(algorand.account.random());
     const out0_spending_secret = 333n;
     const out0_nullifier_secret = 444n;
     const out1_spending_secret = 555n;
