@@ -49,10 +49,11 @@ export class Mithras extends MimcMerkle {
     assert(signalsAndProofCall.sender === this.depositVerifier.value.native);
 
     const signals = signalsAndProofCall.appArgs(1);
-    const commitment = getSignal(signals, 0);
-    this.addLeaf(commitment);
 
+    const commitment = getSignal(signals, 0);
     const amount = op.extractUint64(getSignal(signals, 1), 24);
+
+    this.addLeaf(commitment);
 
     assertMatch(
       deposit,
@@ -69,16 +70,18 @@ export class Mithras extends MimcMerkle {
 
     const signals = verifierCall.appArgs(1);
 
+    const out0Commitment = getSignal(signals, 0);
+    const out1Commitment = getSignal(signals, 1);
+    const utxoRoot = getSignal(signals, 2);
+    // const nullifier = getSignal(signals, 3); // TODO: nullifiers
+    // const fee = op.extractUint64(getSignal(signals, 4), 24); // TODO: fee covering
     const spender = getSignal(signals, 5);
+
     const senderInScalarField: biguint =
       BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
 
     assert(BigUint(spender) === senderInScalarField);
 
-    const out0Commitment = getSignal(signals, 0);
-    const out1Commitment = getSignal(signals, 1);
-
-    const utxoRoot = getSignal(signals, 2);
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 
     this.addLeaf(out0Commitment);
