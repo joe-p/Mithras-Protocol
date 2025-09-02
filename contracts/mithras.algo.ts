@@ -58,12 +58,11 @@ export class Mithras extends MimcMerkle {
     assert(verifierCall.sender === this.spendVerifier.value.native);
 
     const signals = verifierCall.appArgs(1);
-    // const fee = getSignal(signals, 0);
-    // const utxoSpender = getSignal(signals, 1);
-    const out0Commitment = getSignal(signals, 2);
-    const out1Commitment = getSignal(signals, 3);
-    const utxoRoot = getSignal(signals, 4);
-    // const utxoNullifier = getSignal(signals, 5);
+
+    const out0Commitment = getSignal(signals, 0);
+    const out1Commitment = getSignal(signals, 1);
+
+    const utxoRoot = getSignal(signals, 2);
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 
     this.addLeaf(out0Commitment);

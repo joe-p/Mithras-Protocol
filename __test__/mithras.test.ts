@@ -7,7 +7,7 @@ import {
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 
 import { beforeAll, describe, expect, it } from "vitest";
-import { MerkleTestHelpers } from "./utils/test-utils";
+import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";
 
 const SPEND_APP_FEE = 108n * 1000n;
 const DEPOSIT_APP_FEE = 53n * 1000n;
@@ -20,10 +20,12 @@ describe("Mithras App", () => {
   let appClient: MithrasClient;
   let algorand: AlgorandClient;
   let signalsAndProofClient: SignalsAndProofClient;
+  let mimcCalculator: MimcCalculator;
 
   beforeAll(async () => {
     algorand = AlgorandClient.defaultLocalNet();
     algorand.setSuggestedParamsCacheTimeout(0);
+    mimcCalculator = await MimcCalculator.create();
     depositVerifier = new LsigVerifier(
       algorand,
       "circuits/deposit_test.zkey",
@@ -172,9 +174,40 @@ describe("Mithras App", () => {
     const out1_spending_secret = 555n;
     const out1_nullifier_secret = 666n;
 
-    // Build a trivial path: all zeros to compute root
-    const pathElements = MerkleTestHelpers.createDefaultPathElements();
-    const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
+    // Compute the zero hashes the same way the contract does in bootstrap()
+    // tree[0] = bzero(32), tree[i] = mimc(tree[i-1] + tree[i-1])
+    const pathElements: bigint[] = [];
+    let currentZero = 0n; // bzero(32) = 0n
+
+    for (let i = 0; i < 32; i++) {
+      pathElements[i] = currentZero;
+      currentZero = await mimcCalculator.calculateHash(
+        currentZero,
+        currentZero,
+      );
+    }
+
+    const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors(); // All 0s for index 0 (left path)
+
+    // Verify this path is correct by computing what the root should be
+    const utxoCommitment = await mimcCalculator.sum4Commit([
+      utxo_spending_secret,
+      utxo_nullifier_secret,
+      utxo_amount,
+      utxo_spender,
+    ]);
+    const expectedRoot = await mimcCalculator.calculateMerkleRoot(
+      utxoCommitment,
+      pathElements,
+      pathSelectors,
+    );
+
+    const onChainRoot = await appClient.state.global.lastComputedRoot();
+    const onChainRootBigInt = BigInt(
+      "0x" + Buffer.from(onChainRoot.asByteArray()!).toString("hex"),
+    );
+
+    expect(expectedRoot).toBe(onChainRootBigInt);
 
     const inputSignals = {
       fee,
