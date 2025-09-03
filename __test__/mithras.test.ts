@@ -10,10 +10,12 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";
 import { Address } from "algosdk";
 
-const SPEND_APP_FEE = 108n * 1000n;
+const LSGIS_FEE = 6n * 1000n;
+const SPEND_APP_FEE = 110n * 1000n;
 const DEPOSIT_APP_FEE = 53n * 1000n;
 const APP_MBR = 1567900n;
 const BOOTSTRAP_FEE = 51n * 1000n;
+const NULLIFIER_MBR = 15_700n;
 
 const BLS12_381_SCALAR_MODULUS = BigInt(
   "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
@@ -31,11 +33,14 @@ describe("Mithras App", () => {
   let algorand: AlgorandClient;
   let signalsAndProofClient: SignalsAndProofClient;
   let mimcCalculator: MimcCalculator;
+  let depositor: Address;
   let spender: Address;
 
   beforeAll(async () => {
     algorand = AlgorandClient.defaultLocalNet();
-    spender = await algorand.account.localNetDispenser();
+    depositor = await algorand.account.localNetDispenser();
+    spender = algorand.account.random();
+
     algorand.setSuggestedParamsCacheTimeout(0);
     mimcCalculator = await MimcCalculator.create();
     depositVerifier = new LsigVerifier(
@@ -51,7 +56,7 @@ describe("Mithras App", () => {
     );
 
     const signalsAndProofFactory = new SignalsAndProofFactory({
-      defaultSender: await algorand.account.localNetDispenser(),
+      defaultSender: depositor,
       algorand,
     });
 
@@ -63,7 +68,7 @@ describe("Mithras App", () => {
 
     const factory = new MithrasFactory({
       algorand,
-      defaultSender: await algorand.account.localNetDispenser(),
+      defaultSender: depositor,
     });
 
     const { appClient: ac } = await factory.send.create.createApplication({
@@ -113,7 +118,7 @@ describe("Mithras App", () => {
           args: {
             signalsAndProofCall,
             deposit: algorand.createTransaction.payment({
-              sender: await algorand.account.localNetDispenser(),
+              sender: depositor,
               receiver: appClient.appAddress,
               amount: microAlgos(amount),
             }),
@@ -135,7 +140,7 @@ describe("Mithras App", () => {
   it("spend", async () => {
     const utxo_spending_secret = 11n;
     const utxo_nullifier_secret = 22n;
-    const utxo_amount = 33n;
+    const utxo_amount = 200_000n;
     const utxo_spender = addressInScalarField(spender);
 
     const depositGroup = appClient.newGroup();
@@ -151,8 +156,6 @@ describe("Mithras App", () => {
       paramsCallback: async (params) => {
         const { appParams, lsigsFee } = params;
 
-        console.debug(appParams.args.signals);
-
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
           await signalsAndProofClient.createTransaction.signalsAndProof(
@@ -164,7 +167,7 @@ describe("Mithras App", () => {
           args: {
             signalsAndProofCall,
             deposit: algorand.createTransaction.payment({
-              sender: await algorand.account.localNetDispenser(),
+              sender: depositor,
               receiver: appClient.appAddress,
               amount: microAlgos(utxo_amount),
             }),
@@ -176,9 +179,22 @@ describe("Mithras App", () => {
 
     await depositGroup.send();
 
-    const fee = 0n;
-    const out0_amount = 11n;
-    const out1_amount = 22n;
+    const initialSpenderBalance = (
+      await algorand.account.getInformation(spender)
+    ).balance.microAlgo;
+
+    expect(initialSpenderBalance).toEqual(0n);
+
+    const feePayment = await algorand.createTransaction.payment({
+      sender: spender,
+      receiver: spender,
+      amount: microAlgos(0),
+      extraFee: microAlgos(SPEND_APP_FEE + LSGIS_FEE),
+    });
+
+    const fee = NULLIFIER_MBR + feePayment.fee;
+    const out0_amount = 100_000n - fee;
+    const out1_amount = 100_000n;
     const out0_receiver = addressInScalarField(algorand.account.random());
     const out1_receiver = addressInScalarField(algorand.account.random());
     const out0_spending_secret = 333n;
@@ -245,8 +261,7 @@ describe("Mithras App", () => {
       composer: spendGroup,
       inputs: inputSignals,
       paramsCallback: async (params) => {
-        const { appParams, lsigsFee } = params;
-        console.debug(appParams.args.signals);
+        const { appParams } = params;
 
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
@@ -256,11 +271,14 @@ describe("Mithras App", () => {
         ).transactions[0];
 
         spendGroup.spend({
+          sender: spender,
           args: { verifierCall: signalsAndProofCall },
-          extraFee: microAlgos(SPEND_APP_FEE + lsigsFee.microAlgos),
+          staticFee: microAlgos(0),
         });
       },
     });
+
+    spendGroup.addTransaction(feePayment);
 
     const simRes = await spendGroup.simulate({
       allowUnnamedResources: true,
@@ -269,5 +287,12 @@ describe("Mithras App", () => {
     expect(
       simRes.simulateResponse.txnGroups[0].appBudgetConsumed,
     ).toMatchSnapshot("spend app budget");
+
+    await spendGroup.send();
+
+    const finalSpenderBalance = (await algorand.account.getInformation(spender))
+      .balance.microAlgo;
+
+    expect(finalSpenderBalance).toEqual(0n);
   });
 });

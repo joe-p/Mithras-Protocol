@@ -13,6 +13,8 @@ import {
   Txn,
   Bytes,
   biguint,
+  BoxMap,
+  itxn,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "./mimc_merkle.algo";
 import { Address } from "@algorandfoundation/algorand-typescript/arc4";
@@ -32,6 +34,8 @@ function getSignal(signals: bytes, idx: uint64): bytes<32> {
 export class Mithras extends MimcMerkle {
   depositVerifier = GlobalState<Address>({ key: "d" });
   spendVerifier = GlobalState<Address>({ key: "s" });
+
+  nullifiers = BoxMap<bytes<32>, bytes<0>>({ keyPrefix: "n" });
 
   createApplication(depositVerifier: Address, spendVerifier: Address) {
     this.depositVerifier.value = depositVerifier;
@@ -66,21 +70,43 @@ export class Mithras extends MimcMerkle {
   }
 
   spend(verifierCall: gtxn.ApplicationCallTxn) {
-    assert(verifierCall.sender === this.spendVerifier.value.native);
+    assert(
+      verifierCall.sender === this.spendVerifier.value.native,
+      "sender of verifier call must be the spend verifier lsig",
+    );
 
     const signals = verifierCall.appArgs(1);
 
     const out0Commitment = getSignal(signals, 0);
     const out1Commitment = getSignal(signals, 1);
     const utxoRoot = getSignal(signals, 2);
-    // const nullifier = getSignal(signals, 3); // TODO: nullifiers
-    // const fee = op.extractUint64(getSignal(signals, 4), 24); // TODO: fee covering
+    const nullifier = getSignal(signals, 3);
+    const fee = op.extractUint64(getSignal(signals, 4), 24);
     const spender = getSignal(signals, 5);
+
+    assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
+
+    const preMBR = Global.currentApplicationAddress.minBalance;
+    this.nullifiers(nullifier).create();
+    const postMBR = Global.currentApplicationAddress.minBalance;
+
+    const nullifierMbr: uint64 = postMBR - preMBR;
+
+    assert(fee >= nullifierMbr, "Fee does not cover nullifier storage cost");
+
+    if (fee - nullifierMbr > 0) {
+      itxn
+        .payment({
+          receiver: Txn.sender,
+          amount: fee - nullifierMbr,
+        })
+        .submit();
+    }
 
     const senderInScalarField: biguint =
       BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
 
-    assert(BigUint(spender) === senderInScalarField);
+    assert(BigUint(spender) === senderInScalarField, "Invalid spender");
 
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 
