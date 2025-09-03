@@ -14,6 +14,7 @@ import {
   Bytes,
   biguint,
   BoxMap,
+  itxn,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "./mimc_merkle.algo";
 import { Address } from "@algorandfoundation/algorand-typescript/arc4";
@@ -69,7 +70,10 @@ export class Mithras extends MimcMerkle {
   }
 
   spend(verifierCall: gtxn.ApplicationCallTxn) {
-    assert(verifierCall.sender === this.spendVerifier.value.native);
+    assert(
+      verifierCall.sender === this.spendVerifier.value.native,
+      "sender of verifier call must be the spend verifier lsig",
+    );
 
     const signals = verifierCall.appArgs(1);
 
@@ -86,15 +90,23 @@ export class Mithras extends MimcMerkle {
     this.nullifiers(nullifier).create();
     const postMBR = Global.currentApplicationAddress.minBalance;
 
-    assert(
-      fee >= postMBR - preMBR,
-      "Fee does not cover nullifier storage cost",
-    );
+    const nullifierMbr: uint64 = postMBR - preMBR;
+
+    assert(fee >= nullifierMbr, "Fee does not cover nullifier storage cost");
+
+    if (fee - nullifierMbr > 0) {
+      itxn
+        .payment({
+          receiver: Txn.sender,
+          amount: fee - nullifierMbr,
+        })
+        .submit();
+    }
 
     const senderInScalarField: biguint =
       BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
 
-    assert(BigUint(spender) === senderInScalarField);
+    assert(BigUint(spender) === senderInScalarField, "Invalid spender");
 
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 
