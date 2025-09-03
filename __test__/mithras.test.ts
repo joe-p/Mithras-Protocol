@@ -135,7 +135,7 @@ describe("Mithras App", () => {
   it("spend", async () => {
     const utxo_spending_secret = 11n;
     const utxo_nullifier_secret = 22n;
-    const utxo_amount = 33n;
+    const utxo_amount = 200_000n;
     const utxo_spender = addressInScalarField(spender);
 
     const depositGroup = appClient.newGroup();
@@ -177,8 +177,8 @@ describe("Mithras App", () => {
     await depositGroup.send();
 
     const fee = 0n;
-    const out0_amount = 11n;
-    const out1_amount = 22n;
+    const out0_amount = 100_000n;
+    const out1_amount = 100_000n;
     const out0_receiver = addressInScalarField(algorand.account.random());
     const out1_receiver = addressInScalarField(algorand.account.random());
     const out0_spending_secret = 333n;
