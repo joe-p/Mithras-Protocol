@@ -176,8 +176,8 @@ describe("Mithras App", () => {
 
     await depositGroup.send();
 
-    const fee = 0n;
-    const out0_amount = 100_000n;
+    const fee = 15_700n;
+    const out0_amount = 100_000n - fee;
     const out1_amount = 100_000n;
     const out0_receiver = addressInScalarField(algorand.account.random());
     const out1_receiver = addressInScalarField(algorand.account.random());

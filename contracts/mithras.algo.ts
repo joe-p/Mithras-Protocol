@@ -86,10 +86,10 @@ export class Mithras extends MimcMerkle {
     this.nullifiers(nullifier).create();
     const postMBR = Global.currentApplicationAddress.minBalance;
 
-    // assert(
-    //   fee >= postMBR - preMBR,
-    //   "Fee does not cover nullifier storage cost",
-    // );
+    assert(
+      fee >= postMBR - preMBR,
+      "Fee does not cover nullifier storage cost",
+    );
 
     const senderInScalarField: biguint =
       BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;

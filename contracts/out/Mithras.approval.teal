@@ -475,16 +475,17 @@ spend:
     dig 1
     pushint 4 // 4
     callsub getSignal
-    pop
+    pushint 24 // 24
+    extract_uint64
     // contracts/mithras.algo.ts:81
     // const spender = getSignal(signals, 5);
-    swap
+    uncover 2
     pushint 5 // 5
     callsub getSignal
     // contracts/mithras.algo.ts:37
     // nullifiers = BoxMap<bytes<32>, bytes<0>>({ keyPrefix: "n" });
     pushbytes "n"
-    uncover 2
+    uncover 3
     concat
     // contracts/mithras.algo.ts:83
     // assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
@@ -497,10 +498,10 @@ spend:
     // const preMBR = Global.currentApplicationAddress.minBalance;
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
-    bury 1
     assert // account funded
     // contracts/mithras.algo.ts:86
     // this.nullifiers(nullifier).create();
+    swap
     intc_0 // 0
     box_create
     pop
@@ -508,8 +509,19 @@ spend:
     // const postMBR = Global.currentApplicationAddress.minBalance;
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
-    bury 1
     assert // account funded
+    // contracts/mithras.algo.ts:90
+    // fee >= postMBR - preMBR,
+    swap
+    -
+    uncover 2
+    <=
+    // contracts/mithras.algo.ts:89-92
+    // assert(
+    //   fee >= postMBR - preMBR,
+    //   "Fee does not cover nullifier storage cost",
+    // );
+    assert // Fee does not cover nullifier storage cost
     // contracts/mithras.algo.ts:95
     // BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
     txn Sender
