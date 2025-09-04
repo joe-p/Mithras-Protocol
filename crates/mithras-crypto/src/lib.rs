@@ -96,6 +96,42 @@ pub struct HpkeEnvelope {
     pub ciphertext_b64: String,
 }
 
+pub struct MithrasSecret {
+    pub spending_secret: [u8; 32],
+    pub nullifier_secret: [u8; 32],
+    pub amount: u64,
+}
+
+impl From<[u8; 72]> for MithrasSecret {
+    fn from(bytes: [u8; 72]) -> Self {
+        let mut spending_secret = [0u8; 32];
+        let mut nullifier_secret = [0u8; 32];
+        let mut amount_bytes = [0u8; 8];
+
+        spending_secret.copy_from_slice(&bytes[0..32]);
+        nullifier_secret.copy_from_slice(&bytes[32..64]);
+        amount_bytes.copy_from_slice(&bytes[64..72]);
+
+        let amount = u64::from_be_bytes(amount_bytes);
+
+        Self {
+            spending_secret,
+            nullifier_secret,
+            amount,
+        }
+    }
+}
+
+impl From<MithrasSecret> for [u8; 72] {
+    fn from(secret: MithrasSecret) -> Self {
+        let mut bytes = [0u8; 72];
+        bytes[0..32].copy_from_slice(&secret.spending_secret);
+        bytes[32..64].copy_from_slice(&secret.nullifier_secret);
+        bytes[64..72].copy_from_slice(&secret.amount.to_be_bytes());
+        bytes
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SpendKeypair {
     pub seed: [u8; 32],
@@ -395,8 +431,13 @@ mod tests {
             .setup_sender(hpke_recipient.public_key(), info, None, None, None)
             .unwrap();
 
-        let spend_secret = [42u8; 64];
-        let ct = sender_ctx.seal(aad, spend_secret.as_ref()).unwrap();
+        let mithras_secret = MithrasSecret {
+            spending_secret: [42u8; 32],
+            nullifier_secret: [43u8; 32],
+            amount: 1000,
+        };
+        let secret_bytes: [u8; 72] = mithras_secret.into();
+        let ct = sender_ctx.seal(aad, &secret_bytes).unwrap();
 
         let env = HpkeEnvelope {
             version: 1,
@@ -423,7 +464,7 @@ mod tests {
 
         let pt = recv_ctx.open(aad, ct_bytes.as_slice()).unwrap();
 
-        assert_eq!(&pt, &spend_secret);
+        assert_eq!(&pt, &secret_bytes);
         Ok(())
     }
 
@@ -520,8 +561,13 @@ mod tests {
             .setup_sender(hpke_recipient.public_key(), info, None, None, None)
             .unwrap();
 
-        let spend_secret = [42u8; 64];
-        let ct = sender_ctx.seal(aad, spend_secret.as_ref()).unwrap();
+        let mithras_secret = MithrasSecret {
+            spending_secret: [42u8; 32],
+            nullifier_secret: [43u8; 32],
+            amount: 1000,
+        };
+        let secret_bytes: [u8; 72] = mithras_secret.into();
+        let ct = sender_ctx.seal(aad, &secret_bytes).unwrap();
 
         let env = HpkeEnvelope {
             version: 1,
@@ -548,7 +594,7 @@ mod tests {
 
         let pt = recv_ctx.open(aad, ct_bytes.as_slice()).unwrap();
 
-        assert_eq!(&pt, &spend_secret);
+        assert_eq!(&pt, &secret_bytes);
 
         let mithras_addr = MithrasAddr::from_keys(
             &tweaked_keypair_receiver.public_key,
