@@ -88,11 +88,12 @@ pub fn suite() -> Hpke<HpkeLibcrux> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HpkeEnvelope {
-    pub ver: u8,                  // app version (yours)
-    pub suite: u8,                // your enum code for the chosen suite
-    pub key_id: u32,              // which recipient key (for rotation)
-    pub encapsulated_key: String, // KEM "enc" (ephemeral pubkey) bytes, base64
-    pub ct_b64: String,           // ciphertext||tag, base64
+    /// The mithras version which determines the shape of the data in the plaintext
+    pub version: u8,
+    /// The HPKE suite identifier
+    pub suite: u8,
+    pub encapsulated_key_b64: String,
+    pub ciphertext_b64: String,
 }
 
 #[derive(Debug, Clone)]
@@ -387,7 +388,7 @@ mod tests {
         let mut hpke = suite();
         let hpke_recipient = hpke.generate_key_pair().unwrap();
 
-        let info = b"mithras|network:mainnet|app:1337|v:1";
+        let info = b"mithras|network:mainnet|app:1337|v:1"; // used by KDF
         let aad = b"txid:BLAH...BLAH";
 
         let (encapsulated_key, mut sender_ctx) = hpke
@@ -398,17 +399,16 @@ mod tests {
         let ct = sender_ctx.seal(aad, spend_secret.as_ref()).unwrap();
 
         let env = HpkeEnvelope {
-            ver: 1,
+            version: 1,
             suite: 1,
-            key_id: 0,
-            encapsulated_key: B64.encode(&encapsulated_key),
-            ct_b64: B64.encode(&ct),
+            encapsulated_key_b64: B64.encode(&encapsulated_key),
+            ciphertext_b64: B64.encode(&ct),
         };
 
         let json = serde_json::to_string(&env)?;
         let env2: HpkeEnvelope = serde_json::from_str(&json)?;
-        let enclosed_key_bytes = B64.decode(&env2.encapsulated_key)?;
-        let ct_bytes = B64.decode(&env2.ct_b64)?;
+        let enclosed_key_bytes = B64.decode(&env2.encapsulated_key_b64)?;
+        let ct_bytes = B64.decode(&env2.ciphertext_b64)?;
 
         let mut recv_ctx = hpke
             .setup_receiver(
@@ -524,17 +524,16 @@ mod tests {
         let ct = sender_ctx.seal(aad, spend_secret.as_ref()).unwrap();
 
         let env = HpkeEnvelope {
-            ver: 1,
+            version: 1,
             suite: 1,
-            key_id: 0,
-            encapsulated_key: B64.encode(&encapsulated_key),
-            ct_b64: B64.encode(&ct),
+            encapsulated_key_b64: B64.encode(&encapsulated_key),
+            ciphertext_b64: B64.encode(&ct),
         };
 
         let json = serde_json::to_string(&env)?;
         let env2: HpkeEnvelope = serde_json::from_str(&json)?;
-        let enclosed_key_bytes = B64.decode(&env2.encapsulated_key)?;
-        let ct_bytes = B64.decode(&env2.ct_b64)?;
+        let enclosed_key_bytes = B64.decode(&env2.encapsulated_key_b64)?;
+        let ct_bytes = B64.decode(&env2.ciphertext_b64)?;
 
         let mut recv_ctx = hpke
             .setup_receiver(
