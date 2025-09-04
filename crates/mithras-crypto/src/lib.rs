@@ -2,6 +2,7 @@ pub mod address;
 pub mod keypairs;
 
 use crate::keypairs::TweakedPrivate;
+use curve25519_dalek::Scalar;
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use ed25519_dalek::Signature;
 use ed25519_dalek::VerifyingKey;
@@ -32,38 +33,41 @@ pub struct HpkeEnvelope {
     pub ciphertext_b64: String,
 }
 
+const SECRET_SIZE: usize = 104;
+
 pub struct UtxoSecrets {
     pub spending_secret: [u8; 32],
     pub nullifier_secret: [u8; 32],
     pub amount: u64,
+    pub tweak_scalar: Scalar,
 }
 
-impl From<[u8; 72]> for UtxoSecrets {
-    fn from(bytes: [u8; 72]) -> Self {
+impl From<[u8; SECRET_SIZE]> for UtxoSecrets {
+    fn from(bytes: [u8; SECRET_SIZE]) -> Self {
         let mut spending_secret = [0u8; 32];
         let mut nullifier_secret = [0u8; 32];
-        let mut amount_bytes = [0u8; 8];
 
         spending_secret.copy_from_slice(&bytes[0..32]);
         nullifier_secret.copy_from_slice(&bytes[32..64]);
-        amount_bytes.copy_from_slice(&bytes[64..72]);
-
-        let amount = u64::from_be_bytes(amount_bytes);
+        let amount = u64::from_be_bytes(bytes[64..72].try_into().unwrap());
+        let tweak_scalar = Scalar::from_bytes_mod_order(bytes[72..104].try_into().unwrap());
 
         Self {
             spending_secret,
             nullifier_secret,
             amount,
+            tweak_scalar,
         }
     }
 }
 
-impl From<UtxoSecrets> for [u8; 72] {
+impl From<UtxoSecrets> for [u8; SECRET_SIZE] {
     fn from(secret: UtxoSecrets) -> Self {
-        let mut bytes = [0u8; 72];
+        let mut bytes = [0u8; SECRET_SIZE];
         bytes[0..32].copy_from_slice(&secret.spending_secret);
         bytes[32..64].copy_from_slice(&secret.nullifier_secret);
         bytes[64..72].copy_from_slice(&secret.amount.to_be_bytes());
+        bytes[72..104].copy_from_slice(&secret.tweak_scalar.to_bytes());
         bytes
     }
 }
@@ -249,8 +253,9 @@ mod tests {
             spending_secret: [42u8; 32],
             nullifier_secret: [43u8; 32],
             amount: 1000,
+            tweak_scalar: Scalar::from(7u64),
         };
-        let secret_bytes: [u8; 72] = mithras_secret.into();
+        let secret_bytes: [u8; SECRET_SIZE] = mithras_secret.into();
         let ct = sender_ctx.seal(aad, &secret_bytes).unwrap();
 
         let env = HpkeEnvelope {
@@ -379,8 +384,9 @@ mod tests {
             spending_secret: [42u8; 32],
             nullifier_secret: [43u8; 32],
             amount: 1000,
+            tweak_scalar,
         };
-        let secret_bytes: [u8; 72] = mithras_secret.into();
+        let secret_bytes: [u8; SECRET_SIZE] = mithras_secret.into();
         let ct = sender_ctx.seal(aad, &secret_bytes).unwrap();
 
         let env = HpkeEnvelope {
