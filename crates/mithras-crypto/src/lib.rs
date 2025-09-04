@@ -1,18 +1,14 @@
 pub mod address;
+pub mod keypairs;
 
-use crate::address::MithrasAddr;
-use anyhow::{Result, anyhow};
-use base64::{Engine as _, engine::general_purpose::STANDARD_NO_PAD as B64};
-use curve25519_dalek::scalar::clamp_integer;
+use crate::keypairs::{SpendKeypair, TweakedKeypair, TweakedPrivate};
 use curve25519_dalek::{Scalar, constants::ED25519_BASEPOINT_TABLE};
 use ed25519_dalek::Signature;
-use ed25519_dalek::Verifier;
-use ed25519_dalek::{SigningKey, VerifyingKey};
+use ed25519_dalek::VerifyingKey;
 use hkdf::Hkdf;
 use hmac::{Hmac, Mac};
 use hpke_rs::Hpke;
 use hpke_rs_libcrux::HpkeLibcrux;
-use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha512};
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
@@ -69,67 +65,6 @@ impl From<UtxoSecrets> for [u8; 72] {
         bytes[32..64].copy_from_slice(&secret.nullifier_secret);
         bytes[64..72].copy_from_slice(&secret.amount.to_be_bytes());
         bytes
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct SpendKeypair {
-    pub seed: [u8; 32],
-    pub public_key: VerifyingKey,
-}
-
-#[derive(Clone)]
-pub struct DiscoveryKeypair {
-    pub private_key: StaticSecret,
-    pub public_key: X25519PublicKey,
-}
-
-#[derive(Debug, Clone)]
-pub struct TweakedKeypair {
-    pub private: Option<TweakedPrivate>,
-    pub public_key: VerifyingKey,
-}
-
-#[derive(Debug, Clone)]
-pub struct TweakedPrivate {
-    pub a_scalar: Scalar,
-    pub prefix: [u8; 32],
-}
-
-impl SpendKeypair {
-    pub fn generate() -> Self {
-        use rand::RngCore as _;
-        let mut seed = [0u8; 32];
-        OsRng.fill_bytes(&mut seed);
-        let sk = SigningKey::from_bytes(&seed);
-        let public_key = sk.verifying_key();
-
-        Self { seed, public_key }
-    }
-
-    pub fn a_scalar(&self) -> Scalar {
-        let digest = Sha512::digest(self.seed);
-        let mut a_bytes = [0u8; 32];
-        a_bytes.copy_from_slice(&digest[..32]);
-        Scalar::from_bytes_mod_order(clamp_integer(a_bytes))
-    }
-
-    pub fn prefix(&self) -> [u8; 32] {
-        let digest = Sha512::digest(self.seed);
-        let mut prefix = [0u8; 32];
-        prefix.copy_from_slice(&digest[32..64]);
-        prefix
-    }
-}
-
-impl DiscoveryKeypair {
-    pub fn generate() -> Self {
-        let private_key = StaticSecret::random_from_rng(OsRng);
-        let public_key = X25519PublicKey::from(&private_key);
-        Self {
-            private_key,
-            public_key,
-        }
     }
 }
 
@@ -257,6 +192,13 @@ pub fn compute_discovery_tag(
 
 #[cfg(test)]
 mod tests {
+    use crate::{
+        address::MithrasAddr,
+        keypairs::{DiscoveryKeypair, SpendKeypair},
+    };
+    use base64::{Engine as _, engine::general_purpose::STANDARD_NO_PAD as B64};
+    use ed25519_dalek::Verifier;
+
     use super::*;
 
     #[test]
