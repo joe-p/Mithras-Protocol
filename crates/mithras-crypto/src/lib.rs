@@ -1,8 +1,8 @@
 pub mod address;
 pub mod keypairs;
 
-use crate::keypairs::{SpendKeypair, TweakedKeypair, TweakedPrivate};
-use curve25519_dalek::{Scalar, constants::ED25519_BASEPOINT_TABLE};
+use crate::keypairs::TweakedPrivate;
+use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use ed25519_dalek::Signature;
 use ed25519_dalek::VerifyingKey;
 use hkdf::Hkdf;
@@ -10,7 +10,7 @@ use hmac::{Hmac, Mac};
 use hpke_rs::Hpke;
 use hpke_rs_libcrux::HpkeLibcrux;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256, Sha512};
+use sha2::{Sha256, Sha512};
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
 
 pub fn suite() -> Hpke<HpkeLibcrux> {
@@ -84,76 +84,6 @@ pub fn compute_discovery_secret_receiver(
     *shared_secret.as_bytes()
 }
 
-pub fn derive_tweak_scalar(discovery_secret: &[u8; 32]) -> Scalar {
-    let mut hasher = Sha512::new();
-    hasher.update(b"mithras-tweak-scalar");
-    hasher.update(discovery_secret);
-    let hash = hasher.finalize();
-
-    let mut scalar_bytes = [0u8; 32];
-    scalar_bytes.copy_from_slice(&hash[..32]);
-    Scalar::from_bytes_mod_order(scalar_bytes)
-}
-
-pub fn derive_tweaked_prefix(base_prefix: &[u8; 32], tweaked_public: &VerifyingKey) -> [u8; 32] {
-    let mut hasher = Sha512::new();
-    hasher.update(b"mithras-tweaked-prefix");
-    hasher.update(base_prefix);
-    hasher.update(tweaked_public.to_bytes());
-    let hash = hasher.finalize();
-
-    let mut tweaked_prefix = [0u8; 32];
-    tweaked_prefix.copy_from_slice(&hash[32..64]);
-    tweaked_prefix
-}
-
-pub fn compute_tweaked_keypair_sender(
-    spend_public: &VerifyingKey,
-    tweak_scalar: &Scalar,
-) -> TweakedKeypair {
-    let spend_point = spend_public.to_bytes();
-    let tweak_point = ED25519_BASEPOINT_TABLE * tweak_scalar;
-
-    let mut tweaked_bytes = [0u8; 32];
-    let spend_compressed =
-        curve25519_dalek::edwards::CompressedEdwardsY::from_slice(&spend_point).unwrap();
-    let spend_point_decompressed = spend_compressed.decompress().unwrap();
-    let tweaked_point = spend_point_decompressed + tweak_point;
-    tweaked_bytes.copy_from_slice(tweaked_point.compress().as_bytes());
-
-    let tweaked_public = VerifyingKey::from_bytes(&tweaked_bytes).unwrap();
-    TweakedKeypair {
-        private: None,
-        public_key: tweaked_public,
-    }
-}
-
-pub fn compute_tweaked_keypair_receiver(
-    spend: &SpendKeypair,
-    tweak_scalar: &Scalar,
-) -> TweakedKeypair {
-    let tweaked_scalar = spend.a_scalar() + tweak_scalar;
-
-    let spend_point = spend.public_key.to_bytes();
-    let tweak_point = ED25519_BASEPOINT_TABLE * tweak_scalar;
-    let spend_compressed =
-        curve25519_dalek::edwards::CompressedEdwardsY::from_slice(&spend_point).unwrap();
-    let spend_point_decompressed = spend_compressed.decompress().unwrap();
-    let tweaked_point = spend_point_decompressed + tweak_point;
-    let tweaked_public_bytes = tweaked_point.compress();
-    let tweaked_public = VerifyingKey::from_bytes(tweaked_public_bytes.as_bytes()).unwrap();
-
-    let tweaked_prefix = derive_tweaked_prefix(&spend.prefix(), &tweaked_public);
-
-    TweakedKeypair {
-        private: Some(TweakedPrivate {
-            a_scalar: tweaked_scalar,
-            prefix: tweaked_prefix,
-        }),
-        public_key: tweaked_public,
-    }
-}
-
 pub fn ed25519_sign_with_tweaked(tweaked_priv: &TweakedPrivate, msg: &[u8]) -> Signature {
     let a_g = (ED25519_BASEPOINT_TABLE * &tweaked_priv.a_scalar)
         .compress()
@@ -194,10 +124,12 @@ pub fn compute_discovery_tag(
 mod tests {
     use crate::{
         address::MithrasAddr,
-        keypairs::{DiscoveryKeypair, SpendKeypair},
+        keypairs::{DiscoveryKeypair, SpendKeypair, derive_tweak_scalar},
     };
     use base64::{Engine as _, engine::general_purpose::STANDARD_NO_PAD as B64};
     use ed25519_dalek::Verifier;
+
+    use crate::keypairs::TweakedKeypair;
 
     use super::*;
 
@@ -242,10 +174,10 @@ mod tests {
         let tweak_scalar = derive_tweak_scalar(&discovery_secret_sender);
 
         let tweaked_keypair_sender =
-            compute_tweaked_keypair_sender(&spend_keypair.public_key, &tweak_scalar);
+            TweakedKeypair::derive_public_key(&spend_keypair.public_key, &tweak_scalar);
 
         let tweaked_keypair_receiver =
-            compute_tweaked_keypair_receiver(&spend_keypair, &tweak_scalar);
+            TweakedKeypair::derive_keypair(&spend_keypair, &tweak_scalar);
 
         assert_eq!(
             tweaked_keypair_sender.public_key.to_bytes(),
@@ -286,7 +218,7 @@ mod tests {
         let discovery_secret = [42u8; 32];
         let tweak_scalar = derive_tweak_scalar(&discovery_secret);
         let tweaked_keypair_receiver =
-            compute_tweaked_keypair_receiver(&spend_keypair, &tweak_scalar);
+            TweakedKeypair::derive_keypair(&spend_keypair, &tweak_scalar);
 
         let msg = b"example spend authorization";
         let tweaked_priv = tweaked_keypair_receiver.private.as_ref().unwrap();
@@ -357,7 +289,7 @@ mod tests {
         let discovery_secret = [42u8; 32];
         let tweak_scalar = derive_tweak_scalar(&discovery_secret);
         let tweaked_keypair_receiver =
-            compute_tweaked_keypair_receiver(&spend_keypair, &tweak_scalar);
+            TweakedKeypair::derive_keypair(&spend_keypair, &tweak_scalar);
 
         let mithras_addr = MithrasAddr::from_keys(
             &tweaked_keypair_receiver.public_key,
@@ -393,7 +325,7 @@ mod tests {
         let tweak_scalar = derive_tweak_scalar(&discovery_secret_sender);
 
         let tweaked_keypair_sender =
-            compute_tweaked_keypair_sender(&spend_keypair.public_key, &tweak_scalar);
+            TweakedKeypair::derive_public_key(&spend_keypair.public_key, &tweak_scalar);
 
         let sender_data = b"sender_identifier";
         let discovery_tag =
@@ -410,7 +342,7 @@ mod tests {
         assert_eq!(tweak_scalar, tweak_scalar_receiver);
 
         let tweaked_keypair_receiver =
-            compute_tweaked_keypair_receiver(&spend_keypair, &tweak_scalar);
+            TweakedKeypair::derive_keypair(&spend_keypair, &tweak_scalar);
 
         assert_eq!(
             tweaked_keypair_sender.public_key.to_bytes(),
