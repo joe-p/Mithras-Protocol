@@ -1,6 +1,6 @@
 use curve25519_dalek::scalar::clamp_integer;
 use curve25519_dalek::{Scalar, constants::ED25519_BASEPOINT_TABLE};
-use ed25519_dalek::{SigningKey, VerifyingKey};
+use ed25519_dalek::{Signature, SigningKey, VerifyingKey};
 use rand::rngs::OsRng;
 use sha2::{Digest, Sha512};
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
@@ -58,6 +58,22 @@ impl SpendKeypair {
 pub struct TweakedPrivate {
     pub a_scalar: Scalar,
     pub prefix: [u8; 32],
+}
+
+impl TweakedPrivate {
+    pub fn sign(&self, msg: &[u8]) -> Signature {
+        let a_g = (ED25519_BASEPOINT_TABLE * &self.a_scalar)
+            .compress()
+            .to_bytes();
+        let public_locked =
+            VerifyingKey::from_bytes(&a_g).expect("derived verifying key must be valid");
+
+        let esk = ed25519_dalek::hazmat::ExpandedSecretKey {
+            scalar: self.a_scalar,
+            hash_prefix: self.prefix,
+        };
+        ed25519_dalek::hazmat::raw_sign::<Sha512>(&esk, msg, &public_locked)
+    }
 }
 
 #[derive(Debug, Clone)]

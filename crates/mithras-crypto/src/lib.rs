@@ -1,17 +1,13 @@
 pub mod address;
 pub mod keypairs;
 
-use crate::keypairs::TweakedPrivate;
 use curve25519_dalek::Scalar;
-use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
-use ed25519_dalek::Signature;
-use ed25519_dalek::VerifyingKey;
 use hkdf::Hkdf;
 use hmac::{Hmac, Mac};
 use hpke_rs::Hpke;
 use hpke_rs_libcrux::HpkeLibcrux;
 use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Sha512};
+use sha2::Sha256;
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
 
 pub fn suite() -> Hpke<HpkeLibcrux> {
@@ -86,20 +82,6 @@ pub fn compute_discovery_secret_receiver(
 ) -> [u8; 32] {
     let shared_secret = discovery_private.diffie_hellman(ephemeral_public);
     *shared_secret.as_bytes()
-}
-
-pub fn ed25519_sign_with_tweaked(tweaked_priv: &TweakedPrivate, msg: &[u8]) -> Signature {
-    let a_g = (ED25519_BASEPOINT_TABLE * &tweaked_priv.a_scalar)
-        .compress()
-        .to_bytes();
-    let public_locked =
-        VerifyingKey::from_bytes(&a_g).expect("derived verifying key must be valid");
-
-    let esk = ed25519_dalek::hazmat::ExpandedSecretKey {
-        scalar: tweaked_priv.a_scalar,
-        hash_prefix: tweaked_priv.prefix,
-    };
-    ed25519_dalek::hazmat::raw_sign::<Sha512>(&esk, msg, &public_locked)
 }
 
 pub fn compute_discovery_tag(
@@ -226,7 +208,7 @@ mod tests {
 
         let msg = b"example spend authorization";
         let tweaked_priv = tweaked_keypair_receiver.private.as_ref().unwrap();
-        let sig = ed25519_sign_with_tweaked(tweaked_priv, msg);
+        let sig = tweaked_priv.sign(msg);
 
         let verify_res = tweaked_keypair_receiver.public_key.verify_strict(msg, &sig);
         if verify_res.is_err() {
@@ -360,7 +342,7 @@ mod tests {
 
         let msg = b"example spend authorization";
         let tweaked_priv = tweaked_keypair_receiver.private.as_ref().unwrap();
-        let sig = ed25519_sign_with_tweaked(tweaked_priv, msg);
+        let sig = tweaked_priv.sign(msg);
 
         let verify_res = tweaked_keypair_receiver.public_key.verify_strict(msg, &sig);
         if verify_res.is_err() {
