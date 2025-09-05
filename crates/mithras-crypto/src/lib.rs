@@ -111,8 +111,7 @@ mod tests {
     use crate::{
         address::MithrasAddr,
         keypairs::{
-            DiscoveryKeypair, SpendKeypair, TweakedPrivate, derive_tweak_scalar,
-            derive_tweaked_pubkey,
+            DiscoveryKeypair, SpendSeed, TweakedSigner, derive_tweak_scalar, derive_tweaked_pubkey,
         },
     };
     use base64::{Engine as _, engine::general_purpose::STANDARD_NO_PAD as B64};
@@ -122,11 +121,11 @@ mod tests {
 
     #[test]
     fn test_keypair_generation() {
-        let spend_keypair = SpendKeypair::generate();
+        let spend_keypair = SpendSeed::generate();
         let discovery_keypair = DiscoveryKeypair::generate();
 
-        assert_eq!(spend_keypair.seed.len(), 32);
-        assert_eq!(discovery_keypair.public_key.as_bytes().len(), 32);
+        assert_eq!(spend_keypair.seed().len(), 32);
+        assert_eq!(discovery_keypair.public_key().as_bytes().len(), 32);
     }
 
     #[test]
@@ -135,13 +134,13 @@ mod tests {
         let ephemeral_keypair = DiscoveryKeypair::generate();
 
         let discovery_secret_sender = compute_discovery_secret_sender(
-            &ephemeral_keypair.private_key,
-            &discovery_keypair.public_key,
+            ephemeral_keypair.private_key(),
+            discovery_keypair.public_key(),
         );
 
         let discovery_secret_receiver = compute_discovery_secret_receiver(
-            &discovery_keypair.private_key,
-            &ephemeral_keypair.public_key,
+            discovery_keypair.private_key(),
+            ephemeral_keypair.public_key(),
         );
 
         assert_eq!(discovery_secret_sender, discovery_secret_receiver);
@@ -149,21 +148,21 @@ mod tests {
 
     #[test]
     fn test_tweaked_keypair_computation() {
-        let spend_keypair = SpendKeypair::generate();
+        let spend_keypair = SpendSeed::generate();
         let discovery_keypair = DiscoveryKeypair::generate();
         let ephemeral_keypair = DiscoveryKeypair::generate();
 
         let discovery_secret_sender = compute_discovery_secret_sender(
-            &ephemeral_keypair.private_key,
-            &discovery_keypair.public_key,
+            ephemeral_keypair.private_key(),
+            discovery_keypair.public_key(),
         );
 
         let tweak_scalar = derive_tweak_scalar(&discovery_secret_sender);
 
         let tweaked_keypair_sender =
-            derive_tweaked_pubkey(&spend_keypair.public_key, &tweak_scalar);
+            derive_tweaked_pubkey(spend_keypair.public_key(), &tweak_scalar);
 
-        let tweaked_keypair_receiver = TweakedPrivate::derive(&spend_keypair, &tweak_scalar);
+        let tweaked_keypair_receiver = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
 
         assert_eq!(
             tweaked_keypair_sender.to_bytes(),
@@ -177,13 +176,13 @@ mod tests {
         let ephemeral_keypair = DiscoveryKeypair::generate();
 
         let discovery_secret_sender = compute_discovery_secret_sender(
-            &ephemeral_keypair.private_key,
-            &discovery_keypair.public_key,
+            ephemeral_keypair.private_key(),
+            discovery_keypair.public_key(),
         );
 
         let discovery_secret_receiver = compute_discovery_secret_receiver(
-            &discovery_keypair.private_key,
-            &ephemeral_keypair.public_key,
+            discovery_keypair.private_key(),
+            ephemeral_keypair.public_key(),
         );
 
         let sender_data = b"sender_identifier";
@@ -198,14 +197,14 @@ mod tests {
 
     #[test]
     fn test_ed25519_signing_with_tweaked_key() {
-        let spend_keypair = SpendKeypair::generate();
+        let spend_keypair = SpendSeed::generate();
         let discovery_secret = [42u8; 32];
         let tweak_scalar = derive_tweak_scalar(&discovery_secret);
         let tweaked_keypair_receiver =
-            derive_tweaked_pubkey(&spend_keypair.public_key, &tweak_scalar);
+            derive_tweaked_pubkey(spend_keypair.public_key(), &tweak_scalar);
 
         let msg = b"example spend authorization";
-        let tweaked_priv = TweakedPrivate::derive(&spend_keypair, &tweak_scalar);
+        let tweaked_priv = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
         let sig = tweaked_priv.sign(msg);
 
         let verify_res = tweaked_keypair_receiver.verify_strict(msg, &sig);
@@ -266,15 +265,15 @@ mod tests {
 
     #[test]
     fn test_mithras_address_encoding_decoding() -> anyhow::Result<()> {
-        let spend_keypair = SpendKeypair::generate();
+        let spend_keypair = SpendSeed::generate();
         let discovery_keypair = DiscoveryKeypair::generate();
         let discovery_secret = [42u8; 32];
         let tweak_scalar = derive_tweak_scalar(&discovery_secret);
-        let tweaked_keypair_receiver = TweakedPrivate::derive(&spend_keypair, &tweak_scalar);
+        let tweaked_keypair_receiver = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
 
         let mithras_addr = MithrasAddr::from_keys(
             tweaked_keypair_receiver.public_key(),
-            &discovery_keypair.public_key,
+            discovery_keypair.public_key(),
             1, // version
             0, // network
             1, // suite
@@ -294,27 +293,27 @@ mod tests {
 
     #[test]
     fn test_complete_mithras_protocol_flow() -> anyhow::Result<()> {
-        let spend_keypair = SpendKeypair::generate();
+        let spend_keypair = SpendSeed::generate();
         let discovery_keypair = DiscoveryKeypair::generate();
         let ephemeral_keypair = DiscoveryKeypair::generate();
 
         let discovery_secret_sender = compute_discovery_secret_sender(
-            &ephemeral_keypair.private_key,
-            &discovery_keypair.public_key,
+            ephemeral_keypair.private_key(),
+            discovery_keypair.public_key(),
         );
 
         let tweak_scalar = derive_tweak_scalar(&discovery_secret_sender);
 
         let tweaked_keypair_sender =
-            derive_tweaked_pubkey(&spend_keypair.public_key, &tweak_scalar);
+            derive_tweaked_pubkey(spend_keypair.public_key(), &tweak_scalar);
 
         let sender_data = b"sender_identifier";
         let discovery_tag =
             compute_discovery_tag(&discovery_secret_sender, sender_data, 1000, 2000, 3600);
 
         let discovery_secret_receiver = compute_discovery_secret_receiver(
-            &discovery_keypair.private_key,
-            &ephemeral_keypair.public_key,
+            discovery_keypair.private_key(),
+            ephemeral_keypair.public_key(),
         );
 
         assert_eq!(discovery_secret_sender, discovery_secret_receiver);
@@ -322,7 +321,7 @@ mod tests {
         let tweak_scalar_receiver = derive_tweak_scalar(&discovery_secret_receiver);
         assert_eq!(tweak_scalar, tweak_scalar_receiver);
 
-        let tweaked_keypair_receiver = TweakedPrivate::derive(&spend_keypair, &tweak_scalar);
+        let tweaked_keypair_receiver = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
 
         assert_eq!(
             tweaked_keypair_sender.to_bytes(),
@@ -334,7 +333,7 @@ mod tests {
         assert_eq!(discovery_tag, discovery_tag_receiver);
 
         let msg = b"example spend authorization";
-        let tweaked_priv = TweakedPrivate::derive(&spend_keypair, &tweak_scalar);
+        let tweaked_priv = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
         let sig = tweaked_priv.sign(msg);
 
         let verify_res = tweaked_keypair_receiver
@@ -395,7 +394,7 @@ mod tests {
 
         let mithras_addr = MithrasAddr::from_keys(
             tweaked_keypair_receiver.public_key(),
-            &discovery_keypair.public_key,
+            discovery_keypair.public_key(),
             1,
             0,
             1,

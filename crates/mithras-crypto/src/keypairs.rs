@@ -7,8 +7,8 @@ use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
 
 #[derive(Clone)]
 pub struct DiscoveryKeypair {
-    pub private_key: StaticSecret,
-    pub public_key: X25519PublicKey,
+    private_key: StaticSecret,
+    public_key: X25519PublicKey,
 }
 
 impl DiscoveryKeypair {
@@ -20,18 +20,23 @@ impl DiscoveryKeypair {
             public_key,
         }
     }
+
+    pub fn public_key(&self) -> &X25519PublicKey {
+        &self.public_key
+    }
+
+    pub fn private_key(&self) -> &StaticSecret {
+        &self.private_key
+    }
 }
 
 #[derive(Debug, Clone)]
-/// A stuct that contains the seed used to derive a ed25519 keypair and its corresponding public key.
-/// This must be used over a regular keypair because the seed is needed to derive the tweaked
-/// keypair
-pub struct SpendKeypair {
-    pub seed: [u8; 32],
-    pub public_key: Ed25519PublicKey,
+pub struct SpendSeed {
+    seed: [u8; 32],
+    public_key: Ed25519PublicKey,
 }
 
-impl SpendKeypair {
+impl SpendSeed {
     pub fn generate() -> Self {
         use rand::RngCore as _;
         let mut seed = [0u8; 32];
@@ -55,6 +60,14 @@ impl SpendKeypair {
         prefix.copy_from_slice(&digest[32..64]);
         prefix
     }
+
+    pub fn public_key(&self) -> &Ed25519PublicKey {
+        &self.public_key
+    }
+
+    pub fn seed(&self) -> &[u8; 32] {
+        &self.seed
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -65,7 +78,7 @@ pub struct TweakedSigner {
 }
 
 impl TweakedSigner {
-    pub fn derive(spend_keypair: &SpendKeypair, tweak_scalar: &Scalar) -> Self {
+    pub fn derive(spend_keypair: &SpendSeed, tweak_scalar: &Scalar) -> Self {
         let tweaked_scalar = spend_keypair.a_scalar() + tweak_scalar;
 
         let spend_point = spend_keypair.public_key.to_bytes();
