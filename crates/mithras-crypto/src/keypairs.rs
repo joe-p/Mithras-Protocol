@@ -58,50 +58,11 @@ impl SpendKeypair {
 pub struct TweakedPrivate {
     pub a_scalar: Scalar,
     pub prefix: [u8; 32],
+    pubkey: VerifyingKey,
 }
 
 impl TweakedPrivate {
-    pub fn sign(&self, msg: &[u8]) -> Signature {
-        let a_g = (ED25519_BASEPOINT_TABLE * &self.a_scalar)
-            .compress()
-            .to_bytes();
-        let public_locked =
-            VerifyingKey::from_bytes(&a_g).expect("derived verifying key must be valid");
-
-        let esk = ed25519_dalek::hazmat::ExpandedSecretKey {
-            scalar: self.a_scalar,
-            hash_prefix: self.prefix,
-        };
-        ed25519_dalek::hazmat::raw_sign::<Sha512>(&esk, msg, &public_locked)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct TweakedKeypair {
-    pub private: Option<TweakedPrivate>,
-    pub public_key: VerifyingKey,
-}
-
-impl TweakedKeypair {
-    pub fn derive_public_key(spend_public: &VerifyingKey, tweak_scalar: &Scalar) -> Self {
-        let spend_point = spend_public.to_bytes();
-        let tweak_point = ED25519_BASEPOINT_TABLE * tweak_scalar;
-
-        let mut tweaked_bytes = [0u8; 32];
-        let spend_compressed =
-            curve25519_dalek::edwards::CompressedEdwardsY::from_slice(&spend_point).unwrap();
-        let spend_point_decompressed = spend_compressed.decompress().unwrap();
-        let tweaked_point = spend_point_decompressed + tweak_point;
-        tweaked_bytes.copy_from_slice(tweaked_point.compress().as_bytes());
-
-        let tweaked_public = VerifyingKey::from_bytes(&tweaked_bytes).unwrap();
-        TweakedKeypair {
-            private: None,
-            public_key: tweaked_public,
-        }
-    }
-
-    pub fn derive_keypair(spend_keypair: &SpendKeypair, tweak_scalar: &Scalar) -> Self {
+    pub fn derive(spend_keypair: &SpendKeypair, tweak_scalar: &Scalar) -> Self {
         let tweaked_scalar = spend_keypair.a_scalar() + tweak_scalar;
 
         let spend_point = spend_keypair.public_key.to_bytes();
@@ -115,14 +76,44 @@ impl TweakedKeypair {
 
         let tweaked_prefix = derive_tweaked_prefix(&spend_keypair.prefix(), &tweaked_public);
 
-        TweakedKeypair {
-            private: Some(TweakedPrivate {
-                a_scalar: tweaked_scalar,
-                prefix: tweaked_prefix,
-            }),
-            public_key: tweaked_public,
+        Self {
+            a_scalar: tweaked_scalar,
+            prefix: tweaked_prefix,
+            pubkey: tweaked_public,
         }
     }
+
+    pub fn sign(&self, msg: &[u8]) -> Signature {
+        let a_g = (ED25519_BASEPOINT_TABLE * &self.a_scalar)
+            .compress()
+            .to_bytes();
+        let public_locked =
+            VerifyingKey::from_bytes(&a_g).expect("derived verifying key must be valid");
+
+        let esk = ed25519_dalek::hazmat::ExpandedSecretKey {
+            scalar: self.a_scalar,
+            hash_prefix: self.prefix,
+        };
+        ed25519_dalek::hazmat::raw_sign::<Sha512>(&esk, msg, &public_locked)
+    }
+
+    pub fn public_key(&self) -> &VerifyingKey {
+        &self.pubkey
+    }
+}
+
+pub fn derive_tweaked_pubkey(spend_public: &VerifyingKey, tweak_scalar: &Scalar) -> VerifyingKey {
+    let spend_point = spend_public.to_bytes();
+    let tweak_point = ED25519_BASEPOINT_TABLE * tweak_scalar;
+
+    let mut tweaked_bytes = [0u8; 32];
+    let spend_compressed =
+        curve25519_dalek::edwards::CompressedEdwardsY::from_slice(&spend_point).unwrap();
+    let spend_point_decompressed = spend_compressed.decompress().unwrap();
+    let tweaked_point = spend_point_decompressed + tweak_point;
+    tweaked_bytes.copy_from_slice(tweaked_point.compress().as_bytes());
+
+    VerifyingKey::from_bytes(&tweaked_bytes).unwrap()
 }
 
 pub fn derive_tweak_scalar(discovery_secret: &[u8; 32]) -> Scalar {
