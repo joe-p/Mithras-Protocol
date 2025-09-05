@@ -8,7 +8,7 @@ use hpke_rs::Hpke;
 use hpke_rs_libcrux::HpkeLibcrux;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
-use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
+use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret as X25519SecretKey};
 
 pub fn suite() -> Hpke<HpkeLibcrux> {
     Hpke::new(
@@ -69,7 +69,7 @@ impl From<UtxoSecrets> for [u8; SECRET_SIZE] {
 }
 
 pub fn compute_discovery_secret_sender(
-    ephemeral_private: &StaticSecret,
+    ephemeral_private: &X25519SecretKey,
     discovery_public: &X25519PublicKey,
 ) -> [u8; 32] {
     let shared_secret = ephemeral_private.diffie_hellman(discovery_public);
@@ -77,7 +77,7 @@ pub fn compute_discovery_secret_sender(
 }
 
 pub fn compute_discovery_secret_receiver(
-    discovery_private: &StaticSecret,
+    discovery_private: &X25519SecretKey,
     ephemeral_public: &X25519PublicKey,
 ) -> [u8; 32] {
     let shared_secret = discovery_private.diffie_hellman(ephemeral_public);
