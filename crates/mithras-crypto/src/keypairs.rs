@@ -3,17 +3,17 @@ use curve25519_dalek::{Scalar, constants::ED25519_BASEPOINT_TABLE};
 use ed25519_dalek::{Signature, SigningKey, VerifyingKey as Ed25519PublicKey};
 use rand::rngs::OsRng;
 use sha2::{Digest, Sha512};
-use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
+use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret as X25519SecretKey};
 
 #[derive(Clone)]
 pub struct DiscoveryKeypair {
-    private_key: StaticSecret,
+    private_key: X25519SecretKey,
     public_key: X25519PublicKey,
 }
 
 impl DiscoveryKeypair {
     pub fn generate() -> Self {
-        let private_key = StaticSecret::random_from_rng(OsRng);
+        let private_key = X25519SecretKey::random_from_rng(OsRng);
         let public_key = X25519PublicKey::from(&private_key);
         Self {
             private_key,
@@ -25,7 +25,7 @@ impl DiscoveryKeypair {
         &self.public_key
     }
 
-    pub fn private_key(&self) -> &StaticSecret {
+    pub fn private_key(&self) -> &X25519SecretKey {
         &self.private_key
     }
 }
