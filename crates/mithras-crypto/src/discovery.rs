@@ -1,3 +1,4 @@
+use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
 use hkdf::Hkdf;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
@@ -21,10 +22,10 @@ pub fn compute_discovery_secret_receiver(
 
 pub fn compute_discovery_tag(
     discovery_secret: &[u8; 32],
-    sender: &[u8],
+    sender: &Ed25519PublicKey,
     fv: u64,
     lv: u64,
-    lease: u64,
+    lease: [u8; 32],
 ) -> [u8; 32] {
     let salt = [0u8; 0];
     let hk = Hkdf::<Sha256>::new(Some(&salt), discovery_secret);
@@ -33,10 +34,10 @@ pub fn compute_discovery_tag(
     hk.expand(b"discovery-tag", &mut tag_key).unwrap();
 
     let mut hmac = Hmac::<Sha256>::new_from_slice(&tag_key).unwrap();
-    hmac.update(sender);
+    hmac.update(&sender.to_bytes());
     hmac.update(&fv.to_le_bytes());
     hmac.update(&lv.to_le_bytes());
-    hmac.update(&lease.to_le_bytes());
+    hmac.update(&lease);
 
     hmac.finalize().into_bytes().into()
 }

@@ -62,7 +62,10 @@ pub struct UtxoInputs {
 
 impl UtxoInputs {
     pub fn generate(
-        sender: ed25519_dalek::VerifyingKey,
+        sender: Ed25519PublicKey,
+        first_valid: u64,
+        last_valid: u64,
+        lease: [u8; 32],
         amount: u64,
         receiver: MithrasAddr,
     ) -> Result<Self, String> {
@@ -78,7 +81,7 @@ impl UtxoInputs {
         let tweaked_pubkey = derive_tweaked_pubkey(&receiver.spend_ed25519, &tweak_scalar);
 
         let discovery_tag =
-            compute_discovery_tag(&discovery_secret, &sender.to_bytes(), 1000, 2000, 3600);
+            compute_discovery_tag(&discovery_secret, &sender, first_valid, last_valid, lease);
 
         // TODO: ensure secrets are in scalar field
         let mut spending_secret = [0u8; 32];

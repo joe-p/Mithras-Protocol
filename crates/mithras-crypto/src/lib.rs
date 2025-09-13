@@ -88,12 +88,21 @@ mod tests {
             ephemeral_keypair.public_key(),
         );
 
-        let sender_data = b"sender_identifier";
-        let discovery_tag_sender =
-            compute_discovery_tag(&discovery_secret_sender, sender_data, 1000, 2000, 3600);
+        let discovery_tag_sender = compute_discovery_tag(
+            &discovery_secret_sender,
+            &VerifyingKey::from_bytes(&[0u8; 32]).unwrap(),
+            1000,
+            2000,
+            [0u8; 32],
+        );
 
-        let discovery_tag_receiver =
-            compute_discovery_tag(&discovery_secret_receiver, sender_data, 1000, 2000, 3600);
+        let discovery_tag_receiver = compute_discovery_tag(
+            &discovery_secret_receiver,
+            &VerifyingKey::from_bytes(&[0u8; 32]).unwrap(),
+            1000,
+            2000,
+            [0u8; 32],
+        );
 
         assert_eq!(discovery_tag_sender, discovery_tag_receiver);
     }
@@ -212,9 +221,13 @@ mod tests {
         let tweaked_keypair_sender =
             derive_tweaked_pubkey(spend_keypair.public_key(), &tweak_scalar);
 
-        let sender_data = b"sender_identifier";
-        let discovery_tag =
-            compute_discovery_tag(&discovery_secret_sender, sender_data, 1000, 2000, 3600);
+        let discovery_tag = compute_discovery_tag(
+            &discovery_secret_sender,
+            spend_keypair.public_key(),
+            1000,
+            2000,
+            [0u8; 32],
+        );
 
         let discovery_secret_receiver = compute_discovery_secret_receiver(
             discovery_keypair.private_key(),
@@ -233,8 +246,13 @@ mod tests {
             tweaked_keypair_receiver.public_key().to_bytes()
         );
 
-        let discovery_tag_receiver =
-            compute_discovery_tag(&discovery_secret_receiver, sender_data, 1000, 2000, 3600);
+        let discovery_tag_receiver = compute_discovery_tag(
+            &discovery_secret_receiver,
+            spend_keypair.public_key(),
+            1000,
+            2000,
+            [0u8; 32],
+        );
         assert_eq!(discovery_tag, discovery_tag_receiver);
 
         let msg = b"example spend authorization";
