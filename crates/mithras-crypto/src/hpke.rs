@@ -33,6 +33,7 @@ pub struct HpkeEnvelope {
         deserialize_with = "deserialize_ciphertext"
     )]
     pub ciphertext: [u8; CIPHER_TEXT_SIZE],
+    pub discoery_tag: [u8; 32],
 }
 
 pub fn suite() -> Hpke<HpkeLibcrux> {

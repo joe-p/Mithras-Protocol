@@ -25,7 +25,7 @@ pub fn compute_discovery_tag(
     fv: u64,
     lv: u64,
     lease: u64,
-) -> Vec<u8> {
+) -> [u8; 32] {
     let salt = [0u8; 0];
     let hk = Hkdf::<Sha256>::new(Some(&salt), discovery_secret);
 
@@ -38,5 +38,5 @@ pub fn compute_discovery_tag(
     hmac.update(&lv.to_le_bytes());
     hmac.update(&lease.to_le_bytes());
 
-    hmac.finalize().into_bytes().to_vec()
+    hmac.finalize().into_bytes().into()
 }

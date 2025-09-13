@@ -142,6 +142,7 @@ mod tests {
             suite: 1,
             encapsulated_key: encapsulated_key.clone().try_into().unwrap(),
             ciphertext: ct.clone().try_into().unwrap(),
+            discoery_tag: [0u8; 32],
         };
 
         let json = serde_json::to_string(&env)?;
@@ -273,6 +274,7 @@ mod tests {
             suite: 1,
             encapsulated_key: encapsulated_key.clone().try_into().unwrap(),
             ciphertext: ct.clone().try_into().unwrap(),
+            discoery_tag: [0u8; 32],
         };
 
         let json = serde_json::to_string(&env)?;
