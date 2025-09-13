@@ -1,123 +1,24 @@
 pub mod address;
+pub mod discovery;
+pub mod hpke;
 pub mod keypairs;
-
-use curve25519_dalek::Scalar;
-use hkdf::Hkdf;
-use hmac::{Hmac, Mac};
-use hpke_rs::Hpke;
-use hpke_rs_libcrux::HpkeLibcrux;
-use serde::{Deserialize, Serialize};
-use sha2::Sha256;
-use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret as X25519SecretKey};
-
-pub fn suite() -> Hpke<HpkeLibcrux> {
-    Hpke::new(
-        hpke_rs::Mode::Base,
-        hpke_rs::hpke_types::KemAlgorithm::DhKem25519,
-        hpke_rs::hpke_types::KdfAlgorithm::HkdfSha512,
-        hpke_rs::hpke_types::AeadAlgorithm::ChaCha20Poly1305,
-    )
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HpkeEnvelope {
-    /// The mithras version which determines the shape of the data in the plaintext
-    pub version: u8,
-    /// The HPKE suite identifier
-    pub suite: u8,
-    pub encapsulated_key_b64: String,
-    pub ciphertext_b64: String,
-}
-
-const SECRET_SIZE: usize = 104;
-
-pub struct UtxoSecrets {
-    pub spending_secret: [u8; 32],
-    pub nullifier_secret: [u8; 32],
-    pub amount: u64,
-    pub tweak_scalar: Scalar,
-}
-
-impl From<[u8; SECRET_SIZE]> for UtxoSecrets {
-    fn from(bytes: [u8; SECRET_SIZE]) -> Self {
-        let mut spending_secret = [0u8; 32];
-        let mut nullifier_secret = [0u8; 32];
-
-        spending_secret.copy_from_slice(&bytes[0..32]);
-        nullifier_secret.copy_from_slice(&bytes[32..64]);
-        let amount = u64::from_be_bytes(bytes[64..72].try_into().unwrap());
-        let tweak_scalar = Scalar::from_bytes_mod_order(bytes[72..104].try_into().unwrap());
-
-        Self {
-            spending_secret,
-            nullifier_secret,
-            amount,
-            tweak_scalar,
-        }
-    }
-}
-
-impl From<UtxoSecrets> for [u8; SECRET_SIZE] {
-    fn from(secret: UtxoSecrets) -> Self {
-        let mut bytes = [0u8; SECRET_SIZE];
-        bytes[0..32].copy_from_slice(&secret.spending_secret);
-        bytes[32..64].copy_from_slice(&secret.nullifier_secret);
-        bytes[64..72].copy_from_slice(&secret.amount.to_be_bytes());
-        bytes[72..104].copy_from_slice(&secret.tweak_scalar.to_bytes());
-        bytes
-    }
-}
-
-pub fn compute_discovery_secret_sender(
-    ephemeral_private: &X25519SecretKey,
-    discovery_public: &X25519PublicKey,
-) -> [u8; 32] {
-    let shared_secret = ephemeral_private.diffie_hellman(discovery_public);
-    *shared_secret.as_bytes()
-}
-
-pub fn compute_discovery_secret_receiver(
-    discovery_private: &X25519SecretKey,
-    ephemeral_public: &X25519PublicKey,
-) -> [u8; 32] {
-    let shared_secret = discovery_private.diffie_hellman(ephemeral_public);
-    *shared_secret.as_bytes()
-}
-
-pub fn compute_discovery_tag(
-    discovery_secret: &[u8; 32],
-    sender: &[u8],
-    fv: u64,
-    lv: u64,
-    lease: u64,
-) -> Vec<u8> {
-    let salt = [0u8; 0];
-    let hk = Hkdf::<Sha256>::new(Some(&salt), discovery_secret);
-
-    let mut tag_key = [0u8; 32];
-    hk.expand(b"discovery-tag", &mut tag_key).unwrap();
-
-    let mut hmac = Hmac::<Sha256>::new_from_slice(&tag_key).unwrap();
-    hmac.update(sender);
-    hmac.update(&fv.to_le_bytes());
-    hmac.update(&lv.to_le_bytes());
-    hmac.update(&lease.to_le_bytes());
-
-    hmac.finalize().into_bytes().to_vec()
-}
 
 #[cfg(test)]
 mod tests {
     use crate::{
         address::MithrasAddr,
+        discovery::{
+            compute_discovery_secret_receiver, compute_discovery_secret_sender,
+            compute_discovery_tag,
+        },
+        hpke::{HpkeEnvelope, SECRET_SIZE, UtxoSecrets, suite},
         keypairs::{
             DiscoveryKeypair, SpendSeed, TweakedSigner, derive_tweak_scalar, derive_tweaked_pubkey,
         },
     };
     use base64::{Engine as _, engine::general_purpose::STANDARD_NO_PAD as B64};
+    use curve25519_dalek::Scalar;
     use ed25519_dalek::Verifier;
-
-    use super::*;
 
     #[test]
     fn test_keypair_generation() {
