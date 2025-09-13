@@ -1,6 +1,6 @@
 use curve25519_dalek::Scalar;
 
-pub const SECRET_SIZE: usize = 104;
+pub const SECRET_SIZE: usize = 136;
 use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
 use getrandom::getrandom;
 use hpke_rs::HpkePublicKey;
@@ -18,6 +18,7 @@ pub struct UtxoSecrets {
     pub nullifier_secret: [u8; 32],
     pub amount: u64,
     pub tweak_scalar: Scalar,
+    pub tweaked_pubkey: Ed25519PublicKey,
 }
 
 impl From<[u8; SECRET_SIZE]> for UtxoSecrets {
@@ -29,12 +30,15 @@ impl From<[u8; SECRET_SIZE]> for UtxoSecrets {
         nullifier_secret.copy_from_slice(&bytes[32..64]);
         let amount = u64::from_be_bytes(bytes[64..72].try_into().unwrap());
         let tweak_scalar = Scalar::from_bytes_mod_order(bytes[72..104].try_into().unwrap());
+        let tweak_pubkey =
+            Ed25519PublicKey::from_bytes(&bytes[104..136].try_into().unwrap()).unwrap();
 
         Self {
             spending_secret,
             nullifier_secret,
             amount,
             tweak_scalar,
+            tweaked_pubkey: tweak_pubkey,
         }
     }
 }
@@ -46,13 +50,13 @@ impl From<UtxoSecrets> for [u8; SECRET_SIZE] {
         bytes[32..64].copy_from_slice(&secret.nullifier_secret);
         bytes[64..72].copy_from_slice(&secret.amount.to_be_bytes());
         bytes[72..104].copy_from_slice(&secret.tweak_scalar.to_bytes());
+        bytes[104..136].copy_from_slice(&secret.tweaked_pubkey.to_bytes());
         bytes
     }
 }
 
 pub struct UtxoInputs {
     pub secrets: UtxoSecrets,
-    pub receiver: Ed25519PublicKey,
     pub hpke_envelope: HpkeEnvelope,
 }
 
@@ -102,7 +106,9 @@ impl UtxoInputs {
             nullifier_secret,
             amount,
             tweak_scalar,
+            tweaked_pubkey,
         };
+
         let secret_bytes: [u8; SECRET_SIZE] = mithras_secret.clone().into();
         let ct = sender_ctx.seal(aad, &secret_bytes).unwrap();
 
@@ -116,7 +122,6 @@ impl UtxoInputs {
 
         Ok(UtxoInputs {
             secrets: mithras_secret,
-            receiver: tweaked_pubkey,
             hpke_envelope,
         })
     }

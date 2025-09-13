@@ -20,7 +20,7 @@ mod tests {
     };
 
     use curve25519_dalek::Scalar;
-    use ed25519_dalek::Verifier;
+    use ed25519_dalek::{Verifier, VerifyingKey};
 
     #[test]
     fn test_keypair_generation() {
@@ -133,6 +133,7 @@ mod tests {
             nullifier_secret: [43u8; 32],
             amount: 1000,
             tweak_scalar: Scalar::from(7u64),
+            tweaked_pubkey: VerifyingKey::from_bytes(&[0u8; 32])?,
         };
         let secret_bytes: [u8; SECRET_SIZE] = mithras_secret.into();
         let ct = sender_ctx.seal(aad, &secret_bytes).unwrap();
@@ -265,6 +266,7 @@ mod tests {
             nullifier_secret: [43u8; 32],
             amount: 1000,
             tweak_scalar,
+            tweaked_pubkey: *tweaked_keypair_receiver.public_key(),
         };
         let secret_bytes: [u8; SECRET_SIZE] = mithras_secret.into();
         let ct = sender_ctx.seal(aad, &secret_bytes).unwrap();
