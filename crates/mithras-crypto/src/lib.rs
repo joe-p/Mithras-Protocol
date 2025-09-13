@@ -16,7 +16,7 @@ mod tests {
         keypairs::{
             DiscoveryKeypair, SpendSeed, TweakedSigner, derive_tweak_scalar, derive_tweaked_pubkey,
         },
-        utxo::{SECRET_SIZE, UtxoSecrets},
+        utxo::{SECRET_SIZE, UtxoInputs, UtxoSecrets},
     };
 
     use curve25519_dalek::Scalar;
@@ -196,6 +196,89 @@ mod tests {
         let encoded_addr = mithras_addr.encode();
         let decoded_addr = MithrasAddr::decode(&encoded_addr)?;
 
+        assert_eq!(decoded_addr.version, mithras_addr.version);
+        assert_eq!(decoded_addr.network, mithras_addr.network);
+        assert_eq!(decoded_addr.suite, mithras_addr.suite);
+        assert_eq!(decoded_addr.spend_ed25519, mithras_addr.spend_ed25519);
+        assert_eq!(decoded_addr.disc_x25519, mithras_addr.disc_x25519);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_complete_mithras_protocol_flow_with_utxo_generate() -> anyhow::Result<()> {
+        let spend_keypair = SpendSeed::generate();
+        let discovery_keypair = DiscoveryKeypair::generate();
+
+        let mithras_addr = MithrasAddr::from_keys(
+            spend_keypair.public_key(),
+            discovery_keypair.public_key(),
+            1,
+            0,
+            1,
+        );
+
+        let sender_pubkey = *spend_keypair.public_key();
+        let first_valid = 1000;
+        let last_valid = 2000;
+        let lease = [0u8; 32];
+        let amount = 1000;
+
+        let utxo_inputs = UtxoInputs::generate(
+            sender_pubkey,
+            first_valid,
+            last_valid,
+            lease,
+            amount,
+            mithras_addr.clone(),
+        )
+        .map_err(|e| anyhow::anyhow!(e))?;
+
+        let hpke = suite();
+        let info = b"mithras|network:testnet|app:1337|v:1";
+        let aad = b"txid:BLAH...BLAH";
+
+        let hpke_recipient_private =
+            hpke_rs::HpkePrivateKey::new(discovery_keypair.private_key().to_bytes().to_vec());
+
+        let mut recv_ctx = hpke
+            .setup_receiver(
+                &utxo_inputs.hpke_envelope.encapsulated_key,
+                &hpke_recipient_private,
+                info,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+
+        let pt = recv_ctx
+            .open(aad, &utxo_inputs.hpke_envelope.ciphertext)
+            .unwrap();
+        let pt_array: [u8; SECRET_SIZE] = pt.try_into().unwrap();
+        let recovered_secrets = UtxoSecrets::from(pt_array);
+
+        assert_eq!(recovered_secrets.amount, utxo_inputs.secrets.amount);
+        assert_eq!(
+            recovered_secrets.tweak_scalar,
+            utxo_inputs.secrets.tweak_scalar
+        );
+        assert_eq!(
+            recovered_secrets.tweaked_pubkey.to_bytes(),
+            utxo_inputs.secrets.tweaked_pubkey.to_bytes()
+        );
+
+        let msg = b"example spend authorization";
+        let tweaked_signer = TweakedSigner::derive(&spend_keypair, &recovered_secrets.tweak_scalar);
+        let sig = tweaked_signer.sign(msg);
+
+        let verify_res = tweaked_signer.public_key().verify_strict(msg, &sig);
+        if verify_res.is_err() {
+            tweaked_signer.public_key().verify(msg, &sig).unwrap();
+        }
+
+        let encoded_addr = mithras_addr.encode();
+        let decoded_addr = MithrasAddr::decode(&encoded_addr)?;
         assert_eq!(decoded_addr.version, mithras_addr.version);
         assert_eq!(decoded_addr.network, mithras_addr.network);
         assert_eq!(decoded_addr.suite, mithras_addr.suite);
