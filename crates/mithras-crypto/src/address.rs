@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow};
 use bech32::Hrp;
-use ed25519_dalek::VerifyingKey;
+use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
 use serde::{Deserialize, Serialize};
 use x25519_dalek::PublicKey as X25519PublicKey;
 
@@ -9,8 +9,8 @@ pub struct MithrasAddr {
     pub version: u8,
     pub network: u8,
     pub suite: u8,
-    pub spend_ed25519: [u8; 32],
-    pub disc_x25519: [u8; 32],
+    pub spend_ed25519: Ed25519PublicKey,
+    pub disc_x25519: X25519PublicKey,
 }
 
 impl MithrasAddr {
@@ -19,8 +19,8 @@ impl MithrasAddr {
         data.push(self.version);
         data.push(self.network);
         data.push(self.suite);
-        data.extend_from_slice(&self.spend_ed25519);
-        data.extend_from_slice(&self.disc_x25519);
+        data.extend_from_slice(&self.spend_ed25519.to_bytes());
+        data.extend_from_slice(&self.disc_x25519.to_bytes());
         bech32::encode::<bech32::Bech32m>(Hrp::parse_unchecked("mith"), &data).unwrap()
     }
 
@@ -36,7 +36,9 @@ impl MithrasAddr {
         let network = data[1];
         let suite = data[2];
         let spend = data[3..35].try_into()?;
-        let disc = data[35..67].try_into()?;
+        let disc_arr: [u8; 32] = data[35..67].try_into()?;
+        let disc = X25519PublicKey::from(disc_arr);
+
         Ok(Self {
             version,
             network,
@@ -47,20 +49,18 @@ impl MithrasAddr {
     }
 
     pub fn from_keys(
-        spend: &VerifyingKey,
+        spend: &Ed25519PublicKey,
         disc: &X25519PublicKey,
         version: u8,
         network: u8,
         suite: u8,
     ) -> Self {
-        let spend_bytes = spend.to_bytes();
-        let disc_bytes = disc.as_bytes();
         Self {
             version,
             network,
             suite,
-            spend_ed25519: spend_bytes,
-            disc_x25519: *disc_bytes,
+            spend_ed25519: *spend,
+            disc_x25519: *disc,
         }
     }
 }

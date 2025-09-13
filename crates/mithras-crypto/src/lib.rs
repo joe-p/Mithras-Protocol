@@ -2,6 +2,7 @@ pub mod address;
 pub mod discovery;
 pub mod hpke;
 pub mod keypairs;
+pub mod utxo;
 
 #[cfg(test)]
 mod tests {
@@ -11,12 +12,13 @@ mod tests {
             compute_discovery_secret_receiver, compute_discovery_secret_sender,
             compute_discovery_tag,
         },
-        hpke::{HpkeEnvelope, SECRET_SIZE, UtxoSecrets, suite},
+        hpke::{HpkeEnvelope, suite},
         keypairs::{
             DiscoveryKeypair, SpendSeed, TweakedSigner, derive_tweak_scalar, derive_tweaked_pubkey,
         },
+        utxo::{SECRET_SIZE, UtxoSecrets},
     };
-    use base64::{Engine as _, engine::general_purpose::STANDARD_NO_PAD as B64};
+
     use curve25519_dalek::Scalar;
     use ed25519_dalek::Verifier;
 
@@ -138,18 +140,18 @@ mod tests {
         let env = HpkeEnvelope {
             version: 1,
             suite: 1,
-            encapsulated_key_b64: B64.encode(&encapsulated_key),
-            ciphertext_b64: B64.encode(&ct),
+            encapsulated_key: encapsulated_key.clone().try_into().unwrap(),
+            ciphertext: ct.clone().try_into().unwrap(),
         };
 
         let json = serde_json::to_string(&env)?;
         let env2: HpkeEnvelope = serde_json::from_str(&json)?;
-        let enclosed_key_bytes = B64.decode(&env2.encapsulated_key_b64)?;
-        let ct_bytes = B64.decode(&env2.ciphertext_b64)?;
+        let enclosed_key_bytes = &env2.encapsulated_key;
+        let ct_bytes = &env2.ciphertext;
 
         let mut recv_ctx = hpke
             .setup_receiver(
-                enclosed_key_bytes.as_slice(),
+                enclosed_key_bytes,
                 hpke_recipient.private_key(),
                 info,
                 None,
@@ -158,7 +160,7 @@ mod tests {
             )
             .unwrap();
 
-        let pt = recv_ctx.open(aad, ct_bytes.as_slice()).unwrap();
+        let pt = recv_ctx.open(aad, ct_bytes).unwrap();
 
         assert_eq!(&pt, &secret_bytes);
         Ok(())
@@ -269,18 +271,18 @@ mod tests {
         let env = HpkeEnvelope {
             version: 1,
             suite: 1,
-            encapsulated_key_b64: B64.encode(&encapsulated_key),
-            ciphertext_b64: B64.encode(&ct),
+            encapsulated_key: encapsulated_key.clone().try_into().unwrap(),
+            ciphertext: ct.clone().try_into().unwrap(),
         };
 
         let json = serde_json::to_string(&env)?;
         let env2: HpkeEnvelope = serde_json::from_str(&json)?;
-        let enclosed_key_bytes = B64.decode(&env2.encapsulated_key_b64)?;
-        let ct_bytes = B64.decode(&env2.ciphertext_b64)?;
+        let enclosed_key_bytes = &env2.encapsulated_key;
+        let ct_bytes = &env2.ciphertext;
 
         let mut recv_ctx = hpke
             .setup_receiver(
-                enclosed_key_bytes.as_slice(),
+                enclosed_key_bytes,
                 hpke_recipient.private_key(),
                 info,
                 None,
@@ -289,7 +291,7 @@ mod tests {
             )
             .unwrap();
 
-        let pt = recv_ctx.open(aad, ct_bytes.as_slice()).unwrap();
+        let pt = recv_ctx.open(aad, ct_bytes).unwrap();
 
         assert_eq!(&pt, &secret_bytes);
 
