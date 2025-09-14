@@ -3,6 +3,10 @@ members = [
     "crates/mithras-crypto", "crates/mithras-crypto-ffi", "tools/uniffi-bindgen"
 ]
 resolver = "3"
+exclude = [
+    "rust_modules/wasm",
+]
+
 
 [workspace.dependencies]
 uniffi = "0.29.4"

@@ -3,6 +3,7 @@ use std::sync::Arc;
 use mithras_crypto::{keypairs::DiscoveryKeypair, utxo::UtxoSecrets as RustUtxoSecrets};
 
 use crate::{
+    MithrasCryptoError,
     address::MithrasAddr,
     hpke::{HpkeEnvelope, TransactionMetadata},
 };
@@ -81,11 +82,12 @@ impl UtxoInputs {
         txn_metadata: TransactionMetadata,
         amount: u64,
         receiver: Arc<MithrasAddr>,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, MithrasCryptoError> {
         let rust_txn_metadata: mithras_crypto::hpke::TransactionMetadata = txn_metadata.into();
         let rust_receiver: mithras_crypto::address::MithrasAddr = receiver.rust.clone();
         let rust_utxo_inputs =
-            mithras_crypto::utxo::UtxoInputs::generate(&rust_txn_metadata, amount, &rust_receiver)?;
+            mithras_crypto::utxo::UtxoInputs::generate(&rust_txn_metadata, amount, &rust_receiver)
+                .map_err(|e| MithrasCryptoError::Error(e.to_string()))?;
         Ok(UtxoInputs {
             rust: rust_utxo_inputs,
         })

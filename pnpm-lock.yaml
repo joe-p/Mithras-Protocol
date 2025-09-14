@@ -11,6 +11,9 @@ importers:
       snarkjs-algorand:
         specifier: 0.6.0
         version: 0.6.0(typescript@5.9.2)
+      uniffi-bindgen-react-native:
+        specifier: 0.29.3-1
+        version: 0.29.3-1
     devDependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.1.2
@@ -30,6 +33,9 @@ importers:
       circom_tester:
         specifier: ^0.0.24
         version: 0.0.24
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.3.0)
@@ -853,6 +859,11 @@ packages:
     resolution: {integrity: sha512-ESF23V4SKG6lVSGZgYNpbsiaAkdab6ZgOxe52p7+Kid3W3u3bxR4Vfd/o21dmN7jSt0IwgZ4v5MUd26FEtXE9w==}
     engines: {node: '>= 0.8.0'}
 
+  prettier@3.6.2:
+    resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
+    engines: {node: '>=14'}
+    hasBin: true
+
   r1csfile@0.0.48:
     resolution: {integrity: sha512-kHRkKUJNaor31l05f2+RFzvcH5XSa7OfEfd/l4hzjte6NL6fjRkSMfZ4BjySW9wmfdwPOtq3mXurzPvPGEf5Tw==}
 
@@ -992,6 +1003,10 @@ packages:
 
   undici-types@7.10.0:
     resolution: {integrity: sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag==}
+
+  uniffi-bindgen-react-native@0.29.3-1:
+    resolution: {integrity: sha512-o6gXZsAh55yuvhwF2WSFdIHV4phyfWcCmg4DuyfJWJ7CvUz1UcIz2S4u9SmXAz1jsuqvu6Xc9hexrRBB0a5osg==}
+    hasBin: true
 
   upath@2.0.1:
     resolution: {integrity: sha512-1uEe95xksV1O0CYKXo8vQvN1JEbtJp7lb7C5U9HMsIp6IVwntkH/oNUzyVNQSd4S1sYk2FpSSW44FqMc8qee5w==}
@@ -1874,6 +1889,8 @@ snapshots:
 
   prelude-ls@1.1.2: {}
 
+  prettier@3.6.2: {}
+
   r1csfile@0.0.48:
     dependencies:
       '@iden3/bigarray': 0.0.2
@@ -2040,6 +2057,8 @@ snapshots:
   underscore@1.12.1: {}
 
   undici-types@7.10.0: {}
+
+  uniffi-bindgen-react-native@0.29.3-1: {}
 
   upath@2.0.1: {}
 

@@ -6,6 +6,8 @@ use mithras_crypto::hpke::{
 use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
 use x25519_dalek::PublicKey as X25519PublicKey;
 
+use crate::MithrasCryptoError;
+
 #[derive(uniffi::Object)]
 pub struct MithrasAddr {
     pub rust: RustMithrasAddr,
@@ -18,10 +20,10 @@ impl MithrasAddr {
     }
 
     #[uniffi::constructor]
-    pub fn decode(s: &str) -> Result<Self, String> {
+    pub fn decode(s: &str) -> Result<Self, MithrasCryptoError> {
         match RustMithrasAddr::decode(s) {
             Ok(addr) => Ok(MithrasAddr { rust: addr }),
-            Err(e) => Err(format!("Failed to decode address: {}", e)),
+            Err(e) => Err(MithrasCryptoError::Error(e.to_string())),
         }
     }
 

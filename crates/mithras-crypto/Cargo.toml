@@ -9,8 +9,7 @@ hpke-rs = "0.3"
 hpke-rs-libcrux = "0.3"
 
 # RNG; the "js" feature makes randomness work in browsers/wasm
-getrandom = { version = "0.2", features = ["js"] }
-rand = "0.8"
+getrandom = { version = "0.3", features = ["wasm_js"] }
 
 # Simple serialization helpers for an on-chain/off-chain envelope
 serde = { version = "1", features = ["derive"] }

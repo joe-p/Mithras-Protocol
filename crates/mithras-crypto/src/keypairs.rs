@@ -1,7 +1,6 @@
 use curve25519_dalek::scalar::clamp_integer;
 use curve25519_dalek::{Scalar, constants::ED25519_BASEPOINT_TABLE};
 use ed25519_dalek::{Signature, SigningKey, VerifyingKey as Ed25519PublicKey};
-use rand::rngs::OsRng;
 use sha2::{Digest, Sha512};
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret as X25519SecretKey};
 
@@ -13,7 +12,10 @@ pub struct DiscoveryKeypair {
 
 impl DiscoveryKeypair {
     pub fn generate() -> Self {
-        let private_key = X25519SecretKey::random_from_rng(OsRng);
+        let mut secret_key: [u8; 32] = [0u8; 32];
+
+        getrandom::fill(&mut secret_key).unwrap();
+        let private_key = X25519SecretKey::from(secret_key);
         let public_key = X25519PublicKey::from(&private_key);
         Self {
             private_key,
@@ -47,9 +49,9 @@ pub struct SpendSeed {
 
 impl SpendSeed {
     pub fn generate() -> Self {
-        use rand::RngCore as _;
         let mut seed = [0u8; 32];
-        OsRng.fill_bytes(&mut seed);
+        getrandom::fill(&mut seed).unwrap();
+
         let sk = SigningKey::from_bytes(&seed);
         let public_key = sk.verifying_key();
 

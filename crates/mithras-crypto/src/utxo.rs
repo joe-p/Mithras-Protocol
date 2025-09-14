@@ -2,7 +2,6 @@ use curve25519_dalek::Scalar;
 
 pub const SECRET_SIZE: usize = 136;
 use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
-use getrandom::getrandom;
 use hpke_rs::HpkePublicKey;
 
 use crate::{
@@ -118,10 +117,10 @@ impl UtxoInputs {
 
         // TODO: ensure secrets are in scalar field
         let mut spending_secret = [0u8; 32];
-        getrandom(&mut spending_secret).map_err(|e| e.to_string())?;
+        getrandom::fill(&mut spending_secret).map_err(|e| e.to_string())?;
 
         let mut nullifier_secret = [0u8; 32];
-        getrandom(&mut nullifier_secret).map_err(|e| e.to_string())?;
+        getrandom::fill(&mut nullifier_secret).map_err(|e| e.to_string())?;
 
         let (encapsulated_key, mut sender_ctx) = hpke
             .setup_sender(

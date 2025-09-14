@@ -8,4 +8,8 @@ contracts/out/*
 !contracts/out/*.approval.teal
 !__test__/contracts/out/*.approval.teal
 
+# Generated files from uniffi
+rust_modules/
+pkg/
+
 ceremonies/*/*.ptau
