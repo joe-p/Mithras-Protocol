@@ -12,13 +12,43 @@ use crate::{
     keypairs::{DiscoveryKeypair, derive_tweak_scalar, derive_tweaked_pubkey},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct UtxoSecrets {
     pub spending_secret: [u8; 32],
     pub nullifier_secret: [u8; 32],
     pub amount: u64,
     pub tweak_scalar: Scalar,
     pub tweaked_pubkey: Ed25519PublicKey,
+}
+
+impl UtxoSecrets {
+    pub fn from_hpke_envelope(
+        hpke_envelope: HpkeEnvelope,
+        discovery_keypair: DiscoveryKeypair,
+    ) -> Self {
+        let hpke = suite();
+
+        let info = b"mithras|network:testnet|app:1337|v:1";
+        let aad = b"txid:BLAH...BLAH";
+
+        let hpke_recipient_private =
+            hpke_rs::HpkePrivateKey::new(discovery_keypair.private_key().to_bytes().to_vec());
+
+        let mut recv_ctx = hpke
+            .setup_receiver(
+                &hpke_envelope.encapsulated_key,
+                &hpke_recipient_private,
+                info,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+
+        let pt = recv_ctx.open(aad, &hpke_envelope.ciphertext).unwrap();
+        let pt_array: [u8; SECRET_SIZE] = pt.try_into().unwrap();
+        UtxoSecrets::from(pt_array)
+    }
 }
 
 impl From<[u8; SECRET_SIZE]> for UtxoSecrets {
@@ -55,6 +85,7 @@ impl From<UtxoSecrets> for [u8; SECRET_SIZE] {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct UtxoInputs {
     pub secrets: UtxoSecrets,
     pub hpke_envelope: HpkeEnvelope,

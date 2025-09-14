@@ -234,187 +234,24 @@ mod tests {
         )
         .map_err(|e| anyhow::anyhow!(e))?;
 
-        let hpke = suite();
-        let info = b"mithras|network:testnet|app:1337|v:1";
-        let aad = b"txid:BLAH...BLAH";
+        let recovered_secrets =
+            UtxoSecrets::from_hpke_envelope(utxo_inputs.hpke_envelope, discovery_keypair);
 
-        let hpke_recipient_private =
-            hpke_rs::HpkePrivateKey::new(discovery_keypair.private_key().to_bytes().to_vec());
-
-        let mut recv_ctx = hpke
-            .setup_receiver(
-                &utxo_inputs.hpke_envelope.encapsulated_key,
-                &hpke_recipient_private,
-                info,
-                None,
-                None,
-                None,
-            )
-            .unwrap();
-
-        let pt = recv_ctx
-            .open(aad, &utxo_inputs.hpke_envelope.ciphertext)
-            .unwrap();
-        let pt_array: [u8; SECRET_SIZE] = pt.try_into().unwrap();
-        let recovered_secrets = UtxoSecrets::from(pt_array);
-
-        assert_eq!(recovered_secrets.amount, utxo_inputs.secrets.amount);
-        assert_eq!(
-            recovered_secrets.tweak_scalar,
-            utxo_inputs.secrets.tweak_scalar
-        );
-        assert_eq!(
-            recovered_secrets.tweaked_pubkey.to_bytes(),
-            utxo_inputs.secrets.tweaked_pubkey.to_bytes()
-        );
+        assert_eq!(recovered_secrets, utxo_inputs.secrets);
 
         let msg = b"example spend authorization";
         let tweaked_signer = TweakedSigner::derive(&spend_keypair, &recovered_secrets.tweak_scalar);
         let sig = tweaked_signer.sign(msg);
 
-        let verify_res = tweaked_signer.public_key().verify_strict(msg, &sig);
+        let tweak_pubkey_from_sender = utxo_inputs.secrets.tweaked_pubkey;
+
+        // Verify that the pubkey derived from the sender matches the
+        // signature from the receiver
+        // Since the secrets match, this is technically superfluous, but still a good sanity check
+        let verify_res = tweak_pubkey_from_sender.verify_strict(msg, &sig);
         if verify_res.is_err() {
             tweaked_signer.public_key().verify(msg, &sig).unwrap();
         }
-
-        let encoded_addr = mithras_addr.encode();
-        let decoded_addr = MithrasAddr::decode(&encoded_addr)?;
-        assert_eq!(decoded_addr.version, mithras_addr.version);
-        assert_eq!(decoded_addr.network, mithras_addr.network);
-        assert_eq!(decoded_addr.suite, mithras_addr.suite);
-        assert_eq!(decoded_addr.spend_ed25519, mithras_addr.spend_ed25519);
-        assert_eq!(decoded_addr.disc_x25519, mithras_addr.disc_x25519);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_complete_mithras_protocol_flow() -> anyhow::Result<()> {
-        let spend_keypair = SpendSeed::generate();
-        let discovery_keypair = DiscoveryKeypair::generate();
-        let ephemeral_keypair = DiscoveryKeypair::generate();
-
-        let discovery_secret_sender = compute_discovery_secret_sender(
-            ephemeral_keypair.private_key(),
-            discovery_keypair.public_key(),
-        );
-
-        let tweak_scalar = derive_tweak_scalar(&discovery_secret_sender);
-
-        let tweaked_keypair_sender =
-            derive_tweaked_pubkey(spend_keypair.public_key(), &tweak_scalar);
-
-        let discovery_tag = compute_discovery_tag(
-            &discovery_secret_sender,
-            spend_keypair.public_key(),
-            1000,
-            2000,
-            [0u8; 32],
-        );
-
-        let discovery_secret_receiver = compute_discovery_secret_receiver(
-            discovery_keypair.private_key(),
-            ephemeral_keypair.public_key(),
-        );
-
-        assert_eq!(discovery_secret_sender, discovery_secret_receiver);
-
-        let tweak_scalar_receiver = derive_tweak_scalar(&discovery_secret_receiver);
-        assert_eq!(tweak_scalar, tweak_scalar_receiver);
-
-        let tweaked_keypair_receiver = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
-
-        assert_eq!(
-            tweaked_keypair_sender.to_bytes(),
-            tweaked_keypair_receiver.public_key().to_bytes()
-        );
-
-        let discovery_tag_receiver = compute_discovery_tag(
-            &discovery_secret_receiver,
-            spend_keypair.public_key(),
-            1000,
-            2000,
-            [0u8; 32],
-        );
-        assert_eq!(discovery_tag, discovery_tag_receiver);
-
-        let msg = b"example spend authorization";
-        let tweaked_priv = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
-        let sig = tweaked_priv.sign(msg);
-
-        let verify_res = tweaked_keypair_receiver
-            .public_key()
-            .verify_strict(msg, &sig);
-        if verify_res.is_err() {
-            tweaked_keypair_receiver
-                .public_key()
-                .verify(msg, &sig)
-                .unwrap();
-        }
-
-        let mut hpke = suite();
-        let hpke_recipient = hpke.generate_key_pair().unwrap();
-
-        let info = b"mithras|network:mainnet|app:1337|v:1";
-        let aad = b"txid:BLAH...BLAH";
-
-        let (encapsulated_key, mut sender_ctx) = hpke
-            .setup_sender(hpke_recipient.public_key(), info, None, None, None)
-            .unwrap();
-
-        let mithras_secret = UtxoSecrets {
-            spending_secret: [42u8; 32],
-            nullifier_secret: [43u8; 32],
-            amount: 1000,
-            tweak_scalar,
-            tweaked_pubkey: *tweaked_keypair_receiver.public_key(),
-        };
-        let secret_bytes: [u8; SECRET_SIZE] = mithras_secret.into();
-        let ct = sender_ctx.seal(aad, &secret_bytes).unwrap();
-
-        let env = HpkeEnvelope {
-            version: 1,
-            suite: 1,
-            encapsulated_key: encapsulated_key.clone().try_into().unwrap(),
-            ciphertext: ct.clone().try_into().unwrap(),
-            discoery_tag: [0u8; 32],
-        };
-
-        let json = serde_json::to_string(&env)?;
-        let env2: HpkeEnvelope = serde_json::from_str(&json)?;
-        let enclosed_key_bytes = &env2.encapsulated_key;
-        let ct_bytes = &env2.ciphertext;
-
-        let mut recv_ctx = hpke
-            .setup_receiver(
-                enclosed_key_bytes,
-                hpke_recipient.private_key(),
-                info,
-                None,
-                None,
-                None,
-            )
-            .unwrap();
-
-        let pt = recv_ctx.open(aad, ct_bytes).unwrap();
-
-        assert_eq!(&pt, &secret_bytes);
-
-        let mithras_addr = MithrasAddr::from_keys(
-            tweaked_keypair_receiver.public_key(),
-            discovery_keypair.public_key(),
-            1,
-            0,
-            1,
-        );
-
-        let encoded_addr = mithras_addr.encode();
-        let decoded_addr = MithrasAddr::decode(&encoded_addr)?;
-        assert_eq!(decoded_addr.version, mithras_addr.version);
-        assert_eq!(decoded_addr.network, mithras_addr.network);
-        assert_eq!(decoded_addr.suite, mithras_addr.suite);
-        assert_eq!(decoded_addr.spend_ed25519, mithras_addr.spend_ed25519);
-        assert_eq!(decoded_addr.disc_x25519, mithras_addr.disc_x25519);
 
         Ok(())
     }

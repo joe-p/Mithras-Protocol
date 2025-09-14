@@ -21,7 +21,7 @@ where
         .map_err(|_| serde::de::Error::custom("wrong length"))
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct HpkeEnvelope {
     /// The mithras version which determines the shape of the data in the plaintext
     pub version: u8,
