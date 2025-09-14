@@ -12,7 +12,7 @@ mod tests {
             compute_discovery_secret_receiver, compute_discovery_secret_sender,
             compute_discovery_tag,
         },
-        hpke::{HpkeEnvelope, suite},
+        hpke::{HpkeEnvelope, SupportedHpkeSuite},
         keypairs::{
             DiscoveryKeypair, SpendSeed, TweakedSigner, derive_tweak_scalar, derive_tweaked_pubkey,
         },
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn test_hpke_encryption_decryption() -> anyhow::Result<()> {
-        let mut hpke = suite();
+        let mut hpke = SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305.suite();
         let hpke_recipient = hpke.generate_key_pair().unwrap();
 
         let info = b"mithras|network:mainnet|app:1337|v:1"; // used by KDF
@@ -149,7 +149,7 @@ mod tests {
 
         let env = HpkeEnvelope {
             version: 1,
-            suite: 1,
+            suite: SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
             encapsulated_key: encapsulated_key.clone().try_into().unwrap(),
             ciphertext: ct.clone().try_into().unwrap(),
             discoery_tag: [0u8; 32],

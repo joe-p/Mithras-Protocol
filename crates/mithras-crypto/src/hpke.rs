@@ -21,12 +21,33 @@ where
         .map_err(|_| serde::de::Error::custom("wrong length"))
 }
 
+/// Supported HPKE suites in Mithras. Currently, only one suite is supported which uses X25519,
+/// this not PQ-secure. In the future, PQ suites may be supported. See the tracking issue here:
+/// https://github.com/joe-p/Mithras-Protocol/issues/21
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub enum SupportedHpkeSuite {
+    Base25519Sha512ChaCha20Poly1305 = 0x00,
+}
+
+impl SupportedHpkeSuite {
+    pub fn suite(&self) -> Hpke<HpkeLibcrux> {
+        match self {
+            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305 => Hpke::new(
+                hpke_rs::Mode::Base,
+                hpke_rs::hpke_types::KemAlgorithm::DhKem25519,
+                hpke_rs::hpke_types::KdfAlgorithm::HkdfSha512,
+                hpke_rs::hpke_types::AeadAlgorithm::ChaCha20Poly1305,
+            ),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct HpkeEnvelope {
     /// The mithras version which determines the shape of the data in the plaintext
     pub version: u8,
     /// The HPKE suite identifier
-    pub suite: u8,
+    pub suite: SupportedHpkeSuite,
     pub encapsulated_key: [u8; 32],
     #[serde(
         serialize_with = "serialize_ciphertext",
@@ -34,13 +55,4 @@ pub struct HpkeEnvelope {
     )]
     pub ciphertext: [u8; CIPHER_TEXT_SIZE],
     pub discoery_tag: [u8; 32],
-}
-
-pub fn suite() -> Hpke<HpkeLibcrux> {
-    Hpke::new(
-        hpke_rs::Mode::Base,
-        hpke_rs::hpke_types::KemAlgorithm::DhKem25519,
-        hpke_rs::hpke_types::KdfAlgorithm::HkdfSha512,
-        hpke_rs::hpke_types::AeadAlgorithm::ChaCha20Poly1305,
-    )
 }

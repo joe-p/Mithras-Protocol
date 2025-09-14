@@ -8,7 +8,7 @@ use hpke_rs::HpkePublicKey;
 use crate::{
     address::MithrasAddr,
     discovery::{compute_discovery_secret_sender, compute_discovery_tag},
-    hpke::{HpkeEnvelope, suite},
+    hpke::{HpkeEnvelope, SupportedHpkeSuite},
     keypairs::{DiscoveryKeypair, derive_tweak_scalar, derive_tweaked_pubkey},
 };
 
@@ -26,7 +26,7 @@ impl UtxoSecrets {
         hpke_envelope: HpkeEnvelope,
         discovery_keypair: DiscoveryKeypair,
     ) -> Self {
-        let hpke = suite();
+        let hpke = SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305.suite();
 
         let info = b"mithras|network:testnet|app:1337|v:1";
         let aad = b"txid:BLAH...BLAH";
@@ -100,7 +100,7 @@ impl UtxoInputs {
         amount: u64,
         receiver: MithrasAddr,
     ) -> Result<Self, String> {
-        let mut hpke = suite();
+        let mut hpke = SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305.suite();
 
         let ephemeral_keypair = DiscoveryKeypair::generate();
 
@@ -148,7 +148,7 @@ impl UtxoInputs {
 
         let hpke_envelope = HpkeEnvelope {
             version: 1,
-            suite: 1,
+            suite: SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
             encapsulated_key: encapsulated_key.try_into().unwrap(),
             ciphertext: ct.try_into().unwrap(),
             discoery_tag: discovery_tag,
