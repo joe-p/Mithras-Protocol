@@ -12,7 +12,7 @@ mod tests {
             compute_discovery_secret_receiver, compute_discovery_secret_sender,
             compute_discovery_tag,
         },
-        hpke::{HpkeEnvelope, SupportedHpkeSuite},
+        hpke::{HpkeEnvelope, SupportedHpkeSuite, TransactionMetadata},
         keypairs::{
             DiscoveryKeypair, SpendSeed, TweakedSigner, derive_tweak_scalar, derive_tweaked_pubkey,
         },
@@ -218,24 +218,28 @@ mod tests {
             1,
         );
 
-        let sender_pubkey = *spend_keypair.public_key();
         let first_valid = 1000;
         let last_valid = 2000;
         let lease = [0u8; 32];
         let amount = 1000;
 
-        let utxo_inputs = UtxoInputs::generate(
-            sender_pubkey,
+        let txn_metadata = TransactionMetadata {
+            sender: VerifyingKey::from_bytes(&[0u8; 32])?,
             first_valid,
             last_valid,
             lease,
-            amount,
-            mithras_addr.clone(),
-        )
-        .map_err(|e| anyhow::anyhow!(e))?;
+            network: crate::hpke::SupportedNetwork::Mainnet,
+            app_id: 1337,
+        };
 
-        let recovered_secrets =
-            UtxoSecrets::from_hpke_envelope(utxo_inputs.hpke_envelope, discovery_keypair);
+        let utxo_inputs = UtxoInputs::generate(&txn_metadata, amount, mithras_addr.clone())
+            .map_err(|e| anyhow::anyhow!(e))?;
+
+        let recovered_secrets = UtxoSecrets::from_hpke_envelope(
+            utxo_inputs.hpke_envelope,
+            discovery_keypair,
+            &txn_metadata,
+        );
 
         assert_eq!(recovered_secrets, utxo_inputs.secrets);
 

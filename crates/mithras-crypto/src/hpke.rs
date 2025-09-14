@@ -1,3 +1,6 @@
+use std::fmt::Display;
+
+use ed25519_dalek::VerifyingKey;
 use hpke_rs::Hpke;
 use hpke_rs_libcrux::HpkeLibcrux;
 
@@ -19,6 +22,53 @@ where
     let vec: Vec<u8> = Vec::deserialize(deserializer)?;
     vec.try_into()
         .map_err(|_| serde::de::Error::custom("wrong length"))
+}
+
+pub enum SupportedNetwork {
+    Mainnet,
+    Testnet,
+    Betanet,
+    Devnet,
+    Custom([u8; 32]),
+}
+
+impl Display for SupportedNetwork {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SupportedNetwork::Mainnet => write!(f, "mainnet"),
+            SupportedNetwork::Testnet => write!(f, "testnet"),
+            SupportedNetwork::Betanet => write!(f, "betanet"),
+            SupportedNetwork::Devnet => write!(f, "devnet"),
+            SupportedNetwork::Custom(tag) => write!(f, "{:x?}", tag),
+        }
+    }
+}
+
+pub struct TransactionMetadata {
+    pub sender: VerifyingKey,
+    pub first_valid: u64,
+    pub last_valid: u64,
+    pub lease: [u8; 32],
+    pub network: SupportedNetwork,
+    pub app_id: u64,
+}
+
+// TODO: better serialization
+impl TransactionMetadata {
+    pub fn info(&self) -> Vec<u8> {
+        format!("mithras|network:{}|app:{}|v:1", self.network, self.app_id)
+            .as_bytes()
+            .to_vec()
+    }
+
+    pub fn aad(&self) -> Vec<u8> {
+        format!(
+            "txid:{:x?}|fv:{}|lv:{}|lease:{:x?}",
+            self.sender, self.first_valid, self.last_valid, self.lease
+        )
+        .as_bytes()
+        .to_vec()
+    }
 }
 
 /// Supported HPKE suites in Mithras. Currently, only one suite is supported which uses X25519,

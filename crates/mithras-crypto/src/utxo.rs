@@ -25,11 +25,9 @@ impl UtxoSecrets {
     pub fn from_hpke_envelope(
         hpke_envelope: HpkeEnvelope,
         discovery_keypair: DiscoveryKeypair,
+        txn_metadata: &crate::hpke::TransactionMetadata,
     ) -> Self {
         let hpke = SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305.suite();
-
-        let info = b"mithras|network:testnet|app:1337|v:1";
-        let aad = b"txid:BLAH...BLAH";
 
         let hpke_recipient_private =
             hpke_rs::HpkePrivateKey::new(discovery_keypair.private_key().to_bytes().to_vec());
@@ -38,14 +36,16 @@ impl UtxoSecrets {
             .setup_receiver(
                 &hpke_envelope.encapsulated_key,
                 &hpke_recipient_private,
-                info,
+                &txn_metadata.info(),
                 None,
                 None,
                 None,
             )
             .unwrap();
 
-        let pt = recv_ctx.open(aad, &hpke_envelope.ciphertext).unwrap();
+        let pt = recv_ctx
+            .open(&txn_metadata.aad(), &hpke_envelope.ciphertext)
+            .unwrap();
         let pt_array: [u8; SECRET_SIZE] = pt.try_into().unwrap();
         UtxoSecrets::from(pt_array)
     }
@@ -93,10 +93,7 @@ pub struct UtxoInputs {
 
 impl UtxoInputs {
     pub fn generate(
-        sender: Ed25519PublicKey,
-        first_valid: u64,
-        last_valid: u64,
-        lease: [u8; 32],
+        txn_metadata: &crate::hpke::TransactionMetadata,
         amount: u64,
         receiver: MithrasAddr,
     ) -> Result<Self, String> {
@@ -111,8 +108,13 @@ impl UtxoInputs {
 
         let tweaked_pubkey = derive_tweaked_pubkey(&receiver.spend_ed25519, &tweak_scalar);
 
-        let discovery_tag =
-            compute_discovery_tag(&discovery_secret, &sender, first_valid, last_valid, lease);
+        let discovery_tag = compute_discovery_tag(
+            &discovery_secret,
+            &txn_metadata.sender,
+            txn_metadata.first_valid,
+            txn_metadata.last_valid,
+            txn_metadata.lease,
+        );
 
         // TODO: ensure secrets are in scalar field
         let mut spending_secret = [0u8; 32];
@@ -121,14 +123,10 @@ impl UtxoInputs {
         let mut nullifier_secret = [0u8; 32];
         getrandom(&mut nullifier_secret).map_err(|e| e.to_string())?;
 
-        // TODO: proper info and aad
-        let info = b"mithras|network:testnet|app:1337|v:1"; // used by KDF
-        let aad = b"txid:BLAH...BLAH";
-
         let (encapsulated_key, mut sender_ctx) = hpke
             .setup_sender(
                 &HpkePublicKey::new(receiver.disc_x25519.to_bytes().to_vec()),
-                info,
+                &txn_metadata.info(),
                 None,
                 None,
                 None,
@@ -144,7 +142,7 @@ impl UtxoInputs {
         };
 
         let secret_bytes: [u8; SECRET_SIZE] = mithras_secret.clone().into();
-        let ct = sender_ctx.seal(aad, &secret_bytes).unwrap();
+        let ct = sender_ctx.seal(&txn_metadata.aad(), &secret_bytes).unwrap();
 
         let hpke_envelope = HpkeEnvelope {
             version: 1,
