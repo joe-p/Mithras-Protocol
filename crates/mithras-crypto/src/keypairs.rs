@@ -28,6 +28,15 @@ impl DiscoveryKeypair {
     pub fn private_key(&self) -> &X25519SecretKey {
         &self.private_key
     }
+
+    pub fn from_keypair(private_key: [u8; 32], public_key: [u8; 32]) -> Self {
+        let private_key = X25519SecretKey::from(private_key);
+        let public_key = X25519PublicKey::from(public_key);
+        Self {
+            private_key,
+            public_key,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

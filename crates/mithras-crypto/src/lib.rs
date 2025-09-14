@@ -232,7 +232,7 @@ mod tests {
             app_id: 1337,
         };
 
-        let utxo_inputs = UtxoInputs::generate(&txn_metadata, amount, mithras_addr.clone())
+        let utxo_inputs = UtxoInputs::generate(&txn_metadata, amount, &mithras_addr)
             .map_err(|e| anyhow::anyhow!(e))?;
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(

@@ -95,7 +95,7 @@ impl UtxoInputs {
     pub fn generate(
         txn_metadata: &crate::hpke::TransactionMetadata,
         amount: u64,
-        receiver: MithrasAddr,
+        receiver: &MithrasAddr,
     ) -> Result<Self, String> {
         let mut hpke = SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305.suite();
 

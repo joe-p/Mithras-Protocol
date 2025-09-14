@@ -8,7 +8,7 @@ use x25519_dalek::PublicKey as X25519PublicKey;
 
 #[derive(uniffi::Object)]
 pub struct MithrasAddr {
-    rust: RustMithrasAddr,
+    pub rust: RustMithrasAddr,
 }
 
 #[uniffi::export]
