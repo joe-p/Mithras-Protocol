@@ -149,7 +149,7 @@ impl UtxoInputs {
             suite: SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
             encapsulated_key: encapsulated_key.try_into().unwrap(),
             ciphertext: ct.try_into().unwrap(),
-            discoery_tag: discovery_tag,
+            discovery_tag: discovery_tag,
         };
 
         Ok(UtxoInputs {
