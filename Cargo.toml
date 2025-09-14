@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "crates/mithras-crypto", "tools/uniffi-bindgen"
+    "crates/mithras-crypto", "crates/mithras-crypto-ffi", "tools/uniffi-bindgen"
 ]
 resolver = "3"
 

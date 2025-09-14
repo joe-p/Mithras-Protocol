@@ -754,6 +754,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "mithras-crypto-ffi"
+version = "0.1.0"
+dependencies = [
+ "ed25519-dalek",
+ "mithras-crypto",
+ "uniffi",
+ "x25519-dalek",
+]
+
+[[package]]
 name = "nom"
 version = "7.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
