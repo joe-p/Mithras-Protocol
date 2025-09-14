@@ -4,11 +4,13 @@ use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
 use serde::{Deserialize, Serialize};
 use x25519_dalek::PublicKey as X25519PublicKey;
 
+use crate::hpke::{SupportedHpkeSuite, SupportedNetwork};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MithrasAddr {
     pub version: u8,
-    pub network: u8,
-    pub suite: u8,
+    pub network: SupportedNetwork,
+    pub suite: SupportedHpkeSuite,
     pub spend_ed25519: Ed25519PublicKey,
     pub disc_x25519: X25519PublicKey,
 }
@@ -17,8 +19,8 @@ impl MithrasAddr {
     pub fn encode(&self) -> String {
         let mut data = Vec::<u8>::with_capacity(3 + 32 + 32);
         data.push(self.version);
-        data.push(self.network);
-        data.push(self.suite);
+        data.push(self.network.into());
+        data.push(self.suite.into());
         data.extend_from_slice(&self.spend_ed25519.to_bytes());
         data.extend_from_slice(&self.disc_x25519.to_bytes());
         bech32::encode::<bech32::Bech32m>(Hrp::parse_unchecked("mith"), &data).unwrap()
@@ -41,8 +43,8 @@ impl MithrasAddr {
 
         Ok(Self {
             version,
-            network,
-            suite,
+            network: network.try_into()?,
+            suite: suite.try_into()?,
             spend_ed25519: spend,
             disc_x25519: disc,
         })
@@ -52,8 +54,8 @@ impl MithrasAddr {
         spend: &Ed25519PublicKey,
         disc: &X25519PublicKey,
         version: u8,
-        network: u8,
-        suite: u8,
+        network: SupportedNetwork,
+        suite: SupportedHpkeSuite,
     ) -> Self {
         Self {
             version,

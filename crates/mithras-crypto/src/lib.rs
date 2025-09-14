@@ -12,7 +12,7 @@ mod tests {
             compute_discovery_secret_receiver, compute_discovery_secret_sender,
             compute_discovery_tag,
         },
-        hpke::{HpkeEnvelope, SupportedHpkeSuite, TransactionMetadata},
+        hpke::{HpkeEnvelope, SupportedHpkeSuite, SupportedNetwork, TransactionMetadata},
         keypairs::{
             DiscoveryKeypair, SpendSeed, TweakedSigner, derive_tweak_scalar, derive_tweaked_pubkey,
         },
@@ -189,8 +189,8 @@ mod tests {
             tweaked_keypair_receiver.public_key(),
             discovery_keypair.public_key(),
             1, // version
-            0, // network
-            1, // suite
+            SupportedNetwork::Testnet,
+            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
         );
 
         let encoded_addr = mithras_addr.encode();
@@ -214,8 +214,8 @@ mod tests {
             spend_keypair.public_key(),
             discovery_keypair.public_key(),
             1,
-            0,
-            1,
+            SupportedNetwork::Testnet,
+            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
         );
 
         let first_valid = 1000;

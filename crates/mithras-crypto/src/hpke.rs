@@ -24,12 +24,40 @@ where
         .map_err(|_| serde::de::Error::custom("wrong length"))
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum SupportedNetwork {
     Mainnet,
     Testnet,
     Betanet,
     Devnet,
     Custom([u8; 32]),
+}
+
+impl From<SupportedNetwork> for u8 {
+    fn from(network: SupportedNetwork) -> Self {
+        match network {
+            SupportedNetwork::Mainnet => 0x00,
+            SupportedNetwork::Testnet => 0x01,
+            SupportedNetwork::Betanet => 0x02,
+            SupportedNetwork::Devnet => 0x03,
+            SupportedNetwork::Custom(_) => 0xFF,
+        }
+    }
+}
+
+impl TryFrom<u8> for SupportedNetwork {
+    type Error = anyhow::Error;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0x00 => Ok(SupportedNetwork::Mainnet),
+            0x01 => Ok(SupportedNetwork::Testnet),
+            0x02 => Ok(SupportedNetwork::Betanet),
+            0x03 => Ok(SupportedNetwork::Devnet),
+            0xFF => Ok(SupportedNetwork::Custom([0u8; 32])),
+            _ => Err(anyhow::anyhow!("Invalid network identifier: {}", value)),
+        }
+    }
 }
 
 impl Display for SupportedNetwork {
@@ -77,6 +105,25 @@ impl TransactionMetadata {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum SupportedHpkeSuite {
     Base25519Sha512ChaCha20Poly1305 = 0x00,
+}
+
+impl From<SupportedHpkeSuite> for u8 {
+    fn from(suite: SupportedHpkeSuite) -> Self {
+        match suite {
+            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305 => 0x00,
+        }
+    }
+}
+
+impl TryFrom<u8> for SupportedHpkeSuite {
+    type Error = anyhow::Error;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0x00 => Ok(SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305),
+            _ => Err(anyhow::anyhow!("Invalid HPKE suite identifier: {}", value)),
+        }
+    }
 }
 
 impl SupportedHpkeSuite {
