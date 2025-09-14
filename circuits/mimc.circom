@@ -167,12 +167,6 @@ template Encrypt() {
 // func (d *digest) checksum() fr.Element {
 // 	// Write guarantees len(data) % BlockSize == 0
 //
-// 	// TODO @ThomasPiellard shouldn't Sum() returns an error if there is no data?
-// 	// TODO: @Tabaie, @Thomas Piellard Now sure what to make of this
-// 	/*if len(d.data) == 0 {
-// 		d.data = make([]byte, BlockSize)
-// 	}*/
-//
 // 	for i := range d.data {
 // 		r := d.encrypt(d.data[i])
 // 		d.h.Add(&r, &d.h).Add(&d.h, &d.data[i])

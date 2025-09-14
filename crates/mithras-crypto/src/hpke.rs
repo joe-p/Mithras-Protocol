@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use ed25519_dalek::VerifyingKey;
+use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
 use hpke_rs::Hpke;
 use hpke_rs_libcrux::HpkeLibcrux;
 
@@ -45,7 +45,7 @@ impl Display for SupportedNetwork {
 }
 
 pub struct TransactionMetadata {
-    pub sender: VerifyingKey,
+    pub sender: Ed25519PublicKey,
     pub first_valid: u64,
     pub last_valid: u64,
     pub lease: [u8; 32],
