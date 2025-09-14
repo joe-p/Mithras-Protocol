@@ -1,6 +1,9 @@
 [workspace]
 members = [
-    "crates/mithras-crypto",
+    "crates/mithras-crypto", "tools/uniffi-bindgen"
 ]
 resolver = "3"
+
+[workspace.dependencies]
+uniffi = "0.29.4"
 

@@ -1,0 +1,2 @@
+[alias]
+uniffi = ["run", "--package", "uniffi-bindgen", "--"]
