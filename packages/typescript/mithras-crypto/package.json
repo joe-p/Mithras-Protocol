@@ -17,5 +17,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.9.0"
+  "packageManager": "pnpm@10.9.0",
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
 }
