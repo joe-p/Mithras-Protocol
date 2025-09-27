@@ -1,15 +1,15 @@
 /target
 node_modules/
-__test__/contracts/out/*
-contracts/out/*
+packages/typescript/contracts-and-circuits/__test__/contracts/out/*
+packages/typescript/contracts-and-circuits/contracts/out/*
 *.dmypy
 
 # Keep approval programs so they have a record of past versions
-!contracts/out/*.approval.teal
-!__test__/contracts/out/*.approval.teal
+!packages/typescript/contracts-and-circuits/contracts/out/*.approval.teal
+!packages/typescript/contracts-and-circuits/__test__/contracts/out/*.approval.teal
 
 # Generated files from uniffi
-rust_modules/
-pkg/
+packages/typescript/*/rust_modules/
+packages/typescript/*/pkg/
 
-ceremonies/*/*.ptau
+packages/typescript/contracts-and-circuits/ceremonies/*/*.ptau

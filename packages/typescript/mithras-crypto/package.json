@@ -1,0 +1,21 @@
+{
+  "name": "mithras-crypto",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joe-p/Mithras-Protocol.git"
+  },
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:ubrn": "ubrn build web"
+  },
+  "dependencies": {
+    "uniffi-bindgen-react-native": "0.29.3-1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.9.0"
+}
