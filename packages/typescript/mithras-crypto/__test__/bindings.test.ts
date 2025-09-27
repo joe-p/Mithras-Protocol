@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { initSync } from "../pkg/wasm-bindgen/index";
-import { MithrasAddr, UtxoInputs } from "../pkg/mithras_crypto_ffi";
+import {
+  MithrasAddr,
+  UtxoInputs,
+  UtxoSecrets,
+} from "../pkg/mithras_crypto_ffi";
 import { readFileSync } from "fs";
 import * as ed from "@noble/ed25519";
 import nacl from "tweetnacl";
@@ -31,11 +35,11 @@ describe("bindings", () => {
     );
   });
 
-  it("should generate utxo inputs", () => {
+  it("should generate utxo inputs and recover secrets", () => {
     const receiverSpendEd = ed.keygen();
     const receiverDiscovery = nacl.box.keyPair();
 
-    const addr = MithrasAddr.fromKeys(
+    const receiverAddr = MithrasAddr.fromKeys(
       toArrayBuffer(receiverSpendEd.publicKey),
       toArrayBuffer(receiverDiscovery.publicKey),
       0,
@@ -44,20 +48,30 @@ describe("bindings", () => {
     );
 
     const senderEd = ed.keygen();
-    const inputs = UtxoInputs.generate(
-      {
-        sender: toArrayBuffer(senderEd.publicKey),
-        firstValid: 1n,
-        lastValid: 50n,
-        lease: new ArrayBuffer(32),
-        network: "custom",
-        appId: 1337n,
-      },
-      10n,
-      addr,
+
+    const txnMetadata = {
+      sender: toArrayBuffer(senderEd.publicKey),
+      firstValid: 1n,
+      lastValid: 50n,
+      lease: new ArrayBuffer(32),
+      network: "custom",
+      appId: 1337n,
+    };
+
+    const inputs = UtxoInputs.generate(txnMetadata, 10n, receiverAddr);
+
+    const recoveredSecrets = UtxoSecrets.fromHpkeEnvelope(
+      inputs.envelope(),
+      toArrayBuffer(receiverDiscovery.publicKey),
+      toArrayBuffer(receiverDiscovery.secretKey),
+      txnMetadata,
     );
 
-    expect(inputs.envelope()).toBeDefined();
-    expect(inputs.secrets()).toBeDefined();
+    expect(recoveredSecrets.nullifierSecret()).toEqual(
+      inputs.secrets().nullifierSecret(),
+    );
+    expect(recoveredSecrets.spendingSecret()).toEqual(
+      inputs.secrets().spendingSecret(),
+    );
   });
 });
