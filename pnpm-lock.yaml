@@ -41,10 +41,22 @@ importers:
 
   packages/typescript/mithras-crypto:
     dependencies:
+      tweetnacl:
+        specifier: ^1.0.3
+        version: 1.0.3
       uniffi-bindgen-react-native:
         specifier: 0.29.3-1
         version: 0.29.3-1
     devDependencies:
+      '@noble/ed25519':
+        specifier: ^3.0.0
+        version: 3.0.0
+      '@noble/hashes':
+        specifier: ^2.0.1
+        version: 2.0.1
+      js-sha512:
+        specifier: ^0.9.0
+        version: 0.9.0
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.5.2)
@@ -246,6 +258,13 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
+
+  '@noble/ed25519@3.0.0':
+    resolution: {integrity: sha512-QyteqMNm0GLqfa5SoYbSC3+Pvykwpn95Zgth4MFVSMKBB75ELl9tX1LAVsN4c3HXOrakHsF2gL4zWDAYCcsnzg==}
+
+  '@noble/hashes@2.0.1':
+    resolution: {integrity: sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw==}
+    engines: {node: '>= 20.19.0'}
 
   '@rollup/rollup-android-arm-eabi@4.52.3':
     resolution: {integrity: sha512-h6cqHGZ6VdnwliFG1NXvMPTy/9PS3h8oLh7ImwR+kl+oYnQizgjxsONmmPSb2C66RksfkfIxEVtDSEcJiO0tqw==}
@@ -769,6 +788,9 @@ packages:
 
   js-sha512@0.8.0:
     resolution: {integrity: sha512-PWsmefG6Jkodqt+ePTvBZCSMFgN7Clckjd0O7su3I0+BW2QWUTJNzjktHsztGLhncP2h8mcF9V9Y2Ha59pAViQ==}
+
+  js-sha512@0.9.0:
+    resolution: {integrity: sha512-mirki9WS/SUahm+1TbAPkqvbCiCfOAAsyXeHxK1UkullnJVVqoJG2pL9ObvT05CN+tM7fxhfYm0NbXn+1hWoZg==}
 
   js-tokens@9.0.1:
     resolution: {integrity: sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ==}
@@ -1317,6 +1339,10 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
+  '@noble/ed25519@3.0.0': {}
+
+  '@noble/hashes@2.0.1': {}
+
   '@rollup/rollup-android-arm-eabi@4.52.3':
     optional: true
 
@@ -1822,6 +1848,8 @@ snapshots:
   js-sha3@0.8.0: {}
 
   js-sha512@0.8.0: {}
+
+  js-sha512@0.9.0: {}
 
   js-tokens@9.0.1: {}
 

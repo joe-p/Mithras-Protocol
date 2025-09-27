@@ -4,6 +4,8 @@ use ed25519_dalek::{Signature, SigningKey, VerifyingKey as Ed25519PublicKey};
 use sha2::{Digest, Sha512};
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret as X25519SecretKey};
 
+use crate::MithrasError;
+
 #[derive(Clone)]
 pub struct DiscoveryKeypair {
     private_key: X25519SecretKey,
@@ -11,16 +13,17 @@ pub struct DiscoveryKeypair {
 }
 
 impl DiscoveryKeypair {
-    pub fn generate() -> Self {
+    pub fn generate() -> Result<Self, MithrasError> {
         let mut secret_key: [u8; 32] = [0u8; 32];
 
-        getrandom::fill(&mut secret_key).unwrap();
+        getrandom::fill(&mut secret_key)
+            .map_err(|e| MithrasError::RandomGeneration { msg: e.to_string() })?;
         let private_key = X25519SecretKey::from(secret_key);
         let public_key = X25519PublicKey::from(&private_key);
-        Self {
+        Ok(Self {
             private_key,
             public_key,
-        }
+        })
     }
 
     pub fn public_key(&self) -> &X25519PublicKey {
@@ -48,14 +51,15 @@ pub struct SpendSeed {
 }
 
 impl SpendSeed {
-    pub fn generate() -> Self {
+    pub fn generate() -> Result<Self, MithrasError> {
         let mut seed = [0u8; 32];
-        getrandom::fill(&mut seed).unwrap();
+        getrandom::fill(&mut seed)
+            .map_err(|e| MithrasError::RandomGeneration { msg: e.to_string() })?;
 
         let sk = SigningKey::from_bytes(&seed);
         let public_key = sk.verifying_key();
 
-        Self { seed, public_key }
+        Ok(Self { seed, public_key })
     }
 
     pub fn a_scalar(&self) -> Scalar {
@@ -89,39 +93,53 @@ pub struct TweakedSigner {
 }
 
 impl TweakedSigner {
-    pub fn derive(spend_keypair: &SpendSeed, tweak_scalar: &Scalar) -> Self {
+    pub fn derive(spend_keypair: &SpendSeed, tweak_scalar: &Scalar) -> Result<Self, MithrasError> {
         let tweaked_scalar = spend_keypair.a_scalar() + tweak_scalar;
 
         let spend_point = spend_keypair.public_key.to_bytes();
         let tweak_point = ED25519_BASEPOINT_TABLE * tweak_scalar;
-        let spend_compressed =
-            curve25519_dalek::edwards::CompressedEdwardsY::from_slice(&spend_point).unwrap();
-        let spend_point_decompressed = spend_compressed.decompress().unwrap();
+        let spend_compressed = curve25519_dalek::edwards::CompressedEdwardsY::from_slice(
+            &spend_point,
+        )
+        .map_err(|e| MithrasError::CurvePointDecompression {
+            msg: format!("Failed to create compressed point from slice: {}", e),
+        })?;
+        let spend_point_decompressed =
+            spend_compressed
+                .decompress()
+                .ok_or(MithrasError::CurvePointDecompression {
+                    msg: "Failed to decompress Edwards point".to_string(),
+                })?;
         let tweaked_point = spend_point_decompressed + tweak_point;
         let tweaked_public_bytes = tweaked_point.compress();
-        let tweaked_public = Ed25519PublicKey::from_bytes(tweaked_public_bytes.as_bytes()).unwrap();
+        let tweaked_public = Ed25519PublicKey::from_bytes(tweaked_public_bytes.as_bytes())
+            .map_err(|e| MithrasError::Ed25519KeyParsing { msg: e.to_string() })?;
 
         let tweaked_prefix = derive_tweaked_prefix(&spend_keypair.prefix(), &tweaked_public);
 
-        Self {
+        Ok(Self {
             a_scalar: tweaked_scalar,
             prefix: tweaked_prefix,
             pubkey: tweaked_public,
-        }
+        })
     }
 
-    pub fn sign(&self, msg: &[u8]) -> Signature {
+    pub fn sign(&self, msg: &[u8]) -> Result<Signature, MithrasError> {
         let a_g = (ED25519_BASEPOINT_TABLE * &self.a_scalar)
             .compress()
             .to_bytes();
-        let public_locked =
-            Ed25519PublicKey::from_bytes(&a_g).expect("derived verifying key must be valid");
+        let public_locked = Ed25519PublicKey::from_bytes(&a_g)
+            .map_err(|e| MithrasError::Ed25519KeyParsing { msg: e.to_string() })?;
 
         let esk = ed25519_dalek::hazmat::ExpandedSecretKey {
             scalar: self.a_scalar,
             hash_prefix: self.prefix,
         };
-        ed25519_dalek::hazmat::raw_sign::<Sha512>(&esk, msg, &public_locked)
+        Ok(ed25519_dalek::hazmat::raw_sign::<Sha512>(
+            &esk,
+            msg,
+            &public_locked,
+        ))
     }
 
     pub fn public_key(&self) -> &Ed25519PublicKey {
@@ -132,18 +150,26 @@ impl TweakedSigner {
 pub fn derive_tweaked_pubkey(
     spend_public: &Ed25519PublicKey,
     tweak_scalar: &Scalar,
-) -> Ed25519PublicKey {
+) -> Result<Ed25519PublicKey, MithrasError> {
     let spend_point = spend_public.to_bytes();
     let tweak_point = ED25519_BASEPOINT_TABLE * tweak_scalar;
 
     let mut tweaked_bytes = [0u8; 32];
-    let spend_compressed =
-        curve25519_dalek::edwards::CompressedEdwardsY::from_slice(&spend_point).unwrap();
-    let spend_point_decompressed = spend_compressed.decompress().unwrap();
+    let spend_compressed = curve25519_dalek::edwards::CompressedEdwardsY::from_slice(&spend_point)
+        .map_err(|e| MithrasError::CurvePointDecompression {
+            msg: format!("Failed to create compressed point from slice: {}", e),
+        })?;
+    let spend_point_decompressed =
+        spend_compressed
+            .decompress()
+            .ok_or(MithrasError::CurvePointDecompression {
+                msg: "Failed to decompress Edwards point".to_string(),
+            })?;
     let tweaked_point = spend_point_decompressed + tweak_point;
     tweaked_bytes.copy_from_slice(tweaked_point.compress().as_bytes());
 
-    Ed25519PublicKey::from_bytes(&tweaked_bytes).unwrap()
+    Ed25519PublicKey::from_bytes(&tweaked_bytes)
+        .map_err(|e| MithrasError::Ed25519KeyParsing { msg: e.to_string() })
 }
 
 pub fn derive_tweak_scalar(discovery_secret: &[u8; 32]) -> Scalar {

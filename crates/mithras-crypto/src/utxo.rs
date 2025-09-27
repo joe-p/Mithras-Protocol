@@ -5,6 +5,7 @@ use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
 use hpke_rs::HpkePublicKey;
 
 use crate::{
+    MithrasError,
     address::MithrasAddr,
     discovery::{compute_discovery_secret_sender, compute_discovery_tag},
     hpke::{HpkeEnvelope, SupportedHpkeSuite},
@@ -25,7 +26,7 @@ impl UtxoSecrets {
         hpke_envelope: HpkeEnvelope,
         discovery_keypair: DiscoveryKeypair,
         txn_metadata: &crate::hpke::TransactionMetadata,
-    ) -> Self {
+    ) -> Result<Self, MithrasError> {
         let hpke = SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305.suite();
 
         let hpke_recipient_private =
@@ -40,35 +41,54 @@ impl UtxoSecrets {
                 None,
                 None,
             )
-            .unwrap();
+            .map_err(|e| MithrasError::HpkeOperation { msg: e.to_string() })?;
 
         let pt = recv_ctx
             .open(&txn_metadata.aad(), &hpke_envelope.ciphertext)
-            .unwrap();
-        let pt_array: [u8; SECRET_SIZE] = pt.try_into().unwrap();
-        UtxoSecrets::from(pt_array)
+            .map_err(|e| MithrasError::HpkeOperation { msg: e.to_string() })?;
+        let pt_array: [u8; SECRET_SIZE] =
+            pt.try_into().map_err(|_| MithrasError::DataConversion {
+                msg: "Invalid plaintext size for UTXO secrets".to_string(),
+            })?;
+        UtxoSecrets::try_from(pt_array)
     }
 }
 
-impl From<[u8; SECRET_SIZE]> for UtxoSecrets {
-    fn from(bytes: [u8; SECRET_SIZE]) -> Self {
+impl TryFrom<[u8; SECRET_SIZE]> for UtxoSecrets {
+    type Error = MithrasError;
+
+    fn try_from(bytes: [u8; SECRET_SIZE]) -> Result<Self, Self::Error> {
         let mut spending_secret = [0u8; 32];
         let mut nullifier_secret = [0u8; 32];
 
         spending_secret.copy_from_slice(&bytes[0..32]);
         nullifier_secret.copy_from_slice(&bytes[32..64]);
-        let amount = u64::from_be_bytes(bytes[64..72].try_into().unwrap());
-        let tweak_scalar = Scalar::from_bytes_mod_order(bytes[72..104].try_into().unwrap());
+        let amount = u64::from_be_bytes(bytes[64..72].try_into().map_err(|_| {
+            MithrasError::DataConversion {
+                msg: "Failed to convert amount bytes".to_string(),
+            }
+        })?);
+        let tweak_scalar =
+            Scalar::from_bytes_mod_order(bytes[72..104].try_into().map_err(|_| {
+                MithrasError::DataConversion {
+                    msg: "Failed to convert tweak scalar bytes".to_string(),
+                }
+            })?);
         let tweak_pubkey =
-            Ed25519PublicKey::from_bytes(&bytes[104..136].try_into().unwrap()).unwrap();
+            Ed25519PublicKey::from_bytes(&bytes[104..136].try_into().map_err(|_| {
+                MithrasError::DataConversion {
+                    msg: "Failed to convert tweaked pubkey bytes".to_string(),
+                }
+            })?)
+            .map_err(|e| MithrasError::Ed25519KeyParsing { msg: e.to_string() })?;
 
-        Self {
+        Ok(Self {
             spending_secret,
             nullifier_secret,
             amount,
             tweak_scalar,
             tweaked_pubkey: tweak_pubkey,
-        }
+        })
     }
 }
 
@@ -95,17 +115,17 @@ impl UtxoInputs {
         txn_metadata: &crate::hpke::TransactionMetadata,
         amount: u64,
         receiver: &MithrasAddr,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, MithrasError> {
         let mut hpke = SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305.suite();
 
-        let ephemeral_keypair = DiscoveryKeypair::generate();
+        let ephemeral_keypair = DiscoveryKeypair::generate()?;
 
         let discovery_secret =
             compute_discovery_secret_sender(ephemeral_keypair.private_key(), &receiver.disc_x25519);
 
         let tweak_scalar = derive_tweak_scalar(&discovery_secret);
 
-        let tweaked_pubkey = derive_tweaked_pubkey(&receiver.spend_ed25519, &tweak_scalar);
+        let tweaked_pubkey = derive_tweaked_pubkey(&receiver.spend_ed25519, &tweak_scalar)?;
 
         let discovery_tag = compute_discovery_tag(
             &discovery_secret,
@@ -113,14 +133,16 @@ impl UtxoInputs {
             txn_metadata.first_valid,
             txn_metadata.last_valid,
             txn_metadata.lease,
-        );
+        )?;
 
         // TODO: ensure secrets are in scalar field
         let mut spending_secret = [0u8; 32];
-        getrandom::fill(&mut spending_secret).map_err(|e| e.to_string())?;
+        getrandom::fill(&mut spending_secret)
+            .map_err(|e| MithrasError::RandomGeneration { msg: e.to_string() })?;
 
         let mut nullifier_secret = [0u8; 32];
-        getrandom::fill(&mut nullifier_secret).map_err(|e| e.to_string())?;
+        getrandom::fill(&mut nullifier_secret)
+            .map_err(|e| MithrasError::RandomGeneration { msg: e.to_string() })?;
 
         let (encapsulated_key, mut sender_ctx) = hpke
             .setup_sender(
@@ -130,7 +152,7 @@ impl UtxoInputs {
                 None,
                 None,
             )
-            .unwrap();
+            .map_err(|e| MithrasError::HpkeOperation { msg: e.to_string() })?;
 
         let mithras_secret = UtxoSecrets {
             spending_secret,
@@ -141,14 +163,22 @@ impl UtxoInputs {
         };
 
         let secret_bytes: [u8; SECRET_SIZE] = mithras_secret.clone().into();
-        let ct = sender_ctx.seal(&txn_metadata.aad(), &secret_bytes).unwrap();
+        let ct = sender_ctx
+            .seal(&txn_metadata.aad(), &secret_bytes)
+            .map_err(|e| MithrasError::HpkeOperation { msg: e.to_string() })?;
 
         let hpke_envelope = HpkeEnvelope {
             version: 1,
             suite: SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
-            encapsulated_key: encapsulated_key.try_into().unwrap(),
-            ciphertext: ct.try_into().unwrap(),
-            discovery_tag: discovery_tag,
+            encapsulated_key: encapsulated_key.try_into().map_err(|_| {
+                MithrasError::DataConversion {
+                    msg: "Invalid encapsulated key size".to_string(),
+                }
+            })?,
+            ciphertext: ct.try_into().map_err(|_| MithrasError::DataConversion {
+                msg: "Invalid ciphertext size".to_string(),
+            })?,
+            discovery_tag,
         };
 
         Ok(UtxoInputs {
