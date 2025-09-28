@@ -179,6 +179,7 @@ impl UtxoInputs {
                 msg: "Invalid ciphertext size".to_string(),
             })?,
             discovery_tag,
+            discovery_ephemeral: ephemeral_keypair.public_key().to_bytes(),
         };
 
         Ok(UtxoInputs {

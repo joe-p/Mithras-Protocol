@@ -16,8 +16,7 @@ pub struct MithrasAddr {
 #[uniffi::export]
 impl MithrasAddr {
     pub fn encode(&self) -> Result<String, MithrasCryptoError> {
-        self
-            .rust
+        self.rust
             .encode()
             .map_err(|e| MithrasCryptoError::Error(e.to_string()))
     }
@@ -38,14 +37,12 @@ impl MithrasAddr {
         network: String,
         suite: u8,
     ) -> Result<Self, MithrasCryptoError> {
-        let spend_arr: [u8; 32] = ed25519_spend_pubkey
-            .as_slice()
-            .try_into()
-            .map_err(|_| MithrasCryptoError::Error("Invalid Ed25519 public key length".to_string()))?;
-        let disc_arr: [u8; 32] = x25519_discovery_pubkey
-            .as_slice()
-            .try_into()
-            .map_err(|_| MithrasCryptoError::Error("Invalid X25519 public key length".to_string()))?;
+        let spend_arr: [u8; 32] = ed25519_spend_pubkey.as_slice().try_into().map_err(|_| {
+            MithrasCryptoError::Error("Invalid Ed25519 public key length".to_string())
+        })?;
+        let disc_arr: [u8; 32] = x25519_discovery_pubkey.as_slice().try_into().map_err(|_| {
+            MithrasCryptoError::Error("Invalid X25519 public key length".to_string())
+        })?;
 
         let spend_pubkey = Ed25519PublicKey::from_bytes(&spend_arr)
             .map_err(|e| MithrasCryptoError::Error(format!("Invalid Ed25519 public key: {}", e)))?;
@@ -62,7 +59,11 @@ impl MithrasAddr {
 
         let suite_enum = match suite {
             0 => RustSupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
-            _ => return Err(MithrasCryptoError::Error("Unsupported HPKE suite".to_string())),
+            _ => {
+                return Err(MithrasCryptoError::Error(
+                    "Unsupported HPKE suite".to_string(),
+                ));
+            }
         };
 
         Ok(Self {

@@ -145,11 +145,40 @@ pub struct HpkeEnvelope {
     pub version: u8,
     /// The HPKE suite identifier
     pub suite: SupportedHpkeSuite,
+    /// HPKE KEM encapsulated key (sender's HPKE ephemeral public key)
     pub encapsulated_key: [u8; 32],
     #[serde(
         serialize_with = "serialize_ciphertext",
         deserialize_with = "deserialize_ciphertext"
     )]
     pub ciphertext: [u8; CIPHER_TEXT_SIZE],
+    /// Discovery tag for fast output scanning
     pub discovery_tag: [u8; 32],
+    /// X25519 ephemeral public key used solely for discovery tag derivation
+    /// (may differ from `encapsulated_key` when HPKE KEM generates its own ephemeral).
+    pub discovery_ephemeral: [u8; 32],
+}
+
+impl HpkeEnvelope {
+    pub fn discovery_check(
+        &self,
+        discovery_private: &x25519_dalek::StaticSecret,
+        txn_metadata: &TransactionMetadata,
+    ) -> Result<bool, crate::MithrasError> {
+        let ephemeral_public = x25519_dalek::PublicKey::from(self.discovery_ephemeral);
+        let discovery_secret = crate::discovery::compute_discovery_secret_receiver(
+            discovery_private,
+            &ephemeral_public,
+        );
+
+        let computed_tag = crate::discovery::compute_discovery_tag(
+            &discovery_secret,
+            &txn_metadata.sender,
+            txn_metadata.first_valid,
+            txn_metadata.last_valid,
+            txn_metadata.lease,
+        )?;
+
+        Ok(computed_tag == self.discovery_tag)
+    }
 }

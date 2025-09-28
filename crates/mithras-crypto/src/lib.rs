@@ -191,6 +191,7 @@ mod tests {
             encapsulated_key: encapsulated_key.clone().try_into().unwrap(),
             ciphertext: ct.clone().try_into().unwrap(),
             discovery_tag: [0u8; 32],
+            discovery_ephemeral: encapsulated_key.clone().try_into().unwrap(),
         };
 
         let json = serde_json::to_string(&env)?;
@@ -296,6 +297,49 @@ mod tests {
         if verify_res.is_err() {
             tweaked_signer.public_key().verify(msg, &sig).unwrap();
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_discovery_check_on_envelope() -> anyhow::Result<()> {
+        use ed25519_dalek::VerifyingKey;
+
+        let spend = SpendSeed::generate().map_err(|e| anyhow::anyhow!(e))?;
+        let disc = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
+
+        let addr = MithrasAddr::from_keys(
+            spend.public_key(),
+            disc.public_key(),
+            1,
+            SupportedNetwork::Testnet,
+            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
+        );
+
+        let txn = TransactionMetadata {
+            sender: VerifyingKey::from_bytes(&[0u8; 32])?,
+            first_valid: 10,
+            last_valid: 20,
+            lease: [0u8; 32],
+            network: SupportedNetwork::Mainnet,
+            app_id: 42,
+        };
+
+        let inputs = UtxoInputs::generate(&txn, 12345, &addr).map_err(|e| anyhow::anyhow!(e))?;
+        let env = inputs.hpke_envelope;
+
+        // Correct discovery key should validate
+        let ok = env
+            .discovery_check(disc.private_key(), &txn)
+            .map_err(|e| anyhow::anyhow!(e))?;
+        assert!(ok);
+
+        // Wrong discovery key should not validate
+        let wrong_disc = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
+        let not_ok = env
+            .discovery_check(wrong_disc.private_key(), &txn)
+            .map_err(|e| anyhow::anyhow!(e))?;
+        assert!(!not_ok);
 
         Ok(())
     }
