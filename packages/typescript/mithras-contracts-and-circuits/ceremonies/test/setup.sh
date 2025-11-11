@@ -1,3 +1,7 @@
+#!/bin/bash
+
+cd "$(dirname "$0")"
+
 if [ ! -f pot16_final.ptau ]; then
     pnpm snarkjs powersoftau new bls12381 16 pot16_0000.ptau -v
     echo "blah" | pnpm snarkjs powersoftau contribute pot16_0000.ptau pot16_0001.ptau --name="First contribution" -v
