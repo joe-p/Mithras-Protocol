@@ -25,6 +25,7 @@
     "algosdk": "^3.4.0",
     "circom_tester": "^0.0.24",
     "prettier": "^3.6.2",
+    "snarkjs": "^0.7.5",
     "vitest": "^3.2.4"
   },
   "dependencies": {

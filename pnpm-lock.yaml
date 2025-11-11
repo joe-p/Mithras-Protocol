@@ -35,6 +35,9 @@ importers:
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
+      snarkjs:
+        specifier: ^0.7.5
+        version: 0.7.5
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.5.2)
