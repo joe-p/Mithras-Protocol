@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         package:
-          - contracts-and-circuits
+          - mithras-contracts-and-circuits
           - mithras-crypto
 
     steps:

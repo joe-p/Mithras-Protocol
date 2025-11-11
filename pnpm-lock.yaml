@@ -8,7 +8,7 @@ importers:
 
   .: {}
 
-  packages/typescript/contracts-and-circuits:
+  packages/typescript/mithras-contracts-and-circuits:
     dependencies:
       snarkjs-algorand:
         specifier: 0.6.0
