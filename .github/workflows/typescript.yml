@@ -35,6 +35,13 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
+      - name: Download circom
+        run: |
+          mkdir -p $HOME/.local/bin
+          curl -L -o $HOME/.local/bin/circom "https://github.com/iden3/circom/releases/download/v2.2.3/circom-linux-amd64"
+          chmod +x $HOME/.local/bin/circom
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
