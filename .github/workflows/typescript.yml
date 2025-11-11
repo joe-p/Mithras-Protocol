@@ -39,7 +39,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build ${{ matrix.package }}
-        run: pnpm --filter ${{ matrix.package }} build
+        run: pnpm build
+        working-directory: packages/typescript/${{ matrix.package }}
 
       - name: Test ${{ matrix.package }}
-        run: pnpm --filter ${{ matrix.package }} test
+        run: pnpm test
+        working-directory: packages/typescript/${{ matrix.package }}
