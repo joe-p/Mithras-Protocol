@@ -24,6 +24,9 @@ jobs:
         with:
           target: wasm32-unknown-unknown
 
+      - name: Install wasm-bindgen
+        run: cargo install wasm-bindgen-cli
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
