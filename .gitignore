@@ -13,3 +13,7 @@ packages/typescript/*/rust_modules/
 packages/typescript/*/pkg/
 
 packages/typescript/mithras-contracts-and-circuits/ceremonies/*/*.ptau
+packages/typescript/mithras-contracts-and-circuits/circuits/*
+
+!packages/typescript/mithras-contracts-and-circuits/circuits/*.circom
+!packages/typescript/mithras-contracts-and-circuits/circuits/*.sh
