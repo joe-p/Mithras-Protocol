@@ -1,0 +1,66 @@
+name: TypeScript CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        package:
+          - mithras-contracts-and-circuits
+          - mithras-crypto
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: wasm32-unknown-unknown
+
+      - name: Install wasm-bindgen
+        run: cargo install wasm-bindgen-cli
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.9.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Download circom
+        if: matrix.package == 'mithras-contracts-and-circuits'
+        run: |
+          mkdir -p $HOME/.local/bin
+          curl -L -o $HOME/.local/bin/circom "https://github.com/iden3/circom/releases/download/v2.2.3/circom-linux-amd64"
+          chmod +x $HOME/.local/bin/circom
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Download algokit
+        if: matrix.package == 'mithras-contracts-and-circuits'
+        run: pip install algokit
+
+      - name: Run algokit localnet
+        if: matrix.package == 'mithras-contracts-and-circuits'
+        run: algokit localnet start
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build ${{ matrix.package }}
+        run: pnpm build
+        working-directory: packages/typescript/${{ matrix.package }}
+
+      - name: Test ${{ matrix.package }}
+        run: pnpm test
+        working-directory: packages/typescript/${{ matrix.package }}

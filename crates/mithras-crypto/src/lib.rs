@@ -3,10 +3,43 @@ pub mod discovery;
 pub mod hpke;
 pub mod keypairs;
 pub mod utxo;
+use snafu::Snafu;
+
+#[derive(Debug, Snafu)]
+#[snafu(visibility(pub))]
+pub enum MithrasError {
+    #[snafu(display("Error: {}", msg))]
+    Other { msg: String },
+
+    #[snafu(display("Cryptographic random number generation failed: {}", msg))]
+    RandomGeneration { msg: String },
+
+    #[snafu(display("HKDF expand operation failed: {}", msg))]
+    HkdfExpand { msg: String },
+
+    #[snafu(display("HMAC key creation failed: {}", msg))]
+    HmacKeyCreation { msg: String },
+
+    #[snafu(display("HPKE operation failed: {}", msg))]
+    HpkeOperation { msg: String },
+
+    #[snafu(display("Ed25519 key parsing failed: {}", msg))]
+    Ed25519KeyParsing { msg: String },
+
+    #[snafu(display("Curve25519 point decompression failed: {}", msg))]
+    CurvePointDecompression { msg: String },
+
+    #[snafu(display("Address encoding failed: {}", msg))]
+    AddressEncoding { msg: String },
+
+    #[snafu(display("Data conversion failed: {}", msg))]
+    DataConversion { msg: String },
+}
 
 #[cfg(test)]
 mod tests {
     use crate::{
+        MithrasError,
         address::MithrasAddr,
         discovery::{
             compute_discovery_secret_receiver, compute_discovery_secret_sender,
@@ -23,18 +56,19 @@ mod tests {
     use ed25519_dalek::{Verifier, VerifyingKey};
 
     #[test]
-    fn test_keypair_generation() {
-        let spend_keypair = SpendSeed::generate();
-        let discovery_keypair = DiscoveryKeypair::generate();
+    fn test_keypair_generation() -> Result<(), MithrasError> {
+        let spend_keypair = SpendSeed::generate()?;
+        let discovery_keypair = DiscoveryKeypair::generate()?;
 
         assert_eq!(spend_keypair.seed().len(), 32);
         assert_eq!(discovery_keypair.public_key().as_bytes().len(), 32);
+        Ok(())
     }
 
     #[test]
-    fn test_discovery_secret_computation() {
-        let discovery_keypair = DiscoveryKeypair::generate();
-        let ephemeral_keypair = DiscoveryKeypair::generate();
+    fn test_discovery_secret_computation() -> Result<(), MithrasError> {
+        let discovery_keypair = DiscoveryKeypair::generate()?;
+        let ephemeral_keypair = DiscoveryKeypair::generate()?;
 
         let discovery_secret_sender = compute_discovery_secret_sender(
             ephemeral_keypair.private_key(),
@@ -47,13 +81,14 @@ mod tests {
         );
 
         assert_eq!(discovery_secret_sender, discovery_secret_receiver);
+        Ok(())
     }
 
     #[test]
-    fn test_tweaked_keypair_computation() {
-        let spend_keypair = SpendSeed::generate();
-        let discovery_keypair = DiscoveryKeypair::generate();
-        let ephemeral_keypair = DiscoveryKeypair::generate();
+    fn test_tweaked_keypair_computation() -> Result<(), MithrasError> {
+        let spend_keypair = SpendSeed::generate()?;
+        let discovery_keypair = DiscoveryKeypair::generate()?;
+        let ephemeral_keypair = DiscoveryKeypair::generate()?;
 
         let discovery_secret_sender = compute_discovery_secret_sender(
             ephemeral_keypair.private_key(),
@@ -63,20 +98,21 @@ mod tests {
         let tweak_scalar = derive_tweak_scalar(&discovery_secret_sender);
 
         let tweaked_keypair_sender =
-            derive_tweaked_pubkey(spend_keypair.public_key(), &tweak_scalar);
+            derive_tweaked_pubkey(spend_keypair.public_key(), &tweak_scalar)?;
 
-        let tweaked_keypair_receiver = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
+        let tweaked_keypair_receiver = TweakedSigner::derive(&spend_keypair, &tweak_scalar)?;
 
         assert_eq!(
             tweaked_keypair_sender.to_bytes(),
             tweaked_keypair_receiver.public_key().to_bytes()
         );
+        Ok(())
     }
 
     #[test]
-    fn test_discovery_tag() {
-        let discovery_keypair = DiscoveryKeypair::generate();
-        let ephemeral_keypair = DiscoveryKeypair::generate();
+    fn test_discovery_tag() -> Result<(), MithrasError> {
+        let discovery_keypair = DiscoveryKeypair::generate()?;
+        let ephemeral_keypair = DiscoveryKeypair::generate()?;
 
         let discovery_secret_sender = compute_discovery_secret_sender(
             ephemeral_keypair.private_key(),
@@ -94,7 +130,7 @@ mod tests {
             1000,
             2000,
             [0u8; 32],
-        );
+        )?;
 
         let discovery_tag_receiver = compute_discovery_tag(
             &discovery_secret_receiver,
@@ -102,27 +138,29 @@ mod tests {
             1000,
             2000,
             [0u8; 32],
-        );
+        )?;
 
         assert_eq!(discovery_tag_sender, discovery_tag_receiver);
+        Ok(())
     }
 
     #[test]
-    fn test_ed25519_signing_with_tweaked_key() {
-        let spend_keypair = SpendSeed::generate();
+    fn test_ed25519_signing_with_tweaked_key() -> Result<(), MithrasError> {
+        let spend_keypair = SpendSeed::generate()?;
         let discovery_secret = [42u8; 32];
         let tweak_scalar = derive_tweak_scalar(&discovery_secret);
         let tweaked_keypair_receiver =
-            derive_tweaked_pubkey(spend_keypair.public_key(), &tweak_scalar);
+            derive_tweaked_pubkey(spend_keypair.public_key(), &tweak_scalar)?;
 
         let msg = b"example spend authorization";
-        let tweaked_priv = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
-        let sig = tweaked_priv.sign(msg);
+        let tweaked_priv = TweakedSigner::derive(&spend_keypair, &tweak_scalar)?;
+        let sig = tweaked_priv.sign(msg)?;
 
         let verify_res = tweaked_keypair_receiver.verify_strict(msg, &sig);
         if verify_res.is_err() {
             tweaked_keypair_receiver.verify(msg, &sig).unwrap();
         }
+        Ok(())
     }
 
     #[test]
@@ -153,6 +191,7 @@ mod tests {
             encapsulated_key: encapsulated_key.clone().try_into().unwrap(),
             ciphertext: ct.clone().try_into().unwrap(),
             discovery_tag: [0u8; 32],
+            discovery_ephemeral: encapsulated_key.clone().try_into().unwrap(),
         };
 
         let json = serde_json::to_string(&env)?;
@@ -179,11 +218,12 @@ mod tests {
 
     #[test]
     fn test_mithras_address_encoding_decoding() -> anyhow::Result<()> {
-        let spend_keypair = SpendSeed::generate();
-        let discovery_keypair = DiscoveryKeypair::generate();
+        let spend_keypair = SpendSeed::generate().map_err(|e| anyhow::anyhow!(e))?;
+        let discovery_keypair = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
         let discovery_secret = [42u8; 32];
         let tweak_scalar = derive_tweak_scalar(&discovery_secret);
-        let tweaked_keypair_receiver = TweakedSigner::derive(&spend_keypair, &tweak_scalar);
+        let tweaked_keypair_receiver =
+            TweakedSigner::derive(&spend_keypair, &tweak_scalar).map_err(|e| anyhow::anyhow!(e))?;
 
         let mithras_addr = MithrasAddr::from_keys(
             tweaked_keypair_receiver.public_key(),
@@ -193,7 +233,7 @@ mod tests {
             SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
         );
 
-        let encoded_addr = mithras_addr.encode();
+        let encoded_addr = mithras_addr.encode().map_err(|e| anyhow::anyhow!(e))?;
         let decoded_addr = MithrasAddr::decode(&encoded_addr)?;
 
         assert_eq!(decoded_addr.version, mithras_addr.version);
@@ -207,8 +247,8 @@ mod tests {
 
     #[test]
     fn test_complete_mithras_protocol_flow_with_utxo_generate() -> anyhow::Result<()> {
-        let spend_keypair = SpendSeed::generate();
-        let discovery_keypair = DiscoveryKeypair::generate();
+        let spend_keypair = SpendSeed::generate().map_err(|e| anyhow::anyhow!(e))?;
+        let discovery_keypair = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
 
         let mithras_addr = MithrasAddr::from_keys(
             spend_keypair.public_key(),
@@ -232,20 +272,21 @@ mod tests {
             app_id: 1337,
         };
 
-        let utxo_inputs = UtxoInputs::generate(&txn_metadata, amount, mithras_addr.clone())
+        let utxo_inputs = UtxoInputs::generate(&txn_metadata, amount, &mithras_addr)
             .map_err(|e| anyhow::anyhow!(e))?;
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
             utxo_inputs.hpke_envelope,
             discovery_keypair,
             &txn_metadata,
-        );
+        )?;
 
         assert_eq!(recovered_secrets, utxo_inputs.secrets);
 
         let msg = b"example spend authorization";
-        let tweaked_signer = TweakedSigner::derive(&spend_keypair, &recovered_secrets.tweak_scalar);
-        let sig = tweaked_signer.sign(msg);
+        let tweaked_signer =
+            TweakedSigner::derive(&spend_keypair, &recovered_secrets.tweak_scalar)?;
+        let sig = tweaked_signer.sign(msg)?;
 
         let tweak_pubkey_from_sender = utxo_inputs.secrets.tweaked_pubkey;
 
@@ -256,6 +297,49 @@ mod tests {
         if verify_res.is_err() {
             tweaked_signer.public_key().verify(msg, &sig).unwrap();
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_discovery_check_on_envelope() -> anyhow::Result<()> {
+        use ed25519_dalek::VerifyingKey;
+
+        let spend = SpendSeed::generate().map_err(|e| anyhow::anyhow!(e))?;
+        let disc = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
+
+        let addr = MithrasAddr::from_keys(
+            spend.public_key(),
+            disc.public_key(),
+            1,
+            SupportedNetwork::Testnet,
+            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
+        );
+
+        let txn = TransactionMetadata {
+            sender: VerifyingKey::from_bytes(&[0u8; 32])?,
+            first_valid: 10,
+            last_valid: 20,
+            lease: [0u8; 32],
+            network: SupportedNetwork::Mainnet,
+            app_id: 42,
+        };
+
+        let inputs = UtxoInputs::generate(&txn, 12345, &addr).map_err(|e| anyhow::anyhow!(e))?;
+        let env = inputs.hpke_envelope;
+
+        // Correct discovery key should validate
+        let ok = env
+            .discovery_check(disc.private_key(), &txn)
+            .map_err(|e| anyhow::anyhow!(e))?;
+        assert!(ok);
+
+        // Wrong discovery key should not validate
+        let wrong_disc = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
+        let not_ok = env
+            .discovery_check(wrong_disc.private_key(), &txn)
+            .map_err(|e| anyhow::anyhow!(e))?;
+        assert!(!not_ok);
 
         Ok(())
     }

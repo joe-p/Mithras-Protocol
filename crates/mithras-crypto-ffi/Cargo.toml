@@ -1,0 +1,13 @@
+[package]
+name = "mithras-crypto-ffi"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ed25519-dalek = "2.2.0"
+mithras-crypto = { version = "0.1.0", path = "../mithras-crypto" }
+uniffi.workspace = true
+x25519-dalek = "2.0.1"

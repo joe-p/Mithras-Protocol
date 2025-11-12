@@ -4,7 +4,10 @@ use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
 use serde::{Deserialize, Serialize};
 use x25519_dalek::PublicKey as X25519PublicKey;
 
-use crate::hpke::{SupportedHpkeSuite, SupportedNetwork};
+use crate::{
+    MithrasError,
+    hpke::{SupportedHpkeSuite, SupportedNetwork},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MithrasAddr {
@@ -16,14 +19,16 @@ pub struct MithrasAddr {
 }
 
 impl MithrasAddr {
-    pub fn encode(&self) -> String {
+    pub fn encode(&self) -> Result<String, MithrasError> {
         let mut data = Vec::<u8>::with_capacity(3 + 32 + 32);
         data.push(self.version);
         data.push(self.network.into());
         data.push(self.suite.into());
         data.extend_from_slice(&self.spend_ed25519.to_bytes());
         data.extend_from_slice(&self.disc_x25519.to_bytes());
-        bech32::encode::<bech32::Bech32m>(Hrp::parse_unchecked("mith"), &data).unwrap()
+
+        bech32::encode::<bech32::Bech32m>(Hrp::parse_unchecked("mith"), &data)
+            .map_err(|e| MithrasError::AddressEncoding { msg: e.to_string() })
     }
 
     pub fn decode(s: &str) -> Result<Self> {

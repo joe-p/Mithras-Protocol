@@ -1,11 +1,19 @@
 /target
 node_modules/
-__test__/contracts/out/*
-contracts/out/*
+packages/typescript/mithras-contracts-and-circuits/__test__/contracts/out/*
+packages/typescript/mithras-contracts-and-circuits/contracts/out/*
 *.dmypy
 
 # Keep approval programs so they have a record of past versions
-!contracts/out/*.approval.teal
-!__test__/contracts/out/*.approval.teal
+!packages/typescript/mithras-contracts-and-circuits/contracts/out/*.approval.teal
+!packages/typescript/mithras-contracts-and-circuits/__test__/contracts/out/*.approval.teal
 
-ceremonies/*/*.ptau
+# Generated files from uniffi
+packages/typescript/*/rust_modules/
+packages/typescript/*/pkg/
+
+packages/typescript/mithras-contracts-and-circuits/ceremonies/*/*.ptau
+packages/typescript/mithras-contracts-and-circuits/circuits/*
+
+!packages/typescript/mithras-contracts-and-circuits/circuits/*.circom
+!packages/typescript/mithras-contracts-and-circuits/circuits/*.sh
