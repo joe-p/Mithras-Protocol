@@ -12,6 +12,7 @@ pub struct SubscriberTxn {
     pub root_txn: SignedTxnInBlock,
     pub intra_round_offset: Option<u64>,
     pub confirmed_round: Option<u64>,
+    pub path: Vec<usize>,
 }
 
 fn indexer_to_algod(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
@@ -226,6 +227,7 @@ impl Subscriber {
         mut matches: Vec<SubscriberTxn>,
         confirmed_round: Option<u64>,
         intra_round_offset: Option<u64>,
+        path: Vec<usize>,
     ) -> Vec<SubscriberTxn> {
         for txn in txns {
             if let Some(app_id) = sub.app {
@@ -240,6 +242,7 @@ impl Subscriber {
                 root_txn: root_txn.clone(),
                 intra_round_offset,
                 confirmed_round,
+                path: path.clone(),
             });
 
             if let Some(eval_delta) = txn.eval_delta
@@ -248,6 +251,8 @@ impl Subscriber {
                 for (idx, itxn) in inner_txns.iter().enumerate() {
                     let intra_round_offset =
                         intra_round_offset.map_or(idx as u64, |offset| offset + idx as u64);
+                    let mut inner_path = path.clone();
+                    inner_path.push(idx);
                     matches = Subscriber::filter_sub(
                         vec![itxn.clone()],
                         sub,
@@ -255,6 +260,7 @@ impl Subscriber {
                         matches,
                         confirmed_round,
                         Some(intra_round_offset),
+                        inner_path,
                     );
                 }
             }
@@ -338,6 +344,7 @@ impl Subscriber {
                     vec![],
                     None,
                     None,
+                    vec![],
                 );
 
                 for matched in filtered_txns {
