@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use algod_client::{
     AlgodClient,
     models::{BlockAppEvalDelta, SignedTxnInBlock},
 };
-use algokit_transact::AppCallTransactionFields;
+use algokit_transact::{AppCallTransactionFields, TransactionId};
 use base64::{Engine as _, engine::general_purpose};
 use crossbeam_channel::Sender;
 use indexer_client::{IndexerClient, models::Transaction as IndexerTransaction};
@@ -18,11 +20,13 @@ fn indexer_to_subscriber_txn(
     indexer_txn: IndexerTransaction,
     root_txn: SignedTxnInBlock,
 ) -> SubscriberTxn {
+    let intra_round_offset = indexer_txn.intra_round_offset;
+    let confirmed_round = indexer_txn.confirmed_round;
     SubscriberTxn {
         txn: indexer_to_algod(indexer_txn),
         root_txn,
-        intra_round_offset: None,
-        confirmed_round: None,
+        intra_round_offset,
+        confirmed_round,
     }
 }
 
@@ -156,6 +160,40 @@ fn indexer_to_algod(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
                 },
             )
         }
+        "axfer" => {
+            let axfer_txn = indexer_txn
+                .asset_transfer_transaction
+                .clone()
+                .expect("asset transfer transaction missing")
+                .clone();
+
+            algokit_transact::Transaction::AssetTransfer(
+                algokit_transact::AssetTransferTransactionFields {
+                    header,
+                    asset_id: axfer_txn.asset_id,
+                    amount: axfer_txn.amount,
+                    receiver: axfer_txn.receiver.parse().unwrap_or_default(),
+                    close_remainder_to: axfer_txn.close_to.and_then(|addr| addr.parse().ok()),
+                    asset_sender: axfer_txn.sender.and_then(|addr| addr.parse().ok()),
+                },
+            )
+        }
+        "pay" => {
+            let pay_txn = indexer_txn
+                .payment_transaction
+                .clone()
+                .expect("payment transaction missing")
+                .clone();
+
+            algokit_transact::Transaction::Payment(algokit_transact::PaymentTransactionFields {
+                header,
+                amount: pay_txn.amount,
+                receiver: pay_txn.receiver.parse().unwrap_or_default(),
+                close_remainder_to: pay_txn
+                    .close_remainder_to
+                    .and_then(|addr| addr.parse().ok()),
+            })
+        }
         _ => {
             // Handle other types or default case
             todo!("support for '{}' txn type", indexer_txn.tx_type);
@@ -207,6 +245,7 @@ fn indexer_to_algod(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
 #[derive(Clone)]
 pub struct TransactionSubscription {
     pub app: Option<u64>,
+    pub app_args: Option<HashMap<u64, Option<Vec<u8>>>>,
     pub txn_channel: Sender<SubscriberTxn>,
 }
 
@@ -215,15 +254,22 @@ pub struct Subscriber {
     indexer: IndexerClient,
     subscriptions: Vec<TransactionSubscription>,
     last_round: u64,
+    stop_round: Option<u64>,
 }
 
 impl Subscriber {
-    pub fn new(algod: AlgodClient, indexer: IndexerClient, initial_round: u64) -> Self {
+    pub fn new(
+        algod: AlgodClient,
+        indexer: IndexerClient,
+        initial_round: u64,
+        stop_round: Option<u64>,
+    ) -> Self {
         Subscriber {
             algod,
             indexer,
             subscriptions: Vec::new(),
             last_round: initial_round.saturating_sub(1),
+            stop_round,
         }
     }
 
@@ -239,10 +285,35 @@ impl Subscriber {
         for subscriber_txn in txns {
             let txn = subscriber_txn.txn;
 
-            if let Some(app_id) = sub.app {
+            if let Some(subbed_app_id) = sub.app {
                 match &txn.application_id {
-                    Some(id) if *id != app_id => continue,
+                    Some(id) if *id != subbed_app_id => continue,
                     _ => {}
+                }
+            }
+
+            if let Some(subbed_app_args) = &sub.app_args {
+                let appl_txn = match &txn.signed_transaction.transaction {
+                    algokit_transact::Transaction::AppCall(fields) => fields,
+                    _ => continue,
+                };
+
+                let mut args_match = true;
+
+                for (arg_idx, expected_arg) in subbed_app_args {
+                    let actual_arg = appl_txn
+                        .args
+                        .as_ref()
+                        .and_then(|args| args.get(*arg_idx as usize));
+
+                    if actual_arg != expected_arg.as_ref() {
+                        args_match = false;
+                        break;
+                    }
+                }
+
+                if !args_match {
+                    continue;
                 }
             }
 
@@ -295,7 +366,7 @@ impl Subscriber {
                 None,
                 None,
                 Some(min_round),
-                None,
+                self.stop_round,
                 None,
                 None,
                 None,
@@ -371,15 +442,33 @@ mod tests {
 
     #[tokio::test]
     async fn test_app_subscription() {
-        let algod = AlgodClient::localnet();
-        let indexer = IndexerClient::localnet();
-        let mut subscriber = Subscriber::new(algod, indexer, 0);
+        let algod = AlgodClient::mainnet();
+        let indexer = IndexerClient::mainnet();
 
         let (txn_sender, txn_receiver) = crossbeam_channel::unbounded();
 
+        let txid = "KTN52RWH34JR637HG6R3LIWMIW6R6WV7OSHFFYDFCBTMQ3BAKTGA";
+        let txn = indexer.lookup_transaction(txid).await.unwrap();
+        let confirmed_round = txn.transaction.confirmed_round.unwrap();
+
+        let mut subscriber = Subscriber::new(
+            algod,
+            indexer,
+            confirmed_round - 1,
+            Some(confirmed_round + 1),
+        );
+
+        let mut subbed_args: HashMap<u64, Option<Vec<u8>>> = HashMap::new();
+
+        let app_txn = txn.transaction.application_transaction.as_ref().unwrap();
+
+        let b64_arg = app_txn.application_args.as_ref().unwrap().get(1).unwrap();
+
+        subbed_args.insert(1, Some(general_purpose::STANDARD.decode(b64_arg).unwrap()));
         let sub = TransactionSubscription {
-            app: Some(2166),
+            app: Some(app_txn.application_id),
             txn_channel: txn_sender,
+            app_args: Some(subbed_args),
         };
 
         subscriber.subscribe(sub.clone());
@@ -389,5 +478,6 @@ mod tests {
         let txn = txn_receiver.try_recv().unwrap();
 
         assert_eq!(txn.txn.application_id.unwrap(), sub.app.unwrap());
+        assert_eq!(txn.txn.signed_transaction.transaction.id().unwrap(), txid);
     }
 }
