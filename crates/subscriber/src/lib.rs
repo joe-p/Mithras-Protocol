@@ -15,6 +15,20 @@ pub struct SubscriberTxn {
     pub path: Vec<usize>,
 }
 
+fn indexer_to_subscriber_txn(
+    indexer_txn: IndexerTransaction,
+    root_txn: SignedTxnInBlock,
+    path: Vec<usize>,
+) -> SubscriberTxn {
+    SubscriberTxn {
+        txn: indexer_to_algod(indexer_txn),
+        root_txn,
+        intra_round_offset: None,
+        confirmed_round: None,
+        path,
+    }
+}
+
 fn indexer_to_algod(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
     let header: algokit_transact::TransactionHeader = algokit_transact::TransactionHeader {
         sender: indexer_txn.sender.parse().unwrap_or_default(),
@@ -221,15 +235,14 @@ impl Subscriber {
     }
 
     fn filter_sub(
-        txns: Vec<SignedTxnInBlock>,
+        txns: Vec<SubscriberTxn>,
         sub: &TransactionSubscription,
         root_txn: SignedTxnInBlock,
         mut matches: Vec<SubscriberTxn>,
-        confirmed_round: Option<u64>,
-        intra_round_offset: Option<u64>,
-        path: Vec<usize>,
     ) -> Vec<SubscriberTxn> {
-        for txn in txns {
+        for subscriber_txn in txns {
+            let txn = subscriber_txn.txn;
+
             if let Some(app_id) = sub.app {
                 match &txn.application_id {
                     Some(id) if *id != app_id => continue,
@@ -240,29 +253,34 @@ impl Subscriber {
             matches.push(SubscriberTxn {
                 txn: txn.clone(),
                 root_txn: root_txn.clone(),
-                intra_round_offset,
-                confirmed_round,
-                path: path.clone(),
+                intra_round_offset: subscriber_txn.intra_round_offset,
+                confirmed_round: subscriber_txn.confirmed_round,
+                path: subscriber_txn.path.clone(),
             });
 
             if let Some(eval_delta) = txn.eval_delta
                 && let Some(inner_txns) = eval_delta.inner_txns
             {
-                for (idx, itxn) in inner_txns.iter().enumerate() {
-                    let intra_round_offset =
-                        intra_round_offset.map_or(idx as u64, |offset| offset + idx as u64);
-                    let mut inner_path = path.clone();
-                    inner_path.push(idx);
-                    matches = Subscriber::filter_sub(
-                        vec![itxn.clone()],
-                        sub,
-                        root_txn.clone(),
-                        matches,
-                        confirmed_round,
-                        Some(intra_round_offset),
-                        inner_path,
-                    );
-                }
+                let inner_subscriber_txns = inner_txns
+                    .into_iter()
+                    .enumerate()
+                    .map(|(idx, inner_txn)| SubscriberTxn {
+                        txn: inner_txn,
+                        root_txn: root_txn.clone(),
+                        intra_round_offset: subscriber_txn
+                            .intra_round_offset
+                            .map(|offset| offset + idx as u64 + 1),
+                        confirmed_round: subscriber_txn.confirmed_round,
+                        path: {
+                            let mut new_path = subscriber_txn.path.clone();
+                            new_path.push(idx);
+                            new_path
+                        },
+                    })
+                    .collect::<Vec<SubscriberTxn>>();
+
+                matches =
+                    Subscriber::filter_sub(inner_subscriber_txns, sub, root_txn.clone(), matches);
             }
         }
 
@@ -337,13 +355,16 @@ impl Subscriber {
                     search_result
                         .transactions
                         .iter()
-                        .map(|t| indexer_to_algod(t.clone()))
-                        .collect::<Vec<SignedTxnInBlock>>(),
+                        .map(|t| {
+                            indexer_to_subscriber_txn(
+                                t.clone(),
+                                indexer_to_algod(t.clone()),
+                                vec![],
+                            )
+                        })
+                        .collect::<Vec<SubscriberTxn>>(),
                     sub,
                     SignedTxnInBlock::default(),
-                    vec![],
-                    None,
-                    None,
                     vec![],
                 );
 
