@@ -7,12 +7,14 @@ use base64::{Engine as _, engine::general_purpose};
 use crossbeam_channel::Sender;
 use indexer_client::{IndexerClient, models::Transaction as IndexerTransaction};
 
-pub struct SubscribedTxn {
-    pub matched_txn: SignedTxnInBlock,
+pub struct SubscriberTxn {
+    pub txn: SignedTxnInBlock,
     pub root_txn: SignedTxnInBlock,
+    pub intra_round_offset: Option<u64>,
+    pub confirmed_round: Option<u64>,
 }
 
-fn convert_indexer_txn(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
+fn indexer_to_algod(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
     let header: algokit_transact::TransactionHeader = algokit_transact::TransactionHeader {
         sender: indexer_txn.sender.parse().unwrap_or_default(),
         fee: Some(indexer_txn.fee),
@@ -173,7 +175,7 @@ fn convert_indexer_txn(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
             inner_txns: indexer_txn.inner_txns.map(|itxns| {
                 itxns
                     .into_iter()
-                    .map(convert_indexer_txn)
+                    .map(indexer_to_algod)
                     .collect::<Vec<SignedTxnInBlock>>()
             }),
             shared_accounts: None,
@@ -193,7 +195,7 @@ fn convert_indexer_txn(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
 #[derive(Clone)]
 pub struct TransactionSubscription {
     pub app: Option<u64>,
-    pub txn_channel: Sender<SubscribedTxn>,
+    pub txn_channel: Sender<SubscriberTxn>,
 }
 
 pub struct Subscriber {
@@ -218,11 +220,13 @@ impl Subscriber {
     }
 
     fn filter_sub(
-        txns: &[SignedTxnInBlock],
+        txns: Vec<SignedTxnInBlock>,
         sub: &TransactionSubscription,
-        root: SignedTxnInBlock,
-        mut matches: Vec<SubscribedTxn>,
-    ) -> Vec<SubscribedTxn> {
+        root_txn: SignedTxnInBlock,
+        mut matches: Vec<SubscriberTxn>,
+        confirmed_round: Option<u64>,
+        intra_round_offset: Option<u64>,
+    ) -> Vec<SubscriberTxn> {
         for txn in txns {
             if let Some(app_id) = sub.app {
                 match &txn.application_id {
@@ -231,16 +235,29 @@ impl Subscriber {
                 }
             }
 
-            matches.push(SubscribedTxn {
-                matched_txn: txn.clone(),
-                root_txn: root.clone(),
+            matches.push(SubscriberTxn {
+                txn: txn.clone(),
+                root_txn: root_txn.clone(),
+                intra_round_offset,
+                confirmed_round,
             });
-        }
 
-        if let Some(eval_delta) = &root.eval_delta
-            && let Some(inner_txns) = &eval_delta.inner_txns
-        {
-            matches = Subscriber::filter_sub(inner_txns, sub, root.clone(), matches);
+            if let Some(eval_delta) = txn.eval_delta
+                && let Some(inner_txns) = eval_delta.inner_txns
+            {
+                for (idx, itxn) in inner_txns.iter().enumerate() {
+                    let intra_round_offset =
+                        intra_round_offset.map_or(idx as u64, |offset| offset + idx as u64);
+                    matches = Subscriber::filter_sub(
+                        vec![itxn.clone()],
+                        sub,
+                        root_txn.clone(),
+                        matches,
+                        confirmed_round,
+                        Some(intra_round_offset),
+                    );
+                }
+            }
         }
 
         matches
@@ -314,12 +331,13 @@ impl Subscriber {
                     search_result
                         .transactions
                         .iter()
-                        .map(|t| convert_indexer_txn(t.clone()))
-                        .collect::<Vec<SignedTxnInBlock>>()
-                        .as_slice(),
+                        .map(|t| indexer_to_algod(t.clone()))
+                        .collect::<Vec<SignedTxnInBlock>>(),
                     sub,
                     SignedTxnInBlock::default(),
                     vec![],
+                    None,
+                    None,
                 );
 
                 for matched in filtered_txns {
@@ -362,6 +380,6 @@ mod tests {
 
         let txn = txn_receiver.try_recv().unwrap();
 
-        assert_eq!(txn.matched_txn.application_id.unwrap(), sub.app.unwrap());
+        assert_eq!(txn.txn.application_id.unwrap(), sub.app.unwrap());
     }
 }
