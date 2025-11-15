@@ -7,199 +7,186 @@ use base64::{Engine as _, engine::general_purpose};
 use crossbeam_channel::Sender;
 use indexer_client::{IndexerClient, models::Transaction as IndexerTransaction};
 
-pub struct NewSignedTxnInBlock(SignedTxnInBlock);
-
-impl From<SignedTxnInBlock> for NewSignedTxnInBlock {
-    fn from(value: SignedTxnInBlock) -> Self {
-        NewSignedTxnInBlock(value)
-    }
-}
-
 pub struct SubscribedTxn {
     pub matched_txn: SignedTxnInBlock,
     pub root_txn: SignedTxnInBlock,
 }
 
-impl From<IndexerTransaction> for NewSignedTxnInBlock {
-    fn from(indexer_txn: IndexerTransaction) -> Self {
-        let header: algokit_transact::TransactionHeader = algokit_transact::TransactionHeader {
-            sender: indexer_txn.sender.parse().unwrap_or_default(),
-            fee: Some(indexer_txn.fee),
-            // TODO: Fix indexer returning u32 here
-            first_valid: indexer_txn.first_valid as u64,
-            last_valid: indexer_txn.last_valid as u64,
-            genesis_hash: indexer_txn.genesis_hash.clone().map(|gh| {
-                gh.try_into()
-                    .expect("all genesis hashes should be 32 bytes")
-            }),
-            genesis_id: indexer_txn.genesis_id.clone(),
-            note: indexer_txn
-                .note
-                .map(|n| general_purpose::STANDARD.decode(n).unwrap_or_default()),
-            rekey_to: indexer_txn.rekey_to.and_then(|addr| addr.parse().ok()),
-            lease: indexer_txn
-                .lease
-                .map(|l| l.try_into().expect("all leases should be 32 bytes")),
-            group: indexer_txn
-                .group
-                .map(|g| g.try_into().expect("all groups should be 32 bytes")),
-        };
+fn convert_indexer_txn(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
+    let header: algokit_transact::TransactionHeader = algokit_transact::TransactionHeader {
+        sender: indexer_txn.sender.parse().unwrap_or_default(),
+        fee: Some(indexer_txn.fee),
+        // TODO: Fix indexer returning u32 here
+        first_valid: indexer_txn.first_valid as u64,
+        last_valid: indexer_txn.last_valid as u64,
+        genesis_hash: indexer_txn.genesis_hash.clone().map(|gh| {
+            gh.try_into()
+                .expect("all genesis hashes should be 32 bytes")
+        }),
+        genesis_id: indexer_txn.genesis_id.clone(),
+        note: indexer_txn
+            .note
+            .map(|n| general_purpose::STANDARD.decode(n).unwrap_or_default()),
+        rekey_to: indexer_txn.rekey_to.and_then(|addr| addr.parse().ok()),
+        lease: indexer_txn
+            .lease
+            .map(|l| l.try_into().expect("all leases should be 32 bytes")),
+        group: indexer_txn
+            .group
+            .map(|g| g.try_into().expect("all groups should be 32 bytes")),
+    };
 
-        let txn: algokit_transact::Transaction = match indexer_txn.tx_type.as_str() {
-            "appl" => {
-                let appl_txn = indexer_txn
-                    .application_transaction
-                    .clone()
-                    .expect("application transaction missing")
-                    .clone();
-
-                algokit_transact::Transaction::AppCall(AppCallTransactionFields {
-                    header,
-                    app_id: indexer_txn
-                        .application_transaction
-                        .as_ref()
-                        .map_or(0, |app_txn| app_txn.application_id),
-                    account_references: appl_txn.accounts.map(|accounts_vec| {
-                        accounts_vec
-                            .iter()
-                            .map(|acc| acc.parse().unwrap_or_default())
-                            .collect()
-                    }),
-                    app_references: appl_txn.foreign_apps,
-                    asset_references: appl_txn.foreign_assets,
-                    // TODO: conversion function for on_complete
-                    on_complete: unsafe {
-                        std::mem::transmute::<u8, algokit_transact::OnApplicationComplete>(
-                            appl_txn.on_completion as u8,
-                        )
-                    },
-                    args: appl_txn.application_args.map(|args_vec| {
-                        args_vec
-                            .iter()
-                            .map(|arg| general_purpose::STANDARD.decode(arg).unwrap_or_default())
-                            .collect()
-                    }),
-                    approval_program: appl_txn.approval_program,
-                    clear_state_program: appl_txn.clear_state_program,
-                    extra_program_pages: appl_txn.extra_program_pages,
-                    global_state_schema: appl_txn.global_state_schema.map(|schema| {
-                        algokit_transact::StateSchema {
-                            num_uints: schema.num_uint,
-                            num_byte_slices: schema.num_byte_slice,
-                        }
-                    }),
-                    local_state_schema: appl_txn.local_state_schema.map(|schema| {
-                        algokit_transact::StateSchema {
-                            num_uints: schema.num_uint,
-                            num_byte_slices: schema.num_byte_slice,
-                        }
-                    }),
-                    box_references: appl_txn.box_references.map(|boxes| {
-                        boxes
-                            .iter()
-                            .map(|b| algokit_transact::BoxReference {
-                                app_id: b.app,
-                                name: b.name.clone(),
-                            })
-                            .collect()
-                    }),
-                })
-            }
-            "acfg" => {
-                let acfg_txn = indexer_txn
-                    .asset_config_transaction
-                    .clone()
-                    .expect("asset config transaction missing")
-                    .clone();
-
-                algokit_transact::Transaction::AssetConfig(
-                    algokit_transact::AssetConfigTransactionFields {
-                        header,
-                        asset_id: acfg_txn.asset_id.unwrap_or(0),
-                        asset_name: acfg_txn.params.as_ref().and_then(|p| p.name.clone()),
-
-                        unit_name: acfg_txn.params.as_ref().and_then(|p| p.unit_name.clone()),
-                        url: acfg_txn.params.as_ref().and_then(|p| p.url.clone()),
-                        clawback: acfg_txn
-                            .params
-                            .as_ref()
-                            .and_then(|p| p.clawback.clone())
-                            .and_then(|addr| addr.parse().ok()),
-                        manager: acfg_txn
-                            .params
-                            .as_ref()
-                            .and_then(|p| p.manager.clone())
-                            .and_then(|addr| addr.parse().ok()),
-                        reserve: acfg_txn
-                            .params
-                            .as_ref()
-                            .and_then(|p| p.reserve.clone())
-                            .and_then(|addr| addr.parse().ok()),
-                        freeze: acfg_txn
-                            .params
-                            .as_ref()
-                            .and_then(|p| p.freeze.clone())
-                            .and_then(|addr| addr.parse().ok()),
-                        total: acfg_txn.params.as_ref().map(|p| p.total),
-                        decimals: acfg_txn.params.as_ref().map(|p| p.decimals),
-                        default_frozen: acfg_txn.params.as_ref().and_then(|p| p.default_frozen),
-                        // convert metadata hash to 32 array
-                        metadata_hash: acfg_txn.params.and_then(|p| p.metadata_hash).map(|mh| {
-                            mh.try_into()
-                                .expect("all metadata hashes should be 32 bytes")
-                        }),
-                    },
-                )
-            }
-            _ => {
-                // Handle other types or default case
-                todo!("support for '{}' txn type", indexer_txn.tx_type);
-            }
-        };
-
-        // TODO: handle sig/msig
-        let stxn = algokit_transact::SignedTransaction {
-            transaction: txn,
-            signature: None,
-            auth_address: indexer_txn.auth_addr.and_then(|addr| addr.parse().ok()),
-            multisignature: None,
-        };
-        NewSignedTxnInBlock(SignedTxnInBlock {
-            signed_transaction: stxn,
-            application_id: indexer_txn
+    let txn: algokit_transact::Transaction = match indexer_txn.tx_type.as_str() {
+        "appl" => {
+            let appl_txn = indexer_txn
                 .application_transaction
-                .map(|app_txn| app_txn.application_id),
-            // TODO: handle logic sig
-            logic_signature: None,
-            asset_closing_amount: indexer_txn
-                .asset_transfer_transaction
-                .and_then(|t| t.close_amount),
-            closing_amount: indexer_txn.closing_amount,
-            // TODO: convert deltas
-            eval_delta: Some(BlockAppEvalDelta {
-                global_delta: None,
-                local_deltas: None,
-                inner_txns: indexer_txn.inner_txns.map(|itxns| {
-                    itxns
-                        .into_iter()
-                        .map(|itxn| {
-                            let t: NewSignedTxnInBlock = itxn.into();
-                            t.0
-                        })
-                        .collect::<Vec<SignedTxnInBlock>>()
+                .clone()
+                .expect("application transaction missing")
+                .clone();
+
+            algokit_transact::Transaction::AppCall(AppCallTransactionFields {
+                header,
+                app_id: indexer_txn
+                    .application_transaction
+                    .as_ref()
+                    .map_or(0, |app_txn| app_txn.application_id),
+                account_references: appl_txn.accounts.map(|accounts_vec| {
+                    accounts_vec
+                        .iter()
+                        .map(|acc| acc.parse().unwrap_or_default())
+                        .collect()
                 }),
-                shared_accounts: None,
-                logs: None,
-            }),
-            has_genesis_hash: Some(indexer_txn.genesis_hash.is_some()),
-            has_genesis_id: Some(indexer_txn.genesis_id.is_some()),
-            config_asset: indexer_txn
+                app_references: appl_txn.foreign_apps,
+                asset_references: appl_txn.foreign_assets,
+                // TODO: conversion function for on_complete
+                on_complete: unsafe {
+                    std::mem::transmute::<u8, algokit_transact::OnApplicationComplete>(
+                        appl_txn.on_completion as u8,
+                    )
+                },
+                args: appl_txn.application_args.map(|args_vec| {
+                    args_vec
+                        .iter()
+                        .map(|arg| general_purpose::STANDARD.decode(arg).unwrap_or_default())
+                        .collect()
+                }),
+                approval_program: appl_txn.approval_program,
+                clear_state_program: appl_txn.clear_state_program,
+                extra_program_pages: appl_txn.extra_program_pages,
+                global_state_schema: appl_txn.global_state_schema.map(|schema| {
+                    algokit_transact::StateSchema {
+                        num_uints: schema.num_uint,
+                        num_byte_slices: schema.num_byte_slice,
+                    }
+                }),
+                local_state_schema: appl_txn.local_state_schema.map(|schema| {
+                    algokit_transact::StateSchema {
+                        num_uints: schema.num_uint,
+                        num_byte_slices: schema.num_byte_slice,
+                    }
+                }),
+                box_references: appl_txn.box_references.map(|boxes| {
+                    boxes
+                        .iter()
+                        .map(|b| algokit_transact::BoxReference {
+                            app_id: b.app,
+                            name: b.name.clone(),
+                        })
+                        .collect()
+                }),
+            })
+        }
+        "acfg" => {
+            let acfg_txn = indexer_txn
                 .asset_config_transaction
-                .and_then(|t| t.asset_id),
-            receiver_rewards: indexer_txn.receiver_rewards,
-            sender_rewards: indexer_txn.sender_rewards,
-            close_rewards: indexer_txn.close_rewards,
-        })
+                .clone()
+                .expect("asset config transaction missing")
+                .clone();
+
+            algokit_transact::Transaction::AssetConfig(
+                algokit_transact::AssetConfigTransactionFields {
+                    header,
+                    asset_id: acfg_txn.asset_id.unwrap_or(0),
+                    asset_name: acfg_txn.params.as_ref().and_then(|p| p.name.clone()),
+
+                    unit_name: acfg_txn.params.as_ref().and_then(|p| p.unit_name.clone()),
+                    url: acfg_txn.params.as_ref().and_then(|p| p.url.clone()),
+                    clawback: acfg_txn
+                        .params
+                        .as_ref()
+                        .and_then(|p| p.clawback.clone())
+                        .and_then(|addr| addr.parse().ok()),
+                    manager: acfg_txn
+                        .params
+                        .as_ref()
+                        .and_then(|p| p.manager.clone())
+                        .and_then(|addr| addr.parse().ok()),
+                    reserve: acfg_txn
+                        .params
+                        .as_ref()
+                        .and_then(|p| p.reserve.clone())
+                        .and_then(|addr| addr.parse().ok()),
+                    freeze: acfg_txn
+                        .params
+                        .as_ref()
+                        .and_then(|p| p.freeze.clone())
+                        .and_then(|addr| addr.parse().ok()),
+                    total: acfg_txn.params.as_ref().map(|p| p.total),
+                    decimals: acfg_txn.params.as_ref().map(|p| p.decimals),
+                    default_frozen: acfg_txn.params.as_ref().and_then(|p| p.default_frozen),
+                    // convert metadata hash to 32 array
+                    metadata_hash: acfg_txn.params.and_then(|p| p.metadata_hash).map(|mh| {
+                        mh.try_into()
+                            .expect("all metadata hashes should be 32 bytes")
+                    }),
+                },
+            )
+        }
+        _ => {
+            // Handle other types or default case
+            todo!("support for '{}' txn type", indexer_txn.tx_type);
+        }
+    };
+
+    // TODO: handle sig/msig
+    let stxn = algokit_transact::SignedTransaction {
+        transaction: txn,
+        signature: None,
+        auth_address: indexer_txn.auth_addr.and_then(|addr| addr.parse().ok()),
+        multisignature: None,
+    };
+    SignedTxnInBlock {
+        signed_transaction: stxn,
+        application_id: indexer_txn
+            .application_transaction
+            .map(|app_txn| app_txn.application_id),
+        // TODO: handle logic sig
+        logic_signature: None,
+        asset_closing_amount: indexer_txn
+            .asset_transfer_transaction
+            .and_then(|t| t.close_amount),
+        closing_amount: indexer_txn.closing_amount,
+        // TODO: convert deltas
+        eval_delta: Some(BlockAppEvalDelta {
+            global_delta: None,
+            local_deltas: None,
+            inner_txns: indexer_txn.inner_txns.map(|itxns| {
+                itxns
+                    .into_iter()
+                    .map(convert_indexer_txn)
+                    .collect::<Vec<SignedTxnInBlock>>()
+            }),
+            shared_accounts: None,
+            logs: None,
+        }),
+        has_genesis_hash: Some(indexer_txn.genesis_hash.is_some()),
+        has_genesis_id: Some(indexer_txn.genesis_id.is_some()),
+        config_asset: indexer_txn
+            .asset_config_transaction
+            .and_then(|t| t.asset_id),
+        receiver_rewards: indexer_txn.receiver_rewards,
+        sender_rewards: indexer_txn.sender_rewards,
+        close_rewards: indexer_txn.close_rewards,
     }
 }
 
@@ -327,10 +314,7 @@ impl Subscriber {
                     search_result
                         .transactions
                         .iter()
-                        .map(|t| {
-                            let stxb: NewSignedTxnInBlock = t.clone().into();
-                            stxb.0
-                        })
+                        .map(|t| convert_indexer_txn(t.clone()))
                         .collect::<Vec<SignedTxnInBlock>>()
                         .as_slice(),
                     sub,
