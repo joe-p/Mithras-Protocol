@@ -231,12 +231,11 @@ impl Subscriber {
         self.subscriptions.push(sub);
     }
 
-    fn filter_sub(
+    fn send_matches(
         txns: Vec<SubscriberTxn>,
         sub: &TransactionSubscription,
         root_txn: SignedTxnInBlock,
-        mut matches: Vec<SubscriberTxn>,
-    ) -> Vec<SubscriberTxn> {
+    ) -> Result<(), String> {
         for subscriber_txn in txns {
             let txn = subscriber_txn.txn;
 
@@ -247,12 +246,14 @@ impl Subscriber {
                 }
             }
 
-            matches.push(SubscriberTxn {
-                txn: txn.clone(),
-                root_txn: root_txn.clone(),
-                intra_round_offset: subscriber_txn.intra_round_offset,
-                confirmed_round: subscriber_txn.confirmed_round,
-            });
+            sub.txn_channel
+                .try_send(SubscriberTxn {
+                    txn: txn.clone(),
+                    root_txn: root_txn.clone(),
+                    intra_round_offset: subscriber_txn.intra_round_offset,
+                    confirmed_round: subscriber_txn.confirmed_round,
+                })
+                .map_err(|e| e.to_string())?;
 
             if let Some(eval_delta) = txn.eval_delta
                 && let Some(inner_txns) = eval_delta.inner_txns
@@ -270,12 +271,11 @@ impl Subscriber {
                     })
                     .collect::<Vec<SubscriberTxn>>();
 
-                matches =
-                    Subscriber::filter_sub(inner_subscriber_txns, sub, root_txn.clone(), matches);
+                Subscriber::send_matches(inner_subscriber_txns, sub, root_txn.clone())?;
             }
         }
 
-        matches
+        Ok(())
     }
 
     async fn indexer_search_sub(
@@ -342,7 +342,7 @@ impl Subscriber {
                     .await
                     .map_err(|e| e.to_string())?;
 
-                let filtered_txns = Subscriber::filter_sub(
+                Subscriber::send_matches(
                     search_result
                         .transactions
                         .iter()
@@ -350,12 +350,7 @@ impl Subscriber {
                         .collect::<Vec<SubscriberTxn>>(),
                     sub,
                     SignedTxnInBlock::default(),
-                    vec![],
-                );
-
-                for matched in filtered_txns {
-                    sub.txn_channel.send(matched).map_err(|e| e.to_string())?;
-                }
+                )?;
 
                 next = search_result.next_token;
             }
