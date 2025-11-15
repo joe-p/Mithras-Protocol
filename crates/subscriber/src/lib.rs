@@ -12,20 +12,17 @@ pub struct SubscriberTxn {
     pub root_txn: SignedTxnInBlock,
     pub intra_round_offset: Option<u64>,
     pub confirmed_round: Option<u64>,
-    pub path: Vec<usize>,
 }
 
 fn indexer_to_subscriber_txn(
     indexer_txn: IndexerTransaction,
     root_txn: SignedTxnInBlock,
-    path: Vec<usize>,
 ) -> SubscriberTxn {
     SubscriberTxn {
         txn: indexer_to_algod(indexer_txn),
         root_txn,
         intra_round_offset: None,
         confirmed_round: None,
-        path,
     }
 }
 
@@ -255,7 +252,6 @@ impl Subscriber {
                 root_txn: root_txn.clone(),
                 intra_round_offset: subscriber_txn.intra_round_offset,
                 confirmed_round: subscriber_txn.confirmed_round,
-                path: subscriber_txn.path.clone(),
             });
 
             if let Some(eval_delta) = txn.eval_delta
@@ -271,11 +267,6 @@ impl Subscriber {
                             .intra_round_offset
                             .map(|offset| offset + idx as u64 + 1),
                         confirmed_round: subscriber_txn.confirmed_round,
-                        path: {
-                            let mut new_path = subscriber_txn.path.clone();
-                            new_path.push(idx);
-                            new_path
-                        },
                     })
                     .collect::<Vec<SubscriberTxn>>();
 
@@ -355,13 +346,7 @@ impl Subscriber {
                     search_result
                         .transactions
                         .iter()
-                        .map(|t| {
-                            indexer_to_subscriber_txn(
-                                t.clone(),
-                                indexer_to_algod(t.clone()),
-                                vec![],
-                            )
-                        })
+                        .map(|t| indexer_to_subscriber_txn(t.clone(), indexer_to_algod(t.clone())))
                         .collect::<Vec<SubscriberTxn>>(),
                     sub,
                     SignedTxnInBlock::default(),
