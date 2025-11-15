@@ -345,8 +345,8 @@ impl Subscriber {
                 Subscriber::send_matches(
                     search_result
                         .transactions
-                        .iter()
-                        .map(|t| indexer_to_subscriber_txn(t.clone(), indexer_to_algod(t.clone())))
+                        .into_iter()
+                        .map(|t| indexer_to_subscriber_txn(t.clone(), indexer_to_algod(t)))
                         .collect::<Vec<SubscriberTxn>>(),
                     sub,
                     SignedTxnInBlock::default(),
