@@ -1,0 +1,15 @@
+[package]
+name = "subscriber"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+algokit_transact = { git = "https://github.com/algorandfoundation/algokit-core", branch = "main" }
+algod_client = { git = "https://github.com/algorandfoundation/algokit-core", branch = "main" }
+indexer_client = { git = "https://github.com/algorandfoundation/algokit-core", branch = "main" }
+crossbeam-channel = "0.5.15"
+base64 = "0.22.1"
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"
+tokio = { version = "1.48.0", features = ["macros"] }
