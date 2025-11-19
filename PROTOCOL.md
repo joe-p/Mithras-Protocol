@@ -13,27 +13,11 @@
 
 - **Type:** Ed25519 keypair
 - **Purpose:** Unique per UTXO; used for locking and spending that output.
-  - Public: $P' = P + h·G$ (computed by sender)
-  - Private: $s' = (s + h) \\bmod q$ (computed by receiver); reuse the base key’s `prefix` for signing.
-- **Privacy:** Unlinkable to $P$ without knowing $h$.
+  - Public: $P' = P + t·G$ (computed by sender)
+  - Private: $s' = (s + t) \\bmod q$ (computed by receiver); reuse the base key's `prefix` for signing.
+- **Privacy:** Unlinkable to $P$ without knowing $t$.
 - **Sender:** Can compute $P'$ but not $s'$.
-- **Receiver:** Can compute both from $s$ and $h$.
-
-#### Signing with the Tweaked Key (Ed25519)
-
-Ed25519 signatures remain standard, verifying under $P'$, by using the base key’s deterministic nonce `prefix` and the tweaked scalar `s'`:
-
-1. From the base seed, compute `(s, prefix)` via `digest = SHA512(seed)`; clamp `digest[0..32]` to get `s`, and set `prefix = digest[32..64]`.
-1. Derive `s' = (s + h) mod q` and `P' = P + h·G`.
-1. For message `m`:
-   - `r = H(prefix || m) mod q`, `R = r·G`
-   - `k = H(encode(R) || encode(P') || m) mod q`
-   - `s_sig = r + k·s' (mod q)`
-1. Signature is `(encode(R), s_sig)` — a standard Ed25519 signature under public key `P'`.
-
-Notes:
-
-- The nonce `r` depends only on `prefix` and `m`, not on `s'`. Reusing the same `prefix` across different one-time tweaked keys is safe because `k` binds each signature to its corresponding `P'`.
+- **Receiver:** Can compute $s'$ (and thus $P'$) from $s$ and $t$.
 
 ### Stealth Address *(Friendly Term)*
 
@@ -56,7 +40,7 @@ Notes:
   - Sender: $T = r·D$
   - Receiver: $T = d·R$
 - **Purpose:** Input for:
-  - Tweak scalar $h$ for spend key derivation.
+  - Tweak scalar $t$ for spend key derivation.
   - Key for computing the discovery tag.
 
 ### Discovery Tag
@@ -91,7 +75,7 @@ Notes:
 | **Ephemeral privkey** `r`       | Yes    | No       | No                    |
 | **Ephemeral pubkey** `R`        | Yes    | Yes      | Yes (in tx)           |
 | **Discovery secret** `T`        | Yes    | Yes      | No                    |
-| **Tweak scalar** `h`            | Yes    | Yes      | No                    |
+| **Tweak scalar** `t`            | Yes    | Yes      | No                    |
 | **One-time spend privkey** `s'` | No     | Yes      | No                    |
 | **One-time spend pubkey** `P'`  | Yes    | Yes      | Yes (locks UTXO)      |
 | **Discovery tag** `tag`         | Yes    | Yes      | Yes (in tx)           |
