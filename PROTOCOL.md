@@ -48,7 +48,7 @@
 - **Formula:**
 
   ```text
-  tag_key = HKDF-Expand(HKDF-Extract(0, discovery_secret),
+  tag_key = HKDF-Expand(HKDF-Extract(0, T),
                         "discovery-tag", 32)
   tag = HMAC(tag_key || sender || fv || lv || lease)
   ```
@@ -66,20 +66,20 @@
 
 ## Who Knows What Table
 
-| Value                           | Sender | Receiver | Observer (Blockchain) |
-| ------------------------------- | ------ | -------- | --------------------- |
-| **Spend privkey** `s`           | No     | Yes      | No                    |
-| **Spend pubkey** `P`            | Yes    | Yes      | Possibly (published)  |
-| **Discovery privkey** `d`       | No     | Yes      | No                    |
-| **Discovery pubkey** `D`        | Yes    | Yes      | Possibly (published)  |
-| **Ephemeral privkey** `r`       | Yes    | No       | No                    |
-| **Ephemeral pubkey** `R`        | Yes    | Yes      | Yes (in tx)           |
-| **Discovery secret** `T`        | Yes    | Yes      | No                    |
-| **Tweak scalar** `t`            | Yes    | Yes      | No                    |
-| **One-time spend privkey** `s'` | No     | Yes      | No                    |
-| **One-time spend pubkey** `P'`  | Yes    | Yes      | Yes (locks UTXO)      |
-| **Discovery tag** `tag`         | Yes    | Yes      | Yes (in tx)           |
-| **Spend secret**                | Yes    | Yes      | No (encrypted in tx)  |
+| Value                           | Sender | Receiver | Observer (Blockchain)           |
+| ------------------------------- | ------ | -------- | ------------------------------- |
+| **Spend privkey** `s`           | No     | Yes      | No                              |
+| **Spend pubkey** `P`            | Yes    | Yes      | Possibly (externally published) |
+| **Discovery privkey** `d`       | No     | Yes      | No                              |
+| **Discovery pubkey** `D`        | Yes    | Yes      | Possibly (externally published) |
+| **Ephemeral privkey** `r`       | Yes    | No       | No                              |
+| **Ephemeral pubkey** `R`        | Yes    | Yes      | Yes (in tx)                     |
+| **Discovery secret** `T`        | Yes    | Yes      | No                              |
+| **Tweak scalar** `t`            | Yes    | Yes      | No                              |
+| **One-time spend privkey** `s'` | No     | Yes      | No                              |
+| **One-time spend pubkey** `P'`  | Yes    | Yes      | Yes (locks UTXO)                |
+| **Discovery tag** `tag`         | Yes    | Yes      | Yes (in tx)                     |
+| **Spend secret**                | Yes    | Yes      | No (encrypted in tx)            |
 
 ## Circuits
 
@@ -87,13 +87,13 @@
 
 #### Public Input Signals
 
-- `amount`: The amount being deposited into the protocol
+- `utxo_amount`: The amount being deposited into the protocol
 - `receiver`: The public key of the tweaked one-time spend keypair that can spend the deposited amount
 
 #### Private Input Signals
 
-- `spending_secret`: Secret needed to spend the deposited amount
-- `nullifier_secret`: Second secret needed to spend the deposited amount. Used in nullifier generation
+- `utxo_spending_secret`: Secret needed to spend the deposited amount
+- `utxo_nullifier_secret`: Second secret needed to spend the deposited amount. Used in nullifier generation
 
 #### Public Output Signals
 
