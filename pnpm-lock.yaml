@@ -11,8 +11,8 @@ importers:
   packages/typescript/mithras-contracts-and-circuits:
     dependencies:
       snarkjs-algorand:
-        specifier: 0.6.0
-        version: 0.6.0(typescript@5.9.2)
+        specifier: 0.8.0
+        version: 0.8.0(typescript@5.9.2)
     devDependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.1.2
@@ -936,8 +936,8 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
-  snarkjs-algorand@0.6.0:
-    resolution: {integrity: sha512-JeyJVRYBGMErwOXqA+kNarUa26eKnZsBEo2ak7Ha2uJTyabAAwxU/r/Qm2lXXzI35TtXSfOikTw1PXE4hsvPwQ==}
+  snarkjs-algorand@0.8.0:
+    resolution: {integrity: sha512-SjespUHkXj34w6cxM5h+s32wHrWjmSSyPV5AdhoZ1oW+6vGrhVUlzmPnnQnISqcrRrKtWy2s4HgHq+IwSOCARQ==}
     peerDependencies:
       typescript: ^5
 
@@ -2005,7 +2005,7 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  snarkjs-algorand@0.6.0(typescript@5.9.2):
+  snarkjs-algorand@0.8.0(typescript@5.9.2):
     dependencies:
       '@algorandfoundation/algokit-utils': 9.1.2(algosdk@3.5.2)
       algosdk: 3.5.2
