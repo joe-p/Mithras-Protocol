@@ -4,7 +4,7 @@ use algod_client::{
     AlgodClient,
     models::{BlockAppEvalDelta, SignedTxnInBlock},
 };
-use algokit_transact::{AppCallTransactionFields, TransactionId};
+use algokit_transact::AppCallTransactionFields;
 use base64::{Engine as _, engine::general_purpose};
 use crossbeam_channel::Sender;
 use indexer_client::{IndexerClient, models::Transaction as IndexerTransaction};
@@ -438,6 +438,7 @@ impl Subscriber {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use algokit_transact::TransactionId;
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
