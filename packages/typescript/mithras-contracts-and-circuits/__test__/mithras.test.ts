@@ -1,8 +1,8 @@
 import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
 import {
-  LsigVerifier,
-  SignalsAndProofClient,
-  SignalsAndProofFactory,
+  PlonkLsigVerifier,
+  PlonkSignalsAndProofClient,
+  PlonkSignalsAndProofFactory,
 } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 
@@ -10,7 +10,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";
 import { Address } from "algosdk";
 
-const LSGIS_FEE = 6n * 1000n;
+const SPEND_LSIGS = 12;
+const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
 const SPEND_APP_FEE = 110n * 1000n;
 const DEPOSIT_APP_FEE = 53n * 1000n;
 const APP_MBR = 1567900n;
@@ -27,11 +28,11 @@ function addressInScalarField(addr: Address): bigint {
 }
 
 describe("Mithras App", () => {
-  let depositVerifier: LsigVerifier;
-  let spendVerifier: LsigVerifier;
+  let depositVerifier: PlonkLsigVerifier;
+  let spendVerifier: PlonkLsigVerifier;
   let appClient: MithrasClient;
   let algorand: AlgorandClient;
-  let signalsAndProofClient: SignalsAndProofClient;
+  let signalsAndProofClient: PlonkSignalsAndProofClient;
   let mimcCalculator: MimcCalculator;
   let depositor: Address;
   let spender: Address;
@@ -43,19 +44,21 @@ describe("Mithras App", () => {
 
     algorand.setSuggestedParamsCacheTimeout(0);
     mimcCalculator = await MimcCalculator.create();
-    depositVerifier = new LsigVerifier(
+    depositVerifier = new PlonkLsigVerifier(
       algorand,
       "circuits/deposit_test.zkey",
       "circuits/deposit_js/deposit.wasm",
+      7,
     );
 
-    spendVerifier = new LsigVerifier(
+    spendVerifier = new PlonkLsigVerifier(
       algorand,
       "circuits/spend_test.zkey",
       "circuits/spend_js/spend.wasm",
+      SPEND_LSIGS,
     );
 
-    const signalsAndProofFactory = new SignalsAndProofFactory({
+    const signalsAndProofFactory = new PlonkSignalsAndProofFactory({
       defaultSender: depositor,
       algorand,
     });
@@ -189,7 +192,7 @@ describe("Mithras App", () => {
       sender: spender,
       receiver: spender,
       amount: microAlgos(0),
-      extraFee: microAlgos(SPEND_APP_FEE + LSGIS_FEE),
+      extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE),
     });
 
     const fee = NULLIFIER_MBR + feePayment.fee;

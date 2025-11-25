@@ -1,6 +1,6 @@
 import { describe, it, beforeAll, expect } from "vitest";
 import { CircuitTester, MimcCalculator } from "./utils/test-utils";
-import { AppVerifier } from "snarkjs-algorand";
+import { PlonkAppVerifier } from "snarkjs-algorand";
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 
 describe("Deposit Circuit", () => {
@@ -68,7 +68,7 @@ describe("Deposit Circuit", () => {
 
   it("verifies on chain", async () => {
     const algorand = AlgorandClient.defaultLocalNet();
-    const verifier = new AppVerifier(
+    const verifier = new PlonkAppVerifier(
       algorand,
       "circuits/deposit_test.zkey",
       "circuits/deposit_js/deposit.wasm",
