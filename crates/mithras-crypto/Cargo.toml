@@ -19,8 +19,6 @@ anyhow = "1.0.98"
 ed25519-dalek = { version = "2.2.0", features = ["hazmat", "serde"] }
 x25519-dalek = { version = "2.0.1", features = ["static_secrets", "serde"] }
 sha2 = "0.10.9"
-hkdf = "0.12.4"
-hmac = "0.12.1"
 curve25519-dalek = { version = "4.1.3", features = ["legacy_compatibility"] }
 bech32 = "0.11.0"
 snafu = { version = "0.8.9", features = ["std"] }

@@ -164,7 +164,7 @@ impl HpkeEnvelope {
         &self,
         discovery_private: &x25519_dalek::StaticSecret,
         txn_metadata: &TransactionMetadata,
-    ) -> Result<bool, crate::MithrasError> {
+    ) -> bool {
         let ephemeral_public = x25519_dalek::PublicKey::from(self.discovery_ephemeral);
         let discovery_secret = crate::discovery::compute_discovery_secret_receiver(
             discovery_private,
@@ -177,8 +177,8 @@ impl HpkeEnvelope {
             txn_metadata.first_valid,
             txn_metadata.last_valid,
             txn_metadata.lease,
-        )?;
+        );
 
-        Ok(computed_tag == self.discovery_tag)
+        computed_tag == self.discovery_tag
     }
 }

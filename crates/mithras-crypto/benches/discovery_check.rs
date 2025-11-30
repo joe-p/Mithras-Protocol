@@ -34,9 +34,7 @@ fn bench_discovery_check_ok(c: &mut Criterion) {
 
     c.bench_function("discovery_check_ok", |b| {
         b.iter(|| {
-            let ok = env
-                .discovery_check(black_box(disc.private_key()), black_box(&txn))
-                .expect("discovery_check ok");
+            let ok = env.discovery_check(black_box(disc.private_key()), black_box(&txn));
             assert!(ok);
         });
     });
@@ -71,9 +69,7 @@ fn bench_discovery_check_wrong_key(c: &mut Criterion) {
 
     c.bench_function("discovery_check_wrong_key", |b| {
         b.iter(|| {
-            let ok = env
-                .discovery_check(black_box(wrong_disc.private_key()), black_box(&txn))
-                .expect("discovery_check wrong");
+            let ok = env.discovery_check(black_box(wrong_disc.private_key()), black_box(&txn));
             assert!(!ok);
         });
     });
