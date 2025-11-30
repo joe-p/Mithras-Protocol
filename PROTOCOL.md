@@ -48,7 +48,7 @@
 - **Formula:**
 
   ```text
-  tag = HMAC-SHA512_256(T, "discovery-tag" || sender || fv || lv || lease)
+  tag = SHA512_256("discovery-tag" || T || sender || fv || lv || lease)
   ```
 
 - **Purpose:** Small value in tx header that lets receiver quickly identify their outputs.

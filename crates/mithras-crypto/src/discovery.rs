@@ -1,6 +1,5 @@
 use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
-use hmac::{Hmac, Mac};
-use sha2::Sha512_256;
+use sha2::{Digest, Sha512_256};
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret as X25519SecretKey};
 
 pub fn compute_discovery_secret_sender(
@@ -26,16 +25,12 @@ pub fn compute_discovery_tag(
     lv: u64,
     lease: [u8; 32],
 ) -> [u8; 32] {
-    let mut hmac = Hmac::<Sha512_256>::new_from_slice(discovery_secret)
-        .expect("HMAC should work from discovery secret (32 byte key)");
-    hmac.update(b"discovery-tag");
-    hmac.update(&sender.to_bytes());
-    hmac.update(&fv.to_le_bytes());
-    hmac.update(&lv.to_le_bytes());
-    hmac.update(&lease);
-
-    let result = hmac.finalize().into_bytes();
-    let mut tag = [0u8; 32];
-    tag.copy_from_slice(&result);
-    tag
+    let mut hasher = Sha512_256::new();
+    hasher.update(b"discovery-tag");
+    hasher.update(discovery_secret);
+    hasher.update(sender.to_bytes());
+    hasher.update(fv.to_le_bytes());
+    hasher.update(lv.to_le_bytes());
+    hasher.update(lease);
+    hasher.finalize().into()
 }
