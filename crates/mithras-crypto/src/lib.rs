@@ -14,12 +14,6 @@ pub enum MithrasError {
     #[snafu(display("Cryptographic random number generation failed: {}", msg))]
     RandomGeneration { msg: String },
 
-    #[snafu(display("HKDF expand operation failed: {}", msg))]
-    HkdfExpand { msg: String },
-
-    #[snafu(display("HMAC key creation failed: {}", msg))]
-    HmacKeyCreation { msg: String },
-
     #[snafu(display("HPKE operation failed: {}", msg))]
     HpkeOperation { msg: String },
 
@@ -130,7 +124,7 @@ mod tests {
             1000,
             2000,
             [0u8; 32],
-        )?;
+        );
 
         let discovery_tag_receiver = compute_discovery_tag(
             &discovery_secret_receiver,
@@ -138,7 +132,7 @@ mod tests {
             1000,
             2000,
             [0u8; 32],
-        )?;
+        );
 
         assert_eq!(discovery_tag_sender, discovery_tag_receiver);
         Ok(())
@@ -329,16 +323,12 @@ mod tests {
         let env = inputs.hpke_envelope;
 
         // Correct discovery key should validate
-        let ok = env
-            .discovery_check(disc.private_key(), &txn)
-            .map_err(|e| anyhow::anyhow!(e))?;
+        let ok = env.discovery_check(disc.private_key(), &txn);
         assert!(ok);
 
         // Wrong discovery key should not validate
         let wrong_disc = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
-        let not_ok = env
-            .discovery_check(wrong_disc.private_key(), &txn)
-            .map_err(|e| anyhow::anyhow!(e))?;
+        let not_ok = env.discovery_check(wrong_disc.private_key(), &txn);
         assert!(!not_ok);
 
         Ok(())
