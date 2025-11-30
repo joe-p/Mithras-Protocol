@@ -48,9 +48,7 @@
 - **Formula:**
 
   ```text
-  tag_key = HKDF-Expand(HKDF-Extract(0, T),
-                        "discovery-tag", 32)
-  tag = HMAC(tag_key || sender || fv || lv || lease)
+  tag = SHA512_256("discovery-tag" || T || sender || fv || lv || lease)
   ```
 
 - **Purpose:** Small value in tx header that lets receiver quickly identify their outputs.

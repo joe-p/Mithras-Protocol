@@ -133,7 +133,7 @@ impl UtxoInputs {
             txn_metadata.first_valid,
             txn_metadata.last_valid,
             txn_metadata.lease,
-        )?;
+        );
 
         // TODO: ensure secrets are in scalar field
         let mut spending_secret = [0u8; 32];
