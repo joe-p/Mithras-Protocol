@@ -437,8 +437,8 @@ impl Subscriber {
 
         let genesis_id = block_header.genesis_id.clone().unwrap_or_default();
 
+        let mut search_round = std::cmp::min(self.stop_round.unwrap_or(u64::MAX), algod_round);
         let mut found_round_in_indexer = false;
-        let mut search_round = algod_round - 1;
 
         while !found_round_in_indexer {
             match self.indexer.lookup_block(search_round, Some(true)).await {
