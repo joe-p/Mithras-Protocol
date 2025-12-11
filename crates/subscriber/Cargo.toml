@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-algokit_transact = { git = "https://github.com/algorandfoundation/algokit-core", branch = "main" }
-algod_client = { git = "https://github.com/algorandfoundation/algokit-core", branch = "main" }
-indexer_client = { git = "https://github.com/algorandfoundation/algokit-core", branch = "main" }
+algokit_transact = { git = "https://github.com/algorandfoundation/algokit-core", branch = "fix/block_logs" }
+algod_client = { git = "https://github.com/algorandfoundation/algokit-core", branch = "fix/block_logs" }
+indexer_client = { git = "https://github.com/algorandfoundation/algokit-core", branch = "fix/block_logs" }
 crossbeam-channel = "0.5.15"
 base64 = "0.22.1"
 

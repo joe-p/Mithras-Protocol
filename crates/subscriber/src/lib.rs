@@ -209,9 +209,7 @@ fn indexer_to_algod(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
     };
     SignedTxnInBlock {
         signed_transaction: stxn,
-        application_id: indexer_txn
-            .application_transaction
-            .map(|app_txn| app_txn.application_id),
+        application_id: indexer_txn.created_application_index,
         // TODO: handle logic sig
         logic_signature: None,
         asset_closing_amount: indexer_txn
@@ -281,9 +279,22 @@ impl Subscriber {
         txns: Vec<SubscriberTxn>,
         sub: &TransactionSubscription,
         root_txn: SignedTxnInBlock,
+        genesis_hash: [u8; 32],
+        genesis_id: String,
     ) -> Result<(), String> {
         for subscriber_txn in txns {
-            let txn = subscriber_txn.txn;
+            let mut txn = subscriber_txn.txn;
+            txn.signed_transaction
+                .transaction
+                .header_mut()
+                .genesis_hash
+                .get_or_insert(genesis_hash);
+
+            txn.signed_transaction
+                .transaction
+                .header_mut()
+                .genesis_id
+                .get_or_insert(genesis_id.clone());
 
             if let Some(subbed_app_id) = sub.app {
                 match &txn.application_id {
@@ -332,17 +343,38 @@ impl Subscriber {
                 let inner_subscriber_txns = inner_txns
                     .into_iter()
                     .enumerate()
-                    .map(|(idx, inner_txn)| SubscriberTxn {
-                        txn: inner_txn,
-                        root_txn: root_txn.clone(),
-                        intra_round_offset: subscriber_txn
-                            .intra_round_offset
-                            .map(|offset| offset + idx as u64 + 1),
-                        confirmed_round: subscriber_txn.confirmed_round,
+                    .map(|(idx, mut inner_txn)| {
+                        inner_txn
+                            .signed_transaction
+                            .transaction
+                            .header_mut()
+                            .genesis_hash
+                            .get_or_insert(genesis_hash);
+
+                        inner_txn
+                            .signed_transaction
+                            .transaction
+                            .header_mut()
+                            .genesis_id
+                            .get_or_insert(genesis_id.clone());
+                        SubscriberTxn {
+                            txn: inner_txn,
+                            root_txn: root_txn.clone(),
+                            intra_round_offset: subscriber_txn
+                                .intra_round_offset
+                                .map(|offset| offset + idx as u64 + 1),
+                            confirmed_round: subscriber_txn.confirmed_round,
+                        }
                     })
                     .collect::<Vec<SubscriberTxn>>();
 
-                Subscriber::send_matches(inner_subscriber_txns, sub, root_txn.clone())?;
+                Subscriber::send_matches(
+                    inner_subscriber_txns,
+                    sub,
+                    root_txn.clone(),
+                    genesis_hash,
+                    genesis_id.clone(),
+                )?;
             }
         }
 
@@ -390,6 +422,21 @@ impl Subscriber {
             .map_err(|e| e.to_string())?
             .last_round;
 
+        let block_header = self
+            .algod
+            .get_block(algod_round, Some(true))
+            .await
+            .map_err(|e| e.to_string())?
+            .block;
+
+        let genesis_hash: [u8; 32] = block_header
+            .genesis_hash
+            .clone()
+            .map(|gh| gh.try_into().unwrap_or_default())
+            .unwrap_or_default();
+
+        let genesis_id = block_header.genesis_id.clone().unwrap_or_default();
+
         let mut found_round_in_indexer = false;
         let mut search_round = algod_round - 1;
 
@@ -421,6 +468,8 @@ impl Subscriber {
                         .collect::<Vec<SubscriberTxn>>(),
                     sub,
                     SignedTxnInBlock::default(),
+                    genesis_hash,
+                    genesis_id.clone(),
                 )?;
 
                 next = search_result.next_token;
@@ -438,7 +487,23 @@ impl Subscriber {
             .map_err(|e| e.to_string())?
             .last_round;
 
-        for round in (self.last_round + 1)..=algod_round {
+        let block_header = self
+            .algod
+            .get_block(algod_round, Some(true))
+            .await
+            .map_err(|e| e.to_string())?
+            .block;
+
+        let genesis_hash: [u8; 32] = block_header
+            .genesis_hash
+            .clone()
+            .map(|gh| gh.try_into().unwrap_or_default())
+            .unwrap_or_default();
+
+        let genesis_id = block_header.genesis_id.clone().unwrap_or_default();
+        let stop_round = std::cmp::min(self.stop_round.unwrap_or(u64::MAX), algod_round);
+
+        for round in (self.last_round + 1)..=stop_round {
             let block = self
                 .algod
                 .get_block(round, Some(false))
@@ -459,7 +524,13 @@ impl Subscriber {
                         })
                         .collect::<Vec<SubscriberTxn>>();
 
-                    Subscriber::send_matches(subscriber_txns, sub, SignedTxnInBlock::default())?;
+                    Subscriber::send_matches(
+                        subscriber_txns,
+                        sub,
+                        SignedTxnInBlock::default(),
+                        genesis_hash,
+                        genesis_id.clone(),
+                    )?;
                 }
             }
 
@@ -525,12 +596,20 @@ mod tests {
         txn_receiver: &Receiver<SubscriberTxn>,
         sub: &TransactionSubscription,
     ) {
-        let txn = txn_receiver.try_recv().unwrap();
-        assert_eq!(txn.txn.application_id.unwrap(), sub.app.unwrap());
-        assert_eq!(
-            txn.txn.signed_transaction.transaction.id().unwrap(),
-            TEST_TXID
-        );
+        let txn = txn_receiver
+            .try_recv()
+            .unwrap()
+            .txn
+            .signed_transaction
+            .transaction;
+
+        let app_fields = match &txn {
+            algokit_transact::Transaction::AppCall(fields) => fields,
+            _ => panic!("expected app call transaction"),
+        };
+
+        assert_eq!(app_fields.app_id, sub.app.unwrap());
+        assert_eq!(txn.id().unwrap(), TEST_TXID);
     }
 
     #[tokio::test]

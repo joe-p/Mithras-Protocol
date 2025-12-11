@@ -14,7 +14,7 @@ dependencies = [
 [[package]]
 name = "algod_client"
 version = "0.0.1"
-source = "git+https://github.com/algorandfoundation/algokit-core?branch=main#c65d431ade885c777f0873ff20c08ddbc2ad20f6"
+source = "git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs#a0bd33d8ab8b0f0f0cb4b780d301f8a4ab0fe82f"
 dependencies = [
  "algokit_http_client",
  "algokit_transact",
@@ -24,6 +24,7 @@ dependencies = [
  "serde",
  "serde_bytes",
  "serde_json",
+ "serde_path_to_error",
  "serde_repr",
  "serde_with",
  "snafu",
@@ -34,7 +35,7 @@ dependencies = [
 [[package]]
 name = "algokit_http_client"
 version = "0.1.0"
-source = "git+https://github.com/algorandfoundation/algokit-core?branch=main#c65d431ade885c777f0873ff20c08ddbc2ad20f6"
+source = "git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs#a0bd33d8ab8b0f0f0cb4b780d301f8a4ab0fe82f"
 dependencies = [
  "async-trait",
  "reqwest",
@@ -46,7 +47,7 @@ dependencies = [
 [[package]]
 name = "algokit_transact"
 version = "0.1.0"
-source = "git+https://github.com/algorandfoundation/algokit-core?branch=main#c65d431ade885c777f0873ff20c08ddbc2ad20f6"
+source = "git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs#a0bd33d8ab8b0f0f0cb4b780d301f8a4ab0fe82f"
 dependencies = [
  "base32",
  "base64",
@@ -1256,13 +1257,14 @@ dependencies = [
 [[package]]
 name = "indexer_client"
 version = "2.0.0"
-source = "git+https://github.com/algorandfoundation/algokit-core?branch=main#c65d431ade885c777f0873ff20c08ddbc2ad20f6"
+source = "git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs#a0bd33d8ab8b0f0f0cb4b780d301f8a4ab0fe82f"
 dependencies = [
  "algokit_http_client",
  "base64",
  "serde",
  "serde_bytes",
  "serde_json",
+ "serde_path_to_error",
  "serde_repr",
  "serde_with",
  "snafu",
@@ -2294,6 +2296,17 @@ dependencies = [
  "itoa",
  "memchr",
  "ryu",
+ "serde",
+ "serde_core",
+]
+
+[[package]]
+name = "serde_path_to_error"
+version = "0.1.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10a9ff822e371bb5403e391ecd83e182e0e77ba7f6fe0160b795797109d1b457"
+dependencies = [
+ "itoa",
  "serde",
  "serde_core",
 ]
