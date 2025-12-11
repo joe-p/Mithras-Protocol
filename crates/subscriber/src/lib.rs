@@ -382,7 +382,7 @@ impl Subscriber {
             .map_err(|e| e.to_string())
     }
 
-    async fn indexer_catchup(&mut self) -> Result<(), String> {
+    pub async fn indexer_catchup(&mut self) -> Result<(), String> {
         let algod_round = self
             .algod
             .get_status()
@@ -430,8 +430,43 @@ impl Subscriber {
         Ok(())
     }
 
-    pub async fn start(&mut self) {
-        self.indexer_catchup().await.unwrap();
+    pub async fn algod_catchup(&mut self) -> Result<(), String> {
+        let algod_round = self
+            .algod
+            .get_status()
+            .await
+            .map_err(|e| e.to_string())?
+            .last_round;
+
+        for round in (self.last_round + 1)..=algod_round {
+            let block = self
+                .algod
+                .get_block(round, Some(false))
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if let Some(txns) = block.block.transactions {
+                for sub in &self.subscriptions {
+                    let subscriber_txns = txns
+                        .clone()
+                        .into_iter()
+                        .enumerate()
+                        .map(|(idx, txn)| SubscriberTxn {
+                            txn: txn.clone(),
+                            root_txn: txn.clone(),
+                            intra_round_offset: Some(idx as u64),
+                            confirmed_round: Some(round),
+                        })
+                        .collect::<Vec<SubscriberTxn>>();
+
+                    Subscriber::send_matches(subscriber_txns, sub, SignedTxnInBlock::default())?;
+                }
+            }
+
+            self.last_round = round;
+        }
+
+        Ok(())
     }
 }
 
@@ -439,17 +474,24 @@ impl Subscriber {
 mod tests {
     use super::*;
     use algokit_transact::TransactionId;
+    use crossbeam_channel::Receiver;
     use pretty_assertions::assert_eq;
 
-    #[tokio::test]
-    async fn test_app_subscription() {
+    const TEST_TXID: &str = "KTN52RWH34JR637HG6R3LIWMIW6R6WV7OSHFFYDFCBTMQ3BAKTGA";
+
+    struct TestSetup {
+        subscriber: Subscriber,
+        txn_receiver: Receiver<SubscriberTxn>,
+        sub: TransactionSubscription,
+    }
+
+    async fn setup_app_subscription_test() -> TestSetup {
         let algod = AlgodClient::mainnet();
         let indexer = IndexerClient::mainnet();
 
         let (txn_sender, txn_receiver) = crossbeam_channel::unbounded();
 
-        let txid = "KTN52RWH34JR637HG6R3LIWMIW6R6WV7OSHFFYDFCBTMQ3BAKTGA";
-        let txn = indexer.lookup_transaction(txid).await.unwrap();
+        let txn = indexer.lookup_transaction(TEST_TXID).await.unwrap();
         let confirmed_round = txn.transaction.confirmed_round.unwrap();
 
         let mut subscriber = Subscriber::new(
@@ -460,9 +502,7 @@ mod tests {
         );
 
         let mut subbed_args: HashMap<u64, Option<Vec<u8>>> = HashMap::new();
-
         let app_txn = txn.transaction.application_transaction.as_ref().unwrap();
-
         let b64_arg = app_txn.application_args.as_ref().unwrap().get(1).unwrap();
 
         subbed_args.insert(1, Some(general_purpose::STANDARD.decode(b64_arg).unwrap()));
@@ -474,11 +514,44 @@ mod tests {
 
         subscriber.subscribe(sub.clone());
 
-        subscriber.indexer_catchup().await.unwrap();
+        TestSetup {
+            subscriber,
+            txn_receiver,
+            sub,
+        }
+    }
 
+    fn assert_received_transaction(
+        txn_receiver: &Receiver<SubscriberTxn>,
+        sub: &TransactionSubscription,
+    ) {
         let txn = txn_receiver.try_recv().unwrap();
-
         assert_eq!(txn.txn.application_id.unwrap(), sub.app.unwrap());
-        assert_eq!(txn.txn.signed_transaction.transaction.id().unwrap(), txid);
+        assert_eq!(
+            txn.txn.signed_transaction.transaction.id().unwrap(),
+            TEST_TXID
+        );
+    }
+
+    #[tokio::test]
+    async fn test_indexer_app_subscription() {
+        let TestSetup {
+            mut subscriber,
+            txn_receiver,
+            sub,
+        } = setup_app_subscription_test().await;
+        subscriber.indexer_catchup().await.unwrap();
+        assert_received_transaction(&txn_receiver, &sub);
+    }
+
+    #[tokio::test]
+    async fn test_algod_app_subscription() {
+        let TestSetup {
+            mut subscriber,
+            txn_receiver,
+            sub,
+        } = setup_app_subscription_test().await;
+        subscriber.algod_catchup().await.unwrap();
+        assert_received_transaction(&txn_receiver, &sub);
     }
 }
