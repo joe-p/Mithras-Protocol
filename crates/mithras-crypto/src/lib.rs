@@ -536,12 +536,7 @@ mod tests {
             .raw_transaction(signed_txn.encode().expect("should be able to encode stxn"))
             .await?;
 
-        let mut subscriber = Subscriber::new(
-            algod.clone(),
-            indexer,
-            sp.last_round - 1,
-            Some(sp.last_round + 1),
-        );
+        let mut subscriber = Subscriber::new(algod.clone(), indexer, sp.last_round + 1, None);
 
         let (txn_sender, txn_receiver) = crossbeam_channel::unbounded();
 
