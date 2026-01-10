@@ -16,8 +16,29 @@ name = "algod_client"
 version = "0.0.1"
 source = "git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs#a0bd33d8ab8b0f0f0cb4b780d301f8a4ab0fe82f"
 dependencies = [
- "algokit_http_client",
- "algokit_transact",
+ "algokit_http_client 0.1.0 (git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs)",
+ "algokit_transact 0.1.0 (git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs)",
+ "base64",
+ "rmp-serde",
+ "rmpv",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "serde_path_to_error",
+ "serde_repr",
+ "serde_with",
+ "snafu",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "algod_client"
+version = "0.0.1"
+source = "git+https://github.com/joe-p/algokit-core?branch=fix%2Foptional_genesis_timestamp#4e1d4b9816b7763c1e7df1db831447c68f23af61"
+dependencies = [
+ "algokit_http_client 0.1.0 (git+https://github.com/joe-p/algokit-core?branch=fix%2Foptional_genesis_timestamp)",
+ "algokit_transact 0.1.0 (git+https://github.com/joe-p/algokit-core?branch=fix%2Foptional_genesis_timestamp)",
  "base64",
  "rmp-serde",
  "rmpv",
@@ -36,6 +57,18 @@ dependencies = [
 name = "algokit_http_client"
 version = "0.1.0"
 source = "git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs#a0bd33d8ab8b0f0f0cb4b780d301f8a4ab0fe82f"
+dependencies = [
+ "async-trait",
+ "reqwest",
+ "serde",
+ "snafu",
+ "uniffi",
+]
+
+[[package]]
+name = "algokit_http_client"
+version = "0.1.0"
+source = "git+https://github.com/joe-p/algokit-core?branch=fix%2Foptional_genesis_timestamp#4e1d4b9816b7763c1e7df1db831447c68f23af61"
 dependencies = [
  "async-trait",
  "reqwest",
@@ -65,6 +98,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "algokit_transact"
+version = "0.1.0"
+source = "git+https://github.com/joe-p/algokit-core?branch=fix%2Foptional_genesis_timestamp#4e1d4b9816b7763c1e7df1db831447c68f23af61"
+dependencies = [
+ "base32",
+ "base64",
+ "derive_builder",
+ "rmp",
+ "rmp-serde",
+ "rmpv",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "serde_path_to_error",
+ "serde_repr",
+ "serde_with",
+ "sha2",
+ "snafu",
+]
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -87,9 +141,9 @@ checksum = "862ed96ca487e809f1c8e5a8447f6ee2cf102f846893800b20cebdf541fc6bbd"
 
 [[package]]
 name = "anyhow"
-version = "1.0.99"
+version = "1.0.100"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0674a1ddeecb70197781e945de4b3b8ffb61fa939a5597bcf48503737663100"
+checksum = "a23eb6b1614318a8071c9b2521f36b424b2c83db5eb3a0fead4a6c0809af6e61"
 
 [[package]]
 name = "askama"
@@ -1259,7 +1313,7 @@ name = "indexer_client"
 version = "2.0.0"
 source = "git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs#a0bd33d8ab8b0f0f0cb4b780d301f8a4ab0fe82f"
 dependencies = [
- "algokit_http_client",
+ "algokit_http_client 0.1.0 (git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs)",
  "base64",
  "serde",
  "serde_bytes",
@@ -1344,6 +1398,24 @@ checksum = "1cfaf33c695fc6e08064efbc1f72ec937429614f25eef83af942d0e227c3a28f"
 dependencies = [
  "once_cell",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "kmd_client"
+version = "0.0.1"
+source = "git+https://github.com/joe-p/algokit-core?branch=fix%2Foptional_genesis_timestamp#4e1d4b9816b7763c1e7df1db831447c68f23af61"
+dependencies = [
+ "algokit_http_client 0.1.0 (git+https://github.com/joe-p/algokit-core?branch=fix%2Foptional_genesis_timestamp)",
+ "base64",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "serde_path_to_error",
+ "serde_repr",
+ "serde_with",
+ "snafu",
+ "url",
+ "uuid",
 ]
 
 [[package]]
@@ -2478,8 +2550,8 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 name = "subscriber"
 version = "0.1.0"
 dependencies = [
- "algod_client",
- "algokit_transact",
+ "algod_client 0.0.1 (git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs)",
+ "algokit_transact 0.1.0 (git+https://github.com/algorandfoundation/algokit-core?branch=fix%2Fblock_logs)",
  "base64",
  "crossbeam-channel",
  "indexer_client",
@@ -2556,6 +2628,16 @@ dependencies = [
  "once_cell",
  "rustix",
  "windows-sys 0.61.0",
+]
+
+[[package]]
+name = "test_utils"
+version = "0.1.0"
+dependencies = [
+ "algod_client 0.0.1 (git+https://github.com/joe-p/algokit-core?branch=fix%2Foptional_genesis_timestamp)",
+ "anyhow",
+ "kmd_client",
+ "tokio",
 ]
 
 [[package]]
@@ -2640,9 +2722,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.48.0"
+version = "1.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff360e02eab121e0bc37a2d3b4d4dc622e6eda3a8e5253d5435ecf5bd4c68408"
+checksum = "72a2903cd7736441aac9df9d7688bd0ce48edccaadf181c3b90be801e81d3d86"
 dependencies = [
  "bytes",
  "libc",
