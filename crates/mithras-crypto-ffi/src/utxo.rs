@@ -8,15 +8,6 @@ use crate::{
     hpke::{HpkeEnvelope, TransactionMetadata},
 };
 
-// #[derive(Clone, Debug, PartialEq)]
-// pub struct UtxoSecrets {
-//     pub spending_secret: [u8; 32],
-//     pub nullifier_secret: [u8; 32],
-//     pub amount: u64,
-//     pub tweak_scalar: Scalar,
-//     pub tweaked_pubkey: Ed25519PublicKey,
-// }
-
 #[derive(uniffi::Object)]
 pub struct UtxoSecrets {
     rust: RustUtxoSecrets,
@@ -68,12 +59,6 @@ impl UtxoSecrets {
         self.rust.nullifier_secret.to_vec()
     }
 }
-
-// #[derive(Debug, PartialEq)]
-// pub struct UtxoInputs {
-//     pub secrets: UtxoSecrets,
-//     pub hpke_envelope: HpkeEnvelope,
-// }
 
 #[derive(uniffi::Object)]
 pub struct UtxoInputs {

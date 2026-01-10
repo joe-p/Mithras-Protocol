@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { initSync } from "../pkg/wasm-bindgen/index";
 import {
+  decodeHpkeEnvelope,
+  encodeHpkeEnvelope,
   MithrasAddr,
   UtxoInputs,
   UtxoSecrets,
@@ -60,8 +62,10 @@ describe("bindings", () => {
 
     const inputs = UtxoInputs.generate(txnMetadata, 10n, receiverAddr);
 
+    const encodedEnv = encodeHpkeEnvelope(inputs.envelope());
+
     const recoveredSecrets = UtxoSecrets.fromHpkeEnvelope(
-      inputs.envelope(),
+      decodeHpkeEnvelope(encodedEnv),
       toArrayBuffer(receiverDiscovery.publicKey),
       toArrayBuffer(receiverDiscovery.secretKey),
       txnMetadata,

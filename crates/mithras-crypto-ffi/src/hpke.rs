@@ -1,15 +1,7 @@
+use mithras_crypto::hpke::HPKE_SIZE;
 use mithras_crypto::hpke::HpkeEnvelope as RustHpkeEnvelope;
 use mithras_crypto::hpke::SupportedHpkeSuite;
 use mithras_crypto::hpke::TransactionMetadata as RustTransactionMetadata;
-
-// pub struct TransactionMetadata {
-//     pub sender: Ed25519PublicKey,
-//     pub first_valid: u64,
-//     pub last_valid: u64,
-//     pub lease: [u8; 32],
-//     pub network: SupportedNetwork,
-//     pub app_id: u64,
-// }
 
 #[derive(uniffi::Record)]
 pub struct TransactionMetadata {
@@ -56,20 +48,6 @@ impl TryFrom<TransactionMetadata> for RustTransactionMetadata {
         })
     }
 }
-
-// pub struct HpkeEnvelope {
-//     /// The mithras version which determines the shape of the data in the plaintext
-//     pub version: u8,
-//     /// The HPKE suite identifier
-//     pub suite: SupportedHpkeSuite,
-//     pub encapsulated_key: [u8; 32],
-//     #[serde(
-//         serialize_with = "serialize_ciphertext",
-//         deserialize_with = "deserialize_ciphertext"
-//     )]
-//     pub ciphertext: [u8; CIPHER_TEXT_SIZE],
-//     pub discovery_tag: [u8; 32],
-// }
 
 #[derive(uniffi::Record)]
 pub struct HpkeEnvelope {
@@ -131,4 +109,21 @@ impl From<RustHpkeEnvelope> for HpkeEnvelope {
             discovery_ephemeral: env.discovery_ephemeral.to_vec(),
         }
     }
+}
+
+#[uniffi::export]
+pub fn encode_hpke_envelope(envelope: HpkeEnvelope) -> Result<Vec<u8>, crate::MithrasCryptoError> {
+    let rust_envelope: RustHpkeEnvelope = envelope.try_into()?;
+    Ok(rust_envelope.as_bytes().to_vec())
+}
+
+#[uniffi::export]
+pub fn decode_hpke_envelope(data: Vec<u8>) -> Result<HpkeEnvelope, crate::MithrasCryptoError> {
+    let arr: [u8; HPKE_SIZE] = data.try_into().map_err(|_| {
+        crate::MithrasCryptoError::Error("data must be exactly 256 bytes".to_string())
+    })?;
+    let rust_envelope = RustHpkeEnvelope::from_bytes(&arr).map_err(|e| {
+        crate::MithrasCryptoError::Error(format!("Failed to decode HpkeEnvelope: {}", e))
+    })?;
+    Ok(rust_envelope.into())
 }

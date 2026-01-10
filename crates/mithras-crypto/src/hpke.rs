@@ -159,7 +159,7 @@ pub struct HpkeEnvelope {
     pub discovery_ephemeral: [u8; 32],
 }
 
-const HPKE_SIZE: usize = 1 + 1 + 32 + CIPHER_TEXT_SIZE + 32 + 32;
+pub const HPKE_SIZE: usize = 1 + 1 + 32 + CIPHER_TEXT_SIZE + 32 + 32;
 
 impl HpkeEnvelope {
     pub fn discovery_check(
