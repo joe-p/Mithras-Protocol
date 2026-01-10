@@ -4,7 +4,7 @@ use algod_client::{
     AlgodClient,
     models::{BlockAppEvalDelta, SignedTxnInBlock},
 };
-use algokit_transact::AppCallTransactionFields;
+use algokit_transact::{AppCallTransactionFields, TransactionId};
 use base64::{Engine as _, engine::general_purpose};
 use crossbeam_channel::Sender;
 use indexer_client::{IndexerClient, apis::AddressRole, models::Transaction as IndexerTransaction};
@@ -42,9 +42,7 @@ fn indexer_to_algod(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
                 .expect("all genesis hashes should be 32 bytes")
         }),
         genesis_id: indexer_txn.genesis_id.clone(),
-        note: indexer_txn
-            .note
-            .map(|n| general_purpose::STANDARD.decode(n).unwrap_or_default()),
+        note: indexer_txn.note,
         rekey_to: indexer_txn.rekey_to.and_then(|addr| addr.parse().ok()),
         lease: indexer_txn
             .lease
@@ -459,17 +457,18 @@ impl Subscriber {
 
         let genesis_id = block_header.genesis_id.clone().unwrap_or_default();
 
-        let mut search_round = std::cmp::min(self.stop_round.unwrap_or(u64::MAX), algod_round);
+        let search_round = std::cmp::min(self.stop_round.unwrap_or(u64::MAX), algod_round);
         let mut found_round_in_indexer = false;
 
         while !found_round_in_indexer {
-            match self.indexer.lookup_block(search_round, Some(true)).await {
-                Ok(_) => {
-                    found_round_in_indexer = true;
-                }
-                Err(_) => {
-                    search_round = search_round.saturating_sub(1);
-                }
+            let health = self
+                .indexer
+                .make_health_check()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if health.round >= search_round {
+                found_round_in_indexer = true;
             }
         }
 

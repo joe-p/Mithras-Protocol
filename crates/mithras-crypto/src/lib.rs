@@ -544,4 +544,60 @@ mod tests {
 
         Ok(())
     }
+
+    #[tokio::test]
+    async fn full_e2e_indexer_subscriber() -> anyhow::Result<()> {
+        let algod = AlgodClient::localnet();
+        let kmd = KmdClient::localnet();
+        let indexer = IndexerClient::localnet();
+
+        let ctx = E2eTestContext::setup(&algod, &kmd).await?;
+
+        algod
+            .raw_transaction(
+                ctx.signed_txn
+                    .encode()
+                    .expect("should be able to encode stxn"),
+            )
+            .await?;
+
+        let mut subscriber =
+            Subscriber::new(algod.clone(), indexer, ctx.txn_metadata.first_valid, None);
+
+        let (txn_sender, txn_receiver) = crossbeam_channel::unbounded();
+
+        let sub = TransactionSubscription {
+            note: Some(ctx.note.clone()),
+            sender: Some(ctx.sender.to_string()),
+            app: None,
+            txn_channel: txn_sender,
+            app_args: None,
+        };
+
+        subscriber.subscribe(sub);
+
+        subscriber.indexer_catchup().await.unwrap();
+
+        let txn = txn_receiver
+            .recv_timeout(std::time::Duration::from_secs(2))
+            .map_err(|e| anyhow::anyhow!("did not receive txn from subscriber: {}", e))?;
+
+        let hpke_env_from_tx = rmp_serde::from_slice::<HpkeEnvelope>(
+            txn.txn
+                .signed_transaction
+                .transaction
+                .note()
+                .ok_or_else(|| anyhow::anyhow!("note field missing from txn"))?,
+        )?;
+
+        let recovered_secrets = UtxoSecrets::from_hpke_envelope(
+            hpke_env_from_tx,
+            ctx.keypairs.discovery.clone(),
+            &ctx.txn_metadata,
+        )?;
+
+        ctx.verify_secrets_and_signature(&recovered_secrets)?;
+
+        Ok(())
+    }
 }
