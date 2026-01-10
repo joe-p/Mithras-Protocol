@@ -50,6 +50,7 @@ mod tests {
     use algokit_transact::{
         Address, AlgorandMsgpack, PaymentTransactionFields, Transaction, TransactionHeader,
     };
+    use anyhow::Context;
     use curve25519_dalek::Scalar;
     use ed25519_dalek::{Verifier, VerifyingKey, ed25519::signature::SignerMut};
     use indexer_client::IndexerClient;
@@ -115,8 +116,7 @@ mod tests {
             let mut algo_signing_key = ed25519_dalek::SigningKey::from_bytes(&algo_sk);
             let sender = Address(*algo_signing_key.verifying_key().as_bytes());
 
-            let note = rmp_serde::to_vec(&utxo_inputs.hpke_envelope)
-                .expect("should serialize hpke envelope");
+            let note = utxo_inputs.hpke_envelope.as_bytes().to_vec();
 
             let header = TransactionHeader {
                 sender: sender.clone(),
@@ -467,14 +467,16 @@ mod tests {
             .pending_transaction_information(&confirmation.tx_id)
             .await?;
 
-        let hpke_env_from_tx = rmp_serde::from_slice::<HpkeEnvelope>(
-            tx_resp
-                .txn
-                .transaction
-                .note()
-                .ok_or_else(|| anyhow::anyhow!("note field missing from txn"))?,
-        )?;
+        let note_bytes = tx_resp
+            .txn
+            .transaction
+            .note()
+            .ok_or_else(|| anyhow::anyhow!("note field missing from txn"))?
+            .to_owned()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("note field has incorrect length"))?;
 
+        let hpke_env_from_tx = HpkeEnvelope::from_bytes(&note_bytes)?;
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
             hpke_env_from_tx,
             ctx.keypairs.discovery.clone(),
@@ -526,13 +528,17 @@ mod tests {
             .recv_timeout(std::time::Duration::from_secs(2))
             .map_err(|e| anyhow::anyhow!("did not receive txn from subscriber: {}", e))?;
 
-        let hpke_env_from_tx = rmp_serde::from_slice::<HpkeEnvelope>(
-            txn.txn
-                .signed_transaction
-                .transaction
-                .note()
-                .ok_or_else(|| anyhow::anyhow!("note field missing from txn"))?,
-        )?;
+        let note_bytes = txn
+            .txn
+            .signed_transaction
+            .transaction
+            .note()
+            .ok_or_else(|| anyhow::anyhow!("note field missing from txn"))?
+            .to_owned()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("note field has incorrect length"))?;
+
+        let hpke_env_from_tx = HpkeEnvelope::from_bytes(&note_bytes)?;
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
             hpke_env_from_tx,
@@ -582,13 +588,17 @@ mod tests {
             .recv_timeout(std::time::Duration::from_secs(2))
             .map_err(|e| anyhow::anyhow!("did not receive txn from subscriber: {}", e))?;
 
-        let hpke_env_from_tx = rmp_serde::from_slice::<HpkeEnvelope>(
-            txn.txn
-                .signed_transaction
-                .transaction
-                .note()
-                .ok_or_else(|| anyhow::anyhow!("note field missing from txn"))?,
-        )?;
+        let note_bytes = txn
+            .txn
+            .signed_transaction
+            .transaction
+            .note()
+            .ok_or_else(|| anyhow::anyhow!("note field missing from txn"))?
+            .to_owned()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("note field has incorrect length"))?;
+
+        let hpke_env_from_tx = HpkeEnvelope::from_bytes(&note_bytes)?;
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
             hpke_env_from_tx,

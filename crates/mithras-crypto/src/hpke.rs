@@ -159,6 +159,8 @@ pub struct HpkeEnvelope {
     pub discovery_ephemeral: [u8; 32],
 }
 
+const HPKE_SIZE: usize = 1 + 1 + 32 + CIPHER_TEXT_SIZE + 32 + 32;
+
 impl HpkeEnvelope {
     pub fn discovery_check(
         &self,
@@ -180,5 +182,39 @@ impl HpkeEnvelope {
         );
 
         computed_tag == self.discovery_tag
+    }
+
+    pub fn as_bytes(&self) -> [u8; HPKE_SIZE] {
+        let mut encoded = [0u8; HPKE_SIZE];
+        encoded[0] = self.version;
+        encoded[1] = u8::from(self.suite);
+        encoded[2..34].copy_from_slice(&self.encapsulated_key);
+        encoded[34..(34 + CIPHER_TEXT_SIZE)].copy_from_slice(&self.ciphertext);
+        encoded[(34 + CIPHER_TEXT_SIZE)..(34 + CIPHER_TEXT_SIZE + 32)]
+            .copy_from_slice(&self.discovery_tag);
+        encoded[(34 + CIPHER_TEXT_SIZE + 32)..].copy_from_slice(&self.discovery_ephemeral);
+        encoded
+    }
+
+    pub fn from_bytes(data: &[u8; HPKE_SIZE]) -> Result<Self, anyhow::Error> {
+        let version = data[0];
+        let suite = SupportedHpkeSuite::try_from(data[1])?;
+        let mut encapsulated_key = [0u8; 32];
+        encapsulated_key.copy_from_slice(&data[2..34]);
+        let mut ciphertext = [0u8; CIPHER_TEXT_SIZE];
+        ciphertext.copy_from_slice(&data[34..(34 + CIPHER_TEXT_SIZE)]);
+        let mut discovery_tag = [0u8; 32];
+        discovery_tag.copy_from_slice(&data[(34 + CIPHER_TEXT_SIZE)..(34 + CIPHER_TEXT_SIZE + 32)]);
+        let mut discovery_ephemeral = [0u8; 32];
+        discovery_ephemeral.copy_from_slice(&data[(34 + CIPHER_TEXT_SIZE + 32)..]);
+
+        Ok(HpkeEnvelope {
+            version,
+            suite,
+            encapsulated_key,
+            ciphertext,
+            discovery_tag,
+            discovery_ephemeral,
+        })
     }
 }
