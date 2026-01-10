@@ -10,4 +10,8 @@ exclude = [
 
 [workspace.dependencies]
 uniffi = "0.29.4"
+kmd_client = { git = "https://github.com/joe-p/algokit-core", branch = "fix/optional_genesis_timestamp" }
+algod_client = { git = "https://github.com/joe-p/algokit-core", branch = "fix/optional_genesis_timestamp" }
+algokit_transact = { git = "https://github.com/joe-p/algokit-core", branch = "fix/optional_genesis_timestamp" }
+indexer_client = { git = "https://github.com/joe-p/algokit-core", branch = "fix/optional_genesis_timestamp" }
 

@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-kmd_client = { git = "https://github.com/joe-p/algokit-core", branch = "fix/optional_genesis_timestamp" }
-algod_client = { git = "https://github.com/joe-p/algokit-core", branch = "fix/optional_genesis_timestamp" }
+kmd_client.workspace = true
+algod_client.workspace = true
 anyhow = "1.0.100"
 tokio = "1.49.0"
 
