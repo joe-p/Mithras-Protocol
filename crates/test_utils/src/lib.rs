@@ -6,7 +6,7 @@ use kmd_client::{
 };
 
 pub async fn find_wallet(
-    kmd: KmdClient,
+    kmd: &KmdClient,
     wallet_name: &str,
     address_to_find: Option<&str>,
 ) -> Result<Vec<u8>> {
@@ -68,7 +68,7 @@ pub async fn find_wallet(
     }
 }
 
-pub async fn get_dispenser_account(algod: AlgodClient, kmd: KmdClient) -> Result<Vec<u8>> {
+pub async fn get_dispenser_account(algod: &AlgodClient, kmd: &KmdClient) -> Result<[u8; 32]> {
     let genesis_response = algod.get_genesis().await?;
 
     let dispenser_addresses: Vec<String> = genesis_response
@@ -86,8 +86,10 @@ pub async fn get_dispenser_account(algod: AlgodClient, kmd: KmdClient) -> Result
         )
         .await;
 
-        if dispenser.is_ok() {
-            return dispenser;
+        if let Ok(private_key) = dispenser {
+            let mut key_array = [0u8; 32];
+            key_array.copy_from_slice(&private_key[..32]);
+            return Ok(key_array);
         }
     }
 
@@ -106,7 +108,7 @@ mod tests {
 
         let wallet_name = "unencrypted-default-wallet";
 
-        let result = find_wallet(kmd, wallet_name, None).await;
+        let result = find_wallet(&kmd, wallet_name, None).await;
 
         assert!(result.is_ok());
     }
@@ -116,7 +118,7 @@ mod tests {
         let algod = AlgodClient::localnet();
         let kmd = KmdClient::localnet();
 
-        let result = get_dispenser_account(algod, kmd).await;
+        let result = get_dispenser_account(&algod, &kmd).await;
 
         result.unwrap();
     }

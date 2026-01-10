@@ -1601,6 +1601,8 @@ dependencies = [
 name = "mithras-crypto"
 version = "0.1.0"
 dependencies = [
+ "algod_client",
+ "algokit_transact",
  "anyhow",
  "base64",
  "bech32",
@@ -1610,10 +1612,13 @@ dependencies = [
  "getrandom 0.3.3",
  "hpke-rs",
  "hpke-rs-libcrux",
+ "kmd_client",
  "serde",
  "serde_json",
  "sha2",
  "snafu",
+ "test_utils",
+ "tokio",
  "x25519-dalek",
 ]
 
