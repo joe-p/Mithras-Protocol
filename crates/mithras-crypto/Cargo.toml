@@ -28,8 +28,11 @@ criterion = "0.5"
 tokio = { version = "1.49.0", features = ["macros"] }
 algod_client.workspace = true
 kmd_client.workspace = true
+indexer_client.workspace = true
 algokit_transact.workspace = true
 test_utils = { path = "../test_utils" }
+subscriber = { path = "../subscriber" }
+crossbeam-channel = "0.5.15"
 
 [[bench]]
 name = "discovery_check"

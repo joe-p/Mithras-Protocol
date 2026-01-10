@@ -7,7 +7,7 @@ use algod_client::{
 use algokit_transact::AppCallTransactionFields;
 use base64::{Engine as _, engine::general_purpose};
 use crossbeam_channel::Sender;
-use indexer_client::{IndexerClient, models::Transaction as IndexerTransaction};
+use indexer_client::{IndexerClient, apis::AddressRole, models::Transaction as IndexerTransaction};
 
 pub struct SubscriberTxn {
     pub txn: SignedTxnInBlock,
@@ -244,6 +244,8 @@ fn indexer_to_algod(indexer_txn: IndexerTransaction) -> SignedTxnInBlock {
 pub struct TransactionSubscription {
     pub app: Option<u64>,
     pub app_args: Option<HashMap<u64, Option<Vec<u8>>>>,
+    pub sender: Option<String>,
+    pub note: Option<Vec<u8>>,
     pub txn_channel: Sender<SubscriberTxn>,
 }
 
@@ -300,6 +302,26 @@ impl Subscriber {
                 match &txn.application_id {
                     Some(id) if *id != subbed_app_id => continue,
                     _ => {}
+                }
+            }
+
+            if let Some(subbed_note) = &sub.note {
+                let txn_note = txn.signed_transaction.transaction.header().note.as_ref();
+
+                if txn_note != Some(subbed_note) {
+                    continue;
+                }
+            }
+
+            if let Some(subbed_sender) = &sub.sender {
+                let txn_sender = txn
+                    .signed_transaction
+                    .transaction
+                    .header()
+                    .sender
+                    .to_string();
+                if &txn_sender != subbed_sender {
+                    continue;
                 }
             }
 
@@ -404,8 +426,8 @@ impl Subscriber {
                 None,
                 None,
                 None,
-                None,
-                None,
+                sub.sender.as_deref(),
+                sub.sender.clone().map(|_| AddressRole::Sender),
                 None,
                 None,
                 sub.app,
@@ -578,6 +600,8 @@ mod tests {
 
         subbed_args.insert(1, Some(general_purpose::STANDARD.decode(b64_arg).unwrap()));
         let sub = TransactionSubscription {
+            note: None,
+            sender: None,
             app: Some(app_txn.application_id),
             txn_channel: txn_sender,
             app_args: Some(subbed_args),
