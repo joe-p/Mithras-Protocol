@@ -57,6 +57,136 @@ mod tests {
     use subscriber::{Subscriber, TransactionSubscription};
     use test_utils::get_dispenser_account;
 
+    /// Test keypairs for Mithras protocol
+    struct TestKeypairs {
+        spend: SpendSeed,
+        discovery: DiscoveryKeypair,
+    }
+
+    impl TestKeypairs {
+        fn generate() -> Result<Self, MithrasError> {
+            Ok(Self {
+                spend: SpendSeed::generate()?,
+                discovery: DiscoveryKeypair::generate()?,
+            })
+        }
+
+        fn mithras_addr(&self) -> MithrasAddr {
+            MithrasAddr::from_keys(
+                self.spend.public_key(),
+                self.discovery.public_key(),
+                1,
+                SupportedNetwork::Testnet,
+                SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
+            )
+        }
+    }
+
+    /// E2E test context containing all state needed for integration tests
+    struct E2eTestContext {
+        keypairs: TestKeypairs,
+        txn_metadata: TransactionMetadata,
+        utxo_inputs: UtxoInputs,
+        signed_txn: algokit_transact::SignedTransaction,
+        sender: Address,
+        note: Vec<u8>,
+    }
+
+    impl E2eTestContext {
+        async fn setup(algod: &AlgodClient, kmd: &KmdClient) -> anyhow::Result<Self> {
+            let keypairs = TestKeypairs::generate().map_err(|e| anyhow::anyhow!(e))?;
+            let mithras_addr = keypairs.mithras_addr();
+
+            let sp = algod.transaction_params().await?;
+
+            let txn_metadata = TransactionMetadata {
+                sender: VerifyingKey::from_bytes(&[0u8; 32])?,
+                first_valid: sp.last_round,
+                last_valid: sp.last_round + 1000,
+                lease: [0u8; 32],
+                network: SupportedNetwork::Mainnet,
+                app_id: 1337,
+            };
+
+            let utxo_inputs = UtxoInputs::generate(&txn_metadata, 1000, &mithras_addr)
+                .map_err(|e| anyhow::anyhow!(e))?;
+
+            let algo_sk = get_dispenser_account(algod, kmd).await?;
+            let mut algo_signing_key = ed25519_dalek::SigningKey::from_bytes(&algo_sk);
+            let sender = Address(*algo_signing_key.verifying_key().as_bytes());
+
+            let note = rmp_serde::to_vec(&utxo_inputs.hpke_envelope)
+                .expect("should serialize hpke envelope");
+
+            let header = TransactionHeader {
+                sender: sender.clone(),
+                fee: Some(1000),
+                first_valid: txn_metadata.first_valid,
+                last_valid: txn_metadata.last_valid,
+                genesis_id: Some(sp.genesis_id),
+                genesis_hash: Some(
+                    sp.genesis_hash
+                        .try_into()
+                        .expect("genesis hash should be 32 bytes"),
+                ),
+                note: Some(note.clone()),
+                group: None,
+                lease: Some(txn_metadata.lease),
+                rekey_to: None,
+            };
+
+            let pay_txn = Transaction::Payment(PaymentTransactionFields {
+                header,
+                receiver: sender.clone(),
+                amount: 0,
+                close_remainder_to: None,
+            });
+
+            let bytes_to_sign = pay_txn.encode().expect("should get signing bytes");
+            let sig = algo_signing_key.sign(&bytes_to_sign);
+
+            let signed_txn = algokit_transact::SignedTransaction {
+                transaction: pay_txn,
+                signature: Some(sig.to_bytes()),
+                multisignature: None,
+                auth_address: None,
+            };
+
+            Ok(Self {
+                keypairs,
+                txn_metadata,
+                utxo_inputs,
+                signed_txn,
+                sender,
+                note,
+            })
+        }
+
+        /// Verify that recovered secrets match and signature is valid
+        fn verify_secrets_and_signature(
+            &self,
+            recovered_secrets: &UtxoSecrets,
+        ) -> anyhow::Result<()> {
+            assert_eq!(recovered_secrets, &self.utxo_inputs.secrets);
+
+            let msg = b"example spend authorization";
+            let tweaked_signer =
+                TweakedSigner::derive(&self.keypairs.spend, &recovered_secrets.tweak_scalar)?;
+            let sig = tweaked_signer.sign(msg)?;
+
+            let tweak_pubkey_from_sender = self.utxo_inputs.secrets.tweaked_pubkey;
+
+            // Verify that the pubkey derived from the sender matches the
+            // signature from the receiver
+            let verify_res = tweak_pubkey_from_sender.verify_strict(msg, &sig);
+            if verify_res.is_err() {
+                tweaked_signer.public_key().verify(msg, &sig).unwrap();
+            }
+
+            Ok(())
+        }
+    }
+
     #[test]
     fn test_keypair_generation() -> Result<(), MithrasError> {
         let spend_keypair = SpendSeed::generate()?;
@@ -249,37 +379,24 @@ mod tests {
 
     #[test]
     fn test_complete_mithras_protocol_flow_with_utxo_generate() -> anyhow::Result<()> {
-        let spend_keypair = SpendSeed::generate().map_err(|e| anyhow::anyhow!(e))?;
-        let discovery_keypair = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
-
-        let mithras_addr = MithrasAddr::from_keys(
-            spend_keypair.public_key(),
-            discovery_keypair.public_key(),
-            1,
-            SupportedNetwork::Testnet,
-            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
-        );
-
-        let first_valid = 1000;
-        let last_valid = 2000;
-        let lease = [0u8; 32];
-        let amount = 1000;
+        let keypairs = TestKeypairs::generate().map_err(|e| anyhow::anyhow!(e))?;
+        let mithras_addr = keypairs.mithras_addr();
 
         let txn_metadata = TransactionMetadata {
             sender: VerifyingKey::from_bytes(&[0u8; 32])?,
-            first_valid,
-            last_valid,
-            lease,
-            network: crate::hpke::SupportedNetwork::Mainnet,
+            first_valid: 1000,
+            last_valid: 2000,
+            lease: [0u8; 32],
+            network: SupportedNetwork::Mainnet,
             app_id: 1337,
         };
 
-        let utxo_inputs = UtxoInputs::generate(&txn_metadata, amount, &mithras_addr)
+        let utxo_inputs = UtxoInputs::generate(&txn_metadata, 1000, &mithras_addr)
             .map_err(|e| anyhow::anyhow!(e))?;
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
             utxo_inputs.hpke_envelope,
-            discovery_keypair,
+            keypairs.discovery,
             &txn_metadata,
         )?;
 
@@ -287,14 +404,13 @@ mod tests {
 
         let msg = b"example spend authorization";
         let tweaked_signer =
-            TweakedSigner::derive(&spend_keypair, &recovered_secrets.tweak_scalar)?;
+            TweakedSigner::derive(&keypairs.spend, &recovered_secrets.tweak_scalar)?;
         let sig = tweaked_signer.sign(msg)?;
 
         let tweak_pubkey_from_sender = utxo_inputs.secrets.tweaked_pubkey;
 
         // Verify that the pubkey derived from the sender matches the
         // signature from the receiver
-        // Since the secrets match, this is technically superfluous, but still a good sanity check
         let verify_res = tweak_pubkey_from_sender.verify_strict(msg, &sig);
         if verify_res.is_err() {
             tweaked_signer.public_key().verify(msg, &sig).unwrap();
@@ -305,18 +421,8 @@ mod tests {
 
     #[test]
     fn test_discovery_check_on_envelope() -> anyhow::Result<()> {
-        use ed25519_dalek::VerifyingKey;
-
-        let spend = SpendSeed::generate().map_err(|e| anyhow::anyhow!(e))?;
-        let disc = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
-
-        let addr = MithrasAddr::from_keys(
-            spend.public_key(),
-            disc.public_key(),
-            1,
-            SupportedNetwork::Testnet,
-            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
-        );
+        let keypairs = TestKeypairs::generate().map_err(|e| anyhow::anyhow!(e))?;
+        let addr = keypairs.mithras_addr();
 
         let txn = TransactionMetadata {
             sender: VerifyingKey::from_bytes(&[0u8; 32])?,
@@ -331,7 +437,7 @@ mod tests {
         let env = inputs.hpke_envelope;
 
         // Correct discovery key should validate
-        let ok = env.discovery_check(disc.private_key(), &txn);
+        let ok = env.discovery_check(keypairs.discovery.private_key(), &txn);
         assert!(ok);
 
         // Wrong discovery key should not validate
@@ -347,78 +453,14 @@ mod tests {
         let algod = AlgodClient::localnet();
         let kmd = KmdClient::localnet();
 
-        let spend_keypair = SpendSeed::generate().map_err(|e| anyhow::anyhow!(e))?;
-        let discovery_keypair = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
-
-        let mithras_addr = MithrasAddr::from_keys(
-            spend_keypair.public_key(),
-            discovery_keypair.public_key(),
-            1,
-            SupportedNetwork::Testnet,
-            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
-        );
-
-        let sp = algod.transaction_params().await?;
-
-        let lease = [0u8; 32];
-        let amount = 1000;
-
-        let txn_metadata = TransactionMetadata {
-            sender: VerifyingKey::from_bytes(&[0u8; 32])?,
-            first_valid: sp.last_round,
-            last_valid: sp.last_round + 1000,
-            lease,
-            network: crate::hpke::SupportedNetwork::Mainnet,
-            app_id: 1337,
-        };
-
-        let utxo_inputs = UtxoInputs::generate(&txn_metadata, amount, &mithras_addr)
-            .map_err(|e| anyhow::anyhow!(e))?;
-
-        let algo_sk = get_dispenser_account(&algod, &kmd).await?;
-
-        let mut algo_signing_key = ed25519_dalek::SigningKey::from_bytes(&algo_sk);
-        let sender = Address(*algo_signing_key.verifying_key().as_bytes());
-
-        let header = TransactionHeader {
-            sender: sender.clone(),
-            fee: Some(1000),
-            first_valid: txn_metadata.first_valid,
-            last_valid: txn_metadata.last_valid,
-            genesis_id: Some(sp.genesis_id),
-            genesis_hash: Some(
-                sp.genesis_hash
-                    .try_into()
-                    .expect("genesis hash should be 32 bytes"),
-            ),
-            note: Some(
-                rmp_serde::to_vec(&utxo_inputs.hpke_envelope)
-                    .expect("should serialize hpke envelope"),
-            ),
-            group: None,
-            lease: Some(txn_metadata.lease),
-            rekey_to: None,
-        };
-
-        let pay_txn = Transaction::Payment(PaymentTransactionFields {
-            header,
-            receiver: sender,
-            amount: 0,
-            close_remainder_to: None,
-        });
-
-        let bytes_to_sign = pay_txn.encode().expect("should get signing bytes");
-
-        let sig = algo_signing_key.sign(&bytes_to_sign);
-        let signed_txn = algokit_transact::SignedTransaction {
-            transaction: pay_txn,
-            signature: Some(sig.to_bytes()),
-            multisignature: None,
-            auth_address: None,
-        };
+        let ctx = E2eTestContext::setup(&algod, &kmd).await?;
 
         let confirmation = algod
-            .raw_transaction(signed_txn.encode().expect("should be able to encode stxn"))
+            .raw_transaction(
+                ctx.signed_txn
+                    .encode()
+                    .expect("should be able to encode stxn"),
+            )
             .await?;
 
         let tx_resp = algod
@@ -433,25 +475,13 @@ mod tests {
                 .ok_or_else(|| anyhow::anyhow!("note field missing from txn"))?,
         )?;
 
-        let recovered_secrets =
-            UtxoSecrets::from_hpke_envelope(hpke_env_from_tx, discovery_keypair, &txn_metadata)?;
+        let recovered_secrets = UtxoSecrets::from_hpke_envelope(
+            hpke_env_from_tx,
+            ctx.keypairs.discovery.clone(),
+            &ctx.txn_metadata,
+        )?;
 
-        assert_eq!(recovered_secrets, utxo_inputs.secrets);
-
-        let msg = b"example spend authorization";
-        let tweaked_signer =
-            TweakedSigner::derive(&spend_keypair, &recovered_secrets.tweak_scalar)?;
-        let sig = tweaked_signer.sign(msg)?;
-
-        let tweak_pubkey_from_sender = utxo_inputs.secrets.tweaked_pubkey;
-
-        // Verify that the pubkey derived from the sender matches the
-        // signature from the receiver
-        // Since the secrets match, this is technically superfluous, but still a good sanity check
-        let verify_res = tweak_pubkey_from_sender.verify_strict(msg, &sig);
-        if verify_res.is_err() {
-            tweaked_signer.public_key().verify(msg, &sig).unwrap();
-        }
+        ctx.verify_secrets_and_signature(&recovered_secrets)?;
 
         Ok(())
     }
@@ -462,87 +492,28 @@ mod tests {
         let kmd = KmdClient::localnet();
         let indexer = IndexerClient::localnet();
 
-        let spend_keypair = SpendSeed::generate().map_err(|e| anyhow::anyhow!(e))?;
-        let discovery_keypair = DiscoveryKeypair::generate().map_err(|e| anyhow::anyhow!(e))?;
-
-        let mithras_addr = MithrasAddr::from_keys(
-            spend_keypair.public_key(),
-            discovery_keypair.public_key(),
-            1,
-            SupportedNetwork::Testnet,
-            SupportedHpkeSuite::Base25519Sha512ChaCha20Poly1305,
-        );
-
-        let sp = algod.transaction_params().await?;
-
-        let lease = [0u8; 32];
-        let amount = 1000;
-
-        let txn_metadata = TransactionMetadata {
-            sender: VerifyingKey::from_bytes(&[0u8; 32])?,
-            first_valid: sp.last_round,
-            last_valid: sp.last_round + 1000,
-            lease,
-            network: crate::hpke::SupportedNetwork::Mainnet,
-            app_id: 1337,
-        };
-
-        let utxo_inputs = UtxoInputs::generate(&txn_metadata, amount, &mithras_addr)
-            .map_err(|e| anyhow::anyhow!(e))?;
-
-        let algo_sk = get_dispenser_account(&algod, &kmd).await?;
-
-        let mut algo_signing_key = ed25519_dalek::SigningKey::from_bytes(&algo_sk);
-        let sender = Address(*algo_signing_key.verifying_key().as_bytes());
-
-        let note = Some(
-            rmp_serde::to_vec(&utxo_inputs.hpke_envelope).expect("should serialize hpke envelope"),
-        );
-        let header = TransactionHeader {
-            sender: sender.clone(),
-            fee: Some(1000),
-            first_valid: txn_metadata.first_valid,
-            last_valid: txn_metadata.last_valid,
-            genesis_id: Some(sp.genesis_id),
-            genesis_hash: Some(
-                sp.genesis_hash
-                    .try_into()
-                    .expect("genesis hash should be 32 bytes"),
-            ),
-            note: note.clone(),
-            group: None,
-            lease: Some(txn_metadata.lease),
-            rekey_to: None,
-        };
-
-        let pay_txn = Transaction::Payment(PaymentTransactionFields {
-            header,
-            receiver: sender.clone(),
-            amount: 0,
-            close_remainder_to: None,
-        });
-
-        let bytes_to_sign = pay_txn.encode().expect("should get signing bytes");
-
-        let sig = algo_signing_key.sign(&bytes_to_sign);
-        let signed_txn = algokit_transact::SignedTransaction {
-            transaction: pay_txn,
-            signature: Some(sig.to_bytes()),
-            multisignature: None,
-            auth_address: None,
-        };
+        let ctx = E2eTestContext::setup(&algod, &kmd).await?;
 
         algod
-            .raw_transaction(signed_txn.encode().expect("should be able to encode stxn"))
+            .raw_transaction(
+                ctx.signed_txn
+                    .encode()
+                    .expect("should be able to encode stxn"),
+            )
             .await?;
 
-        let mut subscriber = Subscriber::new(algod.clone(), indexer, sp.last_round + 1, None);
+        let mut subscriber = Subscriber::new(
+            algod.clone(),
+            indexer,
+            ctx.txn_metadata.first_valid + 1,
+            None,
+        );
 
         let (txn_sender, txn_receiver) = crossbeam_channel::unbounded();
 
         let sub = TransactionSubscription {
-            note,
-            sender: Some(sender.to_string()),
+            note: Some(ctx.note.clone()),
+            sender: Some(ctx.sender.to_string()),
             app: None,
             txn_channel: txn_sender,
             app_args: None,
@@ -563,25 +534,13 @@ mod tests {
                 .ok_or_else(|| anyhow::anyhow!("note field missing from txn"))?,
         )?;
 
-        let recovered_secrets =
-            UtxoSecrets::from_hpke_envelope(hpke_env_from_tx, discovery_keypair, &txn_metadata)?;
+        let recovered_secrets = UtxoSecrets::from_hpke_envelope(
+            hpke_env_from_tx,
+            ctx.keypairs.discovery.clone(),
+            &ctx.txn_metadata,
+        )?;
 
-        assert_eq!(recovered_secrets, utxo_inputs.secrets);
-
-        let msg = b"example  authorization";
-        let tweaked_signer =
-            TweakedSigner::derive(&spend_keypair, &recovered_secrets.tweak_scalar)?;
-        let sig = tweaked_signer.sign(msg)?;
-
-        let tweak_pubkey_from_sender = utxo_inputs.secrets.tweaked_pubkey;
-
-        // Verify that the pubkey derived from the sender matches the
-        // signature from the receiver
-        // Since the secrets match, this is technically superfluous, but still a good sanity check
-        let verify_res = tweak_pubkey_from_sender.verify_strict(msg, &sig);
-        if verify_res.is_err() {
-            tweaked_signer.public_key().verify(msg, &sig).unwrap();
-        }
+        ctx.verify_secrets_and_signature(&recovered_secrets)?;
 
         Ok(())
     }
