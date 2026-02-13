@@ -1,4 +1,4 @@
-use std::sync::{Arc, atomic::AtomicU64};
+use std::sync::{Arc, Mutex, atomic::AtomicU64};
 
 use ed25519_dalek::VerifyingKey;
 use mithras_crypto::{
@@ -8,9 +8,25 @@ use mithras_crypto::{
 };
 use subscriber::{Subscriber, TransactionSubscription};
 
+fn compute_commitment(utxo: &UtxoSecrets) -> [u8; 32] {
+    let commitment = [0u8; 32];
+    let _data_to_hash = [
+        &utxo.spending_secret[..],
+        &utxo.nullifier_secret[..],
+        &utxo.amount.to_le_bytes(),
+        &utxo.tweaked_pubkey.to_bytes(),
+    ]
+    .concat();
+
+    // TODO: MiMC hash
+    commitment
+}
+
 pub struct MithrasSubscriber {
     pub subscriber: Subscriber,
     amount: Arc<AtomicU64>,
+    addrs: Arc<Mutex<Vec<[u8; 32]>>>,
+    recorded_utxos: Arc<Mutex<Vec<[u8; 32]>>>,
 }
 
 impl MithrasSubscriber {
@@ -42,6 +58,12 @@ impl MithrasSubscriber {
         let amount = Arc::new(AtomicU64::new(0));
         let cloned_amount = amount.clone();
 
+        let addrs = Arc::new(Mutex::new(vec![]));
+        let cloned_addrs = addrs.clone();
+
+        let recorded_utxos = Arc::new(Mutex::new(vec![]));
+        let cloned_recorded_utxos = recorded_utxos.clone();
+
         std::thread::spawn(move || {
             while let Ok(txn) = txn_receiver.recv() {
                 let note = match txn.txn.signed_transaction.transaction.note() {
@@ -59,48 +81,70 @@ impl MithrasSubscriber {
                     Err(_) => continue,
                 };
 
-                let sender_bytes = txn.txn.signed_transaction.transaction.header().sender.0;
+                let txn = txn.txn.signed_transaction.transaction;
+                let header = txn.header();
+                let sender_bytes = header.sender.0;
                 let sender = VerifyingKey::from_bytes(&sender_bytes).unwrap();
 
                 let txn_metadata = TransactionMetadata {
                     app_id,
                     sender,
-                    first_valid: txn.txn.signed_transaction.transaction.header().first_valid,
-                    last_valid: txn.txn.signed_transaction.transaction.header().last_valid,
-                    lease: txn
-                        .txn
-                        .signed_transaction
-                        .transaction
-                        .header()
-                        .lease
-                        .unwrap(),
+                    first_valid: header.first_valid,
+                    last_valid: header.last_valid,
+                    lease: header.lease.unwrap(),
                     network: mithras_crypto::hpke::SupportedNetwork::Custom(
-                        txn.txn
-                            .signed_transaction
-                            .transaction
-                            .header()
-                            .genesis_hash
-                            .unwrap(),
+                        header.genesis_hash.unwrap(),
                     ),
                 };
 
-                if hpke_envelope
+                if !hpke_envelope
                     .discovery_check(discovery_keypair.clone().private_key(), &txn_metadata)
                 {
-                    let utxo = UtxoSecrets::from_hpke_envelope(
-                        hpke_envelope,
-                        &discovery_keypair,
-                        &txn_metadata,
-                    )
-                    .unwrap();
-
-                    cloned_amount.fetch_add(utxo.amount, std::sync::atomic::Ordering::SeqCst);
+                    continue;
                 }
+
+                let utxo = UtxoSecrets::from_hpke_envelope(
+                    hpke_envelope,
+                    &discovery_keypair,
+                    &txn_metadata,
+                )
+                .unwrap();
+
+                let utxo_commitment = compute_commitment(&utxo);
+
+                {
+                    let mut utxos_guard = cloned_recorded_utxos.lock().unwrap();
+
+                    if utxos_guard.contains(&utxo_commitment) {
+                        continue;
+                    } else {
+                        utxos_guard.push(utxo_commitment);
+                    }
+                }
+
+                // TODO: Checks before adding UTXO amount
+                // - Ensure we can reconstruct the stealth keypair
+                // - Ensure nullifier isn't already spent on-chain
+                // - Ensure UTXO commitment exists in merkle tree
+
+                cloned_amount.fetch_add(utxo.amount, std::sync::atomic::Ordering::SeqCst);
+
+                cloned_addrs
+                    .lock()
+                    .unwrap()
+                    .push(utxo.tweaked_pubkey.to_bytes())
+
+                // TODO: Add subscription to spends from the tweaked_pubkey
             }
         });
 
         subscriber.subscribe(sub);
 
-        Self { subscriber, amount }
+        Self {
+            subscriber,
+            amount,
+            addrs,
+            recorded_utxos,
+        }
     }
 }
