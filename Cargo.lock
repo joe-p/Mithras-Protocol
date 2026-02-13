@@ -1674,6 +1674,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "mithras-discovery"
+version = "0.1.0"
+dependencies = [
+ "algod_client",
+ "crossbeam-channel",
+ "ed25519-dalek",
+ "indexer_client",
+ "mithras-crypto",
+ "subscriber",
+ "x25519-dalek",
+]
+
+[[package]]
 name = "native-tls"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"

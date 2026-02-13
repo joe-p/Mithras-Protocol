@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "crates/mithras-crypto", "crates/mithras-crypto-ffi", "crates/subscriber", "crates/test_utils", "tools/uniffi-bindgen"
+    "crates/mithras-crypto", "crates/mithras-crypto-ffi", "crates/mithras-discovery", "crates/subscriber", "crates/test_utils", "tools/uniffi-bindgen"
 ]
 resolver = "3"
 exclude = [
