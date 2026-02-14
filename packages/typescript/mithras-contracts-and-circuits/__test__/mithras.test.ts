@@ -49,7 +49,7 @@ describe("Mithras App", () => {
       zKey: "circuits/deposit_test.zkey",
       wasmProver: "circuits/deposit_js/deposit.wasm",
       totalLsigs: 7,
-      appOffset: 0,
+      appOffset: 1,
     });
 
     spendVerifier = new PlonkLsigVerifier({
@@ -57,7 +57,7 @@ describe("Mithras App", () => {
       zKey: "circuits/spend_test.zkey",
       wasmProver: "circuits/spend_js/spend.wasm",
       totalLsigs: SPEND_LSIGS,
-      appOffset: 0,
+      appOffset: 1,
     });
 
     const signalsAndProofFactory = new PlonkSignalsAndProofFactory({
@@ -112,25 +112,25 @@ describe("Mithras App", () => {
       paramsCallback: async (params) => {
         const { lsigParams, lsigsFee, args } = params;
 
-        // App call from lsig to expose the signals and proof to our app
-        const signalsAndProofCall = (
-          await signalsAndProofClient.createTransaction.signalsAndProof({
-            ...lsigParams,
-            args,
-          })
-        ).transactions[0];
+        const verifierTxn = algorand.createTransaction.payment({
+          ...lsigParams,
+          receiver: lsigParams.sender,
+          amount: microAlgos(0),
+        });
 
         group.deposit({
           args: {
             _outHpke: new Uint8Array(250),
-            signalsAndProofCall,
+            verifierTxn,
+            signals: args.signals,
+            _proof: args.proof,
             deposit: algorand.createTransaction.payment({
               sender: depositor,
               receiver: appClient.appAddress,
               amount: microAlgos(amount),
             }),
           },
-          extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos),
+          extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos + 1000n),
         });
       },
     });
@@ -164,24 +164,25 @@ describe("Mithras App", () => {
         const { lsigParams, args, lsigsFee } = params;
 
         // App call from lsig to expose the signals and proof to our app
-        const signalsAndProofCall = (
-          await signalsAndProofClient.createTransaction.signalsAndProof({
-            ...lsigParams,
-            args,
-          })
-        ).transactions[0];
+        const verifierTxn = algorand.createTransaction.payment({
+          ...lsigParams,
+          receiver: lsigParams.sender,
+          amount: microAlgos(0),
+        });
 
         depositGroup.deposit({
           args: {
+            verifierTxn,
+            signals: args.signals,
+            _proof: args.proof,
             _outHpke: new Uint8Array(250),
-            signalsAndProofCall,
             deposit: algorand.createTransaction.payment({
               sender: depositor,
               receiver: appClient.appAddress,
               amount: microAlgos(utxo_amount),
             }),
           },
-          extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos),
+          extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos + 1000n),
         });
       },
     });
@@ -198,7 +199,7 @@ describe("Mithras App", () => {
       sender: spender,
       receiver: spender,
       amount: microAlgos(0),
-      extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE),
+      extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE + 1000n),
     });
 
     const fee = NULLIFIER_MBR + feePayment.fee;
@@ -272,18 +273,18 @@ describe("Mithras App", () => {
       paramsCallback: async (params) => {
         const { lsigParams, args } = params;
 
-        // App call from lsig to expose the signals and proof to our app
-        const signalsAndProofCall = (
-          await signalsAndProofClient.createTransaction.signalsAndProof({
-            ...lsigParams,
-            args,
-          })
-        ).transactions[0];
+        const verifierTxn = algorand.createTransaction.payment({
+          ...lsigParams,
+          receiver: lsigParams.sender,
+          amount: microAlgos(0),
+        });
 
         spendGroup.spend({
           sender: spender,
           args: {
-            verifierCall: signalsAndProofCall,
+            verifierTxn,
+            signals: args.signals,
+            _proof: args.proof,
             _out0Hpke: new Uint8Array(250),
             _out1Hpke: new Uint8Array(250),
           },

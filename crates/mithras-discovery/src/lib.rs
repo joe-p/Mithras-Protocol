@@ -105,7 +105,7 @@ impl MithrasSubscriber {
                     _ => continue,
                 };
 
-                for arg in &args[1..] {
+                for arg in &args[3..] {
                     let hpke_bytes = match arg.to_owned().try_into() {
                         Ok(bytes) => bytes,
                         Err(_) => continue,

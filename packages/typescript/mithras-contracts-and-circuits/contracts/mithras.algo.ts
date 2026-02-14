@@ -17,7 +17,7 @@ import {
   itxn,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "./mimc_merkle.algo";
-import { Address } from "@algorandfoundation/algorand-typescript/arc4";
+import { Address, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 
 const BLS12_381_SCALAR_MODULUS = BigUint(
   Bytes.fromHex(
@@ -25,12 +25,34 @@ const BLS12_381_SCALAR_MODULUS = BigUint(
   ),
 );
 
-function getSignal(signals: bytes, idx: uint64): bytes<32> {
-  const start: uint64 = idx * 32;
-  return op.extract(signals, 2 + start, 32).toFixed({ length: 32 });
+function getSignal(signals: Uint256[], idx: uint64): bytes<32> {
+  return signals[idx].bytes.toFixed({ length: 32 });
 }
 
 const HPKE_SIZE = 250;
+
+/**
+ * PLONK proof structure: G1 points (96B BE) and field evals (32B BE)
+ */
+export type PlonkProof = {
+  // Uncompressed G1 points
+  A: bytes<96>;
+  B: bytes<96>;
+  C: bytes<96>;
+  Z: bytes<96>;
+  T1: bytes<96>;
+  T2: bytes<96>;
+  T3: bytes<96>;
+  Wxi: bytes<96>;
+  Wxiw: bytes<96>;
+  // Field evaluations are 32 bytes (SNARKJS internal representation, BE)
+  eval_a: Uint256;
+  eval_b: Uint256;
+  eval_c: Uint256;
+  eval_s1: Uint256;
+  eval_s2: Uint256;
+  eval_zw: Uint256;
+};
 
 @contract({ avmVersion: 11 })
 export class Mithras extends MimcMerkle {
@@ -49,13 +71,13 @@ export class Mithras extends MimcMerkle {
   }
 
   deposit(
-    signalsAndProofCall: gtxn.ApplicationCallTxn,
-    deposit: gtxn.PaymentTxn,
+    signals: Uint256[],
+    _proof: PlonkProof,
     _outHpke: bytes<typeof HPKE_SIZE>,
+    deposit: gtxn.PaymentTxn,
+    verifierTxn: gtxn.Transaction,
   ) {
-    assert(signalsAndProofCall.sender === this.depositVerifier.value.native);
-
-    const signals = signalsAndProofCall.appArgs(1);
+    assert(verifierTxn.sender === this.depositVerifier.value.native);
 
     const commitment = getSignal(signals, 0);
     const amount = op.extractUint64(getSignal(signals, 1), 24);
@@ -73,16 +95,16 @@ export class Mithras extends MimcMerkle {
   }
 
   spend(
-    verifierCall: gtxn.ApplicationCallTxn,
+    signals: Uint256[],
+    _proof: PlonkProof,
     _out0Hpke: bytes<typeof HPKE_SIZE>,
     _out1Hpke: bytes<typeof HPKE_SIZE>,
+    verifierTxn: gtxn.Transaction,
   ) {
     assert(
-      verifierCall.sender === this.spendVerifier.value.native,
+      verifierTxn.sender === this.spendVerifier.value.native,
       "sender of verifier call must be the spend verifier lsig",
     );
-
-    const signals = verifierCall.appArgs(1);
 
     const out0Commitment = getSignal(signals, 0);
     const out1Commitment = getSignal(signals, 1);
