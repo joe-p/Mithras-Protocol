@@ -1683,6 +1683,8 @@ dependencies = [
  "ed25519-dalek",
  "indexer_client",
  "mithras-crypto",
+ "num-bigint",
+ "num-traits",
  "sha2",
  "subscriber",
  "x25519-dalek",

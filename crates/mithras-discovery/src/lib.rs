@@ -1,3 +1,5 @@
+pub mod mimc;
+
 use std::{
     collections::{HashMap, hash_map},
     sync::{Arc, LazyLock, Mutex, atomic::AtomicU64},
@@ -33,25 +35,19 @@ static DEPOSIT_SELECTOR: LazyLock<[u8; 32]> =
 static SPEND_SELECTOR: LazyLock<[u8; 32]> = LazyLock::new(|| compuete_selector(SPEND_SIGNATURE));
 
 fn compute_nullifier(utxo: &UtxoSecrets) -> [u8; 32] {
-    let nullifier = [0u8; 32];
-    let _nullifier_data = [compute_commitment(utxo), utxo.nullifier_secret].concat();
-
-    // TODO: MiMC hash of nullifier
-    nullifier
+    mimc::mimc_sum(&[compute_commitment(utxo), utxo.nullifier_secret])
 }
 
 fn compute_commitment(utxo: &UtxoSecrets) -> [u8; 32] {
-    let commitment = [0u8; 32];
-    let _commitment_data = [
-        &utxo.spending_secret[..],
-        &utxo.nullifier_secret[..],
-        &utxo.amount.to_le_bytes(),
-        &utxo.tweaked_pubkey.to_bytes(),
-    ]
-    .concat();
+    let mut amount_bytes = [0u8; 32];
+    amount_bytes[24..].copy_from_slice(&utxo.amount.to_be_bytes());
 
-    // TODO: MiMC hash of commitment
-    commitment
+    mimc::mimc_sum(&[
+        utxo.spending_secret,
+        utxo.nullifier_secret,
+        amount_bytes,
+        utxo.tweaked_pubkey.to_bytes(),
+    ])
 }
 
 #[allow(clippy::large_enum_variant)]

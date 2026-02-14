@@ -24,6 +24,7 @@ describe("MiMC Circuit Tests", () => {
     await circuit.checkConstraints(witness);
 
     await circuit.assertOut(witness, avmResult.return!);
+    expect(avmResult.return).toMatchSnapshot();
   });
 
   it("should compute MiMC_MP_111 correctly", async () => {
