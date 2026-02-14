@@ -44,25 +44,6 @@ importers:
 
   packages/typescript/mithras-crypto:
     dependencies:
-      tweetnacl:
-        specifier: ^1.0.3
-        version: 1.0.3
-      uniffi-bindgen-react-native:
-        specifier: 0.29.3-1
-        version: 0.29.3-1
-    devDependencies:
-      '@noble/ed25519':
-        specifier: ^3.0.0
-        version: 3.0.0
-      '@noble/hashes':
-        specifier: ^2.0.1
-        version: 2.0.1
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@25.2.3)
-
-  packages/typescript/mithras-sdk:
-    dependencies:
       '@hpke/chacha20poly1305':
         specifier: ^1.7.1
         version: 1.7.1
@@ -78,6 +59,9 @@ importers:
       bech32:
         specifier: ^2.0.0
         version: 2.0.0
+      typescript:
+        specifier: ^5
+        version: 5.9.2
     devDependencies:
       '@types/node':
         specifier: latest
@@ -302,9 +286,6 @@ packages:
   '@noble/curves@2.0.1':
     resolution: {integrity: sha512-vs1Az2OOTBiP4q0pwjW5aF0xp9n4MxVrmkFBxc6EKZc6ddYx5gaZiAsZoq0uRRXWbi3AT/sBqn05eRPtn1JCPw==}
     engines: {node: '>= 20.19.0'}
-
-  '@noble/ed25519@3.0.0':
-    resolution: {integrity: sha512-QyteqMNm0GLqfa5SoYbSC3+Pvykwpn95Zgth4MFVSMKBB75ELl9tX1LAVsN4c3HXOrakHsF2gL4zWDAYCcsnzg==}
 
   '@noble/hashes@2.0.1':
     resolution: {integrity: sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw==}
@@ -1095,10 +1076,6 @@ packages:
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
-  uniffi-bindgen-react-native@0.29.3-1:
-    resolution: {integrity: sha512-o6gXZsAh55yuvhwF2WSFdIHV4phyfWcCmg4DuyfJWJ7CvUz1UcIz2S4u9SmXAz1jsuqvu6Xc9hexrRBB0a5osg==}
-    hasBin: true
-
   upath@2.0.1:
     resolution: {integrity: sha512-1uEe95xksV1O0CYKXo8vQvN1JEbtJp7lb7C5U9HMsIp6IVwntkH/oNUzyVNQSd4S1sYk2FpSSW44FqMc8qee5w==}
     engines: {node: '>=4'}
@@ -1402,8 +1379,6 @@ snapshots:
   '@noble/curves@2.0.1':
     dependencies:
       '@noble/hashes': 2.0.1
-
-  '@noble/ed25519@3.0.0': {}
 
   '@noble/hashes@2.0.1': {}
 
@@ -2196,8 +2171,6 @@ snapshots:
   undici-types@7.12.0: {}
 
   undici-types@7.16.0: {}
-
-  uniffi-bindgen-react-native@0.29.3-1: {}
 
   upath@2.0.1: {}
 

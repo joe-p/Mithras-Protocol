@@ -1,5 +1,5 @@
 {
-  "name": "mithras-sdk",
+  "name": "mithras-crypto",
   "module": "index.ts",
   "type": "module",
   "private": true,
