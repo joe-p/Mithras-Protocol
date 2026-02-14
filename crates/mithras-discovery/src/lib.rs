@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex, atomic::AtomicU64};
+use std::{
+    collections::{HashMap, hash_map},
+    sync::{Arc, Mutex, atomic::AtomicU64},
+};
 
 use algokit_transact::Transaction;
 use ed25519_dalek::VerifyingKey;
@@ -9,9 +12,10 @@ use mithras_crypto::{
 };
 use subscriber::{Subscriber, TransactionSubscription};
 
-fn compute_commitment(utxo: &UtxoSecrets) -> [u8; 32] {
+fn compute_nullifier(utxo: &UtxoSecrets) -> [u8; 32] {
     let commitment = [0u8; 32];
-    let _data_to_hash = [
+    let nullifier = [0u8; 32];
+    let _commitment_data = [
         &utxo.spending_secret[..],
         &utxo.nullifier_secret[..],
         &utxo.amount.to_le_bytes(),
@@ -19,15 +23,18 @@ fn compute_commitment(utxo: &UtxoSecrets) -> [u8; 32] {
     ]
     .concat();
 
-    // TODO: MiMC hash
-    commitment
+    // TODO: MiMC hash of commitment
+    let _nullifier_data = [commitment, utxo.nullifier_secret].concat();
+
+    // TODO: MiMC hash of nullifier
+    nullifier
 }
 
 pub struct MithrasSubscriber {
     pub subscriber: Subscriber,
     amount: Arc<AtomicU64>,
     addrs: Arc<Mutex<Vec<[u8; 32]>>>,
-    recorded_utxos: Arc<Mutex<Vec<[u8; 32]>>>,
+    recorded_utxos: Arc<Mutex<HashMap<[u8; 32], u64>>>,
 }
 
 impl MithrasSubscriber {
@@ -63,7 +70,7 @@ impl MithrasSubscriber {
         let addrs = Arc::new(Mutex::new(vec![]));
         let cloned_addrs = addrs.clone();
 
-        let recorded_utxos = Arc::new(Mutex::new(vec![]));
+        let recorded_utxos = Arc::new(Mutex::new(HashMap::new()));
         let cloned_recorded_utxos = recorded_utxos.clone();
 
         std::thread::spawn(move || {
@@ -114,15 +121,15 @@ impl MithrasSubscriber {
                     )
                     .unwrap();
 
-                    let utxo_commitment = compute_commitment(&utxo);
+                    let utxo_nullifier = compute_nullifier(&utxo);
 
                     {
                         let mut utxos_guard = cloned_recorded_utxos.lock().unwrap();
 
-                        if utxos_guard.contains(&utxo_commitment) {
-                            continue;
+                        if let hash_map::Entry::Vacant(e) = utxos_guard.entry(utxo_nullifier) {
+                            e.insert(utxo.amount);
                         } else {
-                            utxos_guard.push(utxo_commitment);
+                            continue;
                         }
                     }
 
