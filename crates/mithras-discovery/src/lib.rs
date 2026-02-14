@@ -13,8 +13,15 @@ use mithras_crypto::{
 use subscriber::{Subscriber, TransactionSubscription};
 
 fn compute_nullifier(utxo: &UtxoSecrets) -> [u8; 32] {
-    let commitment = [0u8; 32];
     let nullifier = [0u8; 32];
+    let _nullifier_data = [compute_commitment(utxo), utxo.nullifier_secret].concat();
+
+    // TODO: MiMC hash of nullifier
+    nullifier
+}
+
+fn compute_commitment(utxo: &UtxoSecrets) -> [u8; 32] {
+    let commitment = [0u8; 32];
     let _commitment_data = [
         &utxo.spending_secret[..],
         &utxo.nullifier_secret[..],
@@ -24,37 +31,72 @@ fn compute_nullifier(utxo: &UtxoSecrets) -> [u8; 32] {
     .concat();
 
     // TODO: MiMC hash of commitment
-    let _nullifier_data = [commitment, utxo.nullifier_secret].concat();
-
-    // TODO: MiMC hash of nullifier
-    nullifier
+    commitment
 }
 
 enum MithrasMethod {
-    Deposit,
-    Spend,
+    Deposit {
+        commitment: [u8; 32],
+    },
+    Spend {
+        commitment0: [u8; 32],
+        commitment1: [u8; 32],
+    },
 }
 
 impl MithrasMethod {
-    fn from_method_selector(args: &[u8]) -> Option<Self> {
+    fn from_args(args: &[Vec<u8>]) -> Option<Self> {
         if args.is_empty() {
             return None;
         }
 
         // TODO: calculate the actual selectors
-        match args {
-            b"deposit" => Some(MithrasMethod::Deposit),
-            b"spend" => Some(MithrasMethod::Spend),
+        match args[0].as_slice() {
+            b"deposit" => {
+                if args.len() != 4 {
+                    return None;
+                }
+
+                let commitment: [u8; 32] = args[1][0..32].try_into().ok()?;
+
+                Some(MithrasMethod::Deposit { commitment })
+            }
+            b"spend" => {
+                if args.len() != 4 {
+                    return None;
+                }
+
+                let commitment0: [u8; 32] = args[1][0..32].try_into().ok()?;
+                let commitment1: [u8; 32] = args[1][32..64].try_into().ok()?;
+
+                Some(MithrasMethod::Spend {
+                    commitment0,
+                    commitment1,
+                })
+            }
             _ => None,
+        }
+    }
+
+    fn verify_commitment(&self, utxo: &UtxoSecrets) -> bool {
+        let commitment = compute_commitment(utxo);
+        match self {
+            MithrasMethod::Deposit {
+                commitment: expected,
+            } => *expected == commitment,
+            MithrasMethod::Spend {
+                commitment0: expected0,
+                commitment1: expected1,
+            } => *expected0 == commitment || *expected1 == commitment,
         }
     }
 }
 
 pub struct MithrasSubscriber {
     pub subscriber: Subscriber,
-    amount: Arc<AtomicU64>,
-    addrs: Arc<Mutex<Vec<[u8; 32]>>>,
-    recorded_utxos: Arc<Mutex<HashMap<[u8; 32], u64>>>,
+    pub amount: Arc<AtomicU64>,
+    pub addrs: Arc<Mutex<Vec<[u8; 32]>>>,
+    pub recorded_utxos: Arc<Mutex<HashMap<[u8; 32], u64>>>,
 }
 
 impl MithrasSubscriber {
@@ -105,6 +147,11 @@ impl MithrasSubscriber {
                     _ => continue,
                 };
 
+                let method = match MithrasMethod::from_args(&args) {
+                    Some(method) => method,
+                    None => continue,
+                };
+
                 for arg in &args[3..] {
                     let hpke_bytes = match arg.to_owned().try_into() {
                         Ok(bytes) => bytes,
@@ -144,6 +191,10 @@ impl MithrasSubscriber {
                     )
                     .unwrap();
 
+                    if !method.verify_commitment(&utxo) {
+                        continue;
+                    }
+
                     let utxo_nullifier = compute_nullifier(&utxo);
 
                     {
@@ -154,21 +205,6 @@ impl MithrasSubscriber {
                         } else {
                             continue;
                         }
-                    }
-
-                    // TODO: Checks before adding UTXO amount
-                    // - Ensure UTXO commitment matches the one in the app args
-
-                    match MithrasMethod::from_method_selector(&args[0]) {
-                        Some(MithrasMethod::Deposit) => {
-                            // TODO: Check that commitment matches the one in the first app arg
-                        }
-
-                        Some(MithrasMethod::Spend) => {
-                            // TODO: Check that the commitment matche the one in the corresponding
-                            // (first or second) app arg
-                        }
-                        None => continue,
                     }
 
                     match TweakedSigner::derive(&spend_seed, &utxo.tweak_scalar) {
