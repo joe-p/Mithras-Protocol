@@ -39,6 +39,7 @@ enum MithrasMethod {
         commitment: [u8; 32],
     },
     Spend {
+        nullifier: [u8; 32],
         commitment0: [u8; 32],
         commitment1: [u8; 32],
     },
@@ -66,10 +67,12 @@ impl MithrasMethod {
                     return None;
                 }
 
-                let commitment0: [u8; 32] = args[1][0..32].try_into().ok()?;
-                let commitment1: [u8; 32] = args[1][32..64].try_into().ok()?;
+                let commitment0: [u8; 32] = args[1][0..32].try_into().ok()?; // signal[0]
+                let commitment1: [u8; 32] = args[1][32..64].try_into().ok()?; // signal[1]
+                let nullifier: [u8; 32] = args[1][96..128].try_into().ok()?; // signal[3]
 
                 Some(MithrasMethod::Spend {
+                    nullifier,
                     commitment0,
                     commitment1,
                 })
@@ -85,6 +88,7 @@ impl MithrasMethod {
                 commitment: expected,
             } => *expected == commitment,
             MithrasMethod::Spend {
+                nullifier: _,
                 commitment0: expected0,
                 commitment1: expected1,
             } => *expected0 == commitment || *expected1 == commitment,
@@ -151,6 +155,19 @@ impl MithrasSubscriber {
                     Some(method) => method,
                     None => continue,
                 };
+
+                // Check if we spend a nullifier we already know about before doing any expensive operations
+                match method {
+                    MithrasMethod::Spend { nullifier, .. } => {
+                        let mut utxos_guard = cloned_recorded_utxos.lock().unwrap();
+                        if let hash_map::Entry::Occupied(e) = utxos_guard.entry(nullifier) {
+                            cloned_amount.fetch_sub(*e.get(), std::sync::atomic::Ordering::SeqCst);
+                            e.remove();
+                            continue;
+                        }
+                    }
+                    _ => { /* no-op */ }
+                }
 
                 for arg in &args[3..] {
                     let hpke_bytes = match arg.to_owned().try_into() {
@@ -222,8 +239,6 @@ impl MithrasSubscriber {
                         .lock()
                         .unwrap()
                         .push(utxo.tweaked_pubkey.to_bytes())
-
-                    // TODO: Add subscription to spends from the tweaked_pubkey
                 }
             }
         });
