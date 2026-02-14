@@ -16,5 +16,8 @@ jobs:
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
 
+      - name: Install nexttest
+        run: cargo install cargo-nextest --locked
+
       - name: Run tests
         run: cargo t
