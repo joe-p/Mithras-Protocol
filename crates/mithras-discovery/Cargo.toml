@@ -10,5 +10,6 @@ crossbeam-channel = "0.5.15"
 ed25519-dalek = "2.2.0"
 indexer_client.workspace = true
 mithras-crypto = { version = "0.1.0", path = "../mithras-crypto" }
+sha2 = "0.10.9"
 subscriber = { version = "0.1.0", path = "../subscriber" }
 x25519-dalek = "2.0.1"

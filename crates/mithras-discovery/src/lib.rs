@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, hash_map},
-    sync::{Arc, Mutex, atomic::AtomicU64},
+    sync::{Arc, LazyLock, Mutex, atomic::AtomicU64},
 };
 
 use algokit_transact::Transaction;
@@ -10,7 +10,27 @@ use mithras_crypto::{
     keypairs::{DiscoveryKeypair, SpendSeed, TweakedSigner},
     utxo::UtxoSecrets,
 };
+use sha2::{Digest, Sha512_256};
 use subscriber::{Subscriber, TransactionSubscription};
+
+const DEPOSIT_SIGNATURE: &[u8] = b"deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)void";
+const SPEND_SIGNATURE: &[u8] = b"spend(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],byte[
+250],txn)void";
+
+fn compuete_selector(signature: &[u8]) -> [u8; 32] {
+    let mut selector = [0u8; 32];
+
+    let hasher = Sha512_256::new();
+    let hash = hasher.chain_update(signature).finalize();
+    selector.copy_from_slice(&hash[0..32]);
+
+    selector
+}
+
+static DEPOSIT_SELECTOR: LazyLock<[u8; 32]> =
+    LazyLock::new(|| compuete_selector(DEPOSIT_SIGNATURE));
+
+static SPEND_SELECTOR: LazyLock<[u8; 32]> = LazyLock::new(|| compuete_selector(SPEND_SIGNATURE));
 
 fn compute_nullifier(utxo: &UtxoSecrets) -> [u8; 32] {
     let nullifier = [0u8; 32];
@@ -55,68 +75,67 @@ impl MithrasMethod {
             return None;
         }
 
-        // TODO: calculate the actual selectors
-        match args[0].as_slice() {
-            b"deposit" => {
-                if args.len() != 4 {
-                    return None;
-                }
+        let selector = &args[0];
 
-                let commitment: [u8; 32] = args[1][0..32].try_into().ok()?;
-
-                let hpke_bytes = match args[3].to_owned().try_into() {
-                    Ok(bytes) => bytes,
-                    Err(_) => return None,
-                };
-
-                let hpke_envelope = match HpkeEnvelope::from_bytes(&hpke_bytes) {
-                    Ok(env) => env,
-                    Err(_) => return None,
-                };
-
-                Some(MithrasMethod::Deposit {
-                    commitment,
-                    hpke_envelope,
-                })
+        if selector == DEPOSIT_SELECTOR.as_slice() {
+            if args.len() != 4 {
+                return None;
             }
-            b"spend" => {
-                if args.len() != 4 {
-                    return None;
-                }
 
-                let commitment0: [u8; 32] = args[1][0..32].try_into().ok()?; // signal[0]
-                let commitment1: [u8; 32] = args[1][32..64].try_into().ok()?; // signal[1]
-                let nullifier: [u8; 32] = args[1][96..128].try_into().ok()?; // signal[3]
+            let commitment: [u8; 32] = args[1][0..32].try_into().ok()?;
 
-                let hpke_bytes_0 = match args[3].to_owned().try_into() {
-                    Ok(bytes) => bytes,
-                    Err(_) => return None,
-                };
+            let hpke_bytes = match args[3].to_owned().try_into() {
+                Ok(bytes) => bytes,
+                Err(_) => return None,
+            };
 
-                let hpke_envelope_0 = match HpkeEnvelope::from_bytes(&hpke_bytes_0) {
-                    Ok(env) => env,
-                    Err(_) => return None,
-                };
+            let hpke_envelope = match HpkeEnvelope::from_bytes(&hpke_bytes) {
+                Ok(env) => env,
+                Err(_) => return None,
+            };
 
-                let hpke_bytes_1 = match args[4].to_owned().try_into() {
-                    Ok(bytes) => bytes,
-                    Err(_) => return None,
-                };
-
-                let hpke_envelope_1 = match HpkeEnvelope::from_bytes(&hpke_bytes_1) {
-                    Ok(env) => env,
-                    Err(_) => return None,
-                };
-
-                Some(MithrasMethod::Spend {
-                    nullifier,
-                    commitment0,
-                    commitment1,
-                    hpke_envelope_0,
-                    hpke_envelope_1,
-                })
+            Some(MithrasMethod::Deposit {
+                commitment,
+                hpke_envelope,
+            })
+        } else if SPEND_SELECTOR.as_slice() == selector {
+            if args.len() != 4 {
+                return None;
             }
-            _ => None,
+
+            let commitment0: [u8; 32] = args[1][0..32].try_into().ok()?; // signal[0]
+            let commitment1: [u8; 32] = args[1][32..64].try_into().ok()?; // signal[1]
+            let nullifier: [u8; 32] = args[1][96..128].try_into().ok()?; // signal[3]
+
+            let hpke_bytes_0 = match args[3].to_owned().try_into() {
+                Ok(bytes) => bytes,
+                Err(_) => return None,
+            };
+
+            let hpke_envelope_0 = match HpkeEnvelope::from_bytes(&hpke_bytes_0) {
+                Ok(env) => env,
+                Err(_) => return None,
+            };
+
+            let hpke_bytes_1 = match args[4].to_owned().try_into() {
+                Ok(bytes) => bytes,
+                Err(_) => return None,
+            };
+
+            let hpke_envelope_1 = match HpkeEnvelope::from_bytes(&hpke_bytes_1) {
+                Ok(env) => env,
+                Err(_) => return None,
+            };
+
+            Some(MithrasMethod::Spend {
+                nullifier,
+                commitment0,
+                commitment1,
+                hpke_envelope_0,
+                hpke_envelope_1,
+            })
+        } else {
+            None
         }
     }
 
