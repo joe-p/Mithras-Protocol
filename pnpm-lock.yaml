@@ -73,7 +73,30 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@25.2.3)
 
+  packages/typescript/mithras-subscriber:
+    dependencies:
+      '@algorandfoundation/algokit-subscriber':
+        specifier: ^3.2.0
+        version: 3.2.0(@algorandfoundation/algokit-utils@9.1.2(algosdk@3.5.2))(algosdk@3.5.2)
+      '@algorandfoundation/algokit-utils':
+        specifier: ^9.1.2
+        version: 9.1.2(algosdk@3.5.2)
+      algosdk:
+        specifier: ^3.5.2
+        version: 3.5.2
+    devDependencies:
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
+
 packages:
+
+  '@algorandfoundation/algokit-subscriber@3.2.0':
+    resolution: {integrity: sha512-MUpe1n0OTsjO2TW7CAQFXBAJO47x72aJqwHy/toFkYiOjf7TidEvcrgmWXmJs4cpBCeZpnHf7BJfS6RzZwF8ZQ==}
+    engines: {node: '>=18.0'}
+    peerDependencies:
+      '@algorandfoundation/algokit-utils': ^9.0.0
+      algosdk: ^3.0.0
 
   '@algorandfoundation/algokit-utils@9.1.2':
     resolution: {integrity: sha512-gZTg9H5FAce+QcT79y8Eun8by+MtlgocYjIUvP2ahh2O0U0HCcTSjVux5lQZj5+EsSaL3sR0p+BmjXnPAMplbA==}
@@ -820,6 +843,9 @@ packages:
   js-sha512@0.8.0:
     resolution: {integrity: sha512-PWsmefG6Jkodqt+ePTvBZCSMFgN7Clckjd0O7su3I0+BW2QWUTJNzjktHsztGLhncP2h8mcF9V9Y2Ha59pAViQ==}
 
+  js-sha512@0.9.0:
+    resolution: {integrity: sha512-mirki9WS/SUahm+1TbAPkqvbCiCfOAAsyXeHxK1UkullnJVVqoJG2pL9ObvT05CN+tM7fxhfYm0NbXn+1hWoZg==}
+
   js-tokens@9.0.1:
     resolution: {integrity: sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ==}
 
@@ -1227,6 +1253,12 @@ packages:
     resolution: {integrity: sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==}
 
 snapshots:
+
+  '@algorandfoundation/algokit-subscriber@3.2.0(@algorandfoundation/algokit-utils@9.1.2(algosdk@3.5.2))(algosdk@3.5.2)':
+    dependencies:
+      '@algorandfoundation/algokit-utils': 9.1.2(algosdk@3.5.2)
+      algosdk: 3.5.2
+      js-sha512: 0.9.0
 
   '@algorandfoundation/algokit-utils@9.1.2(algosdk@3.5.2)':
     dependencies:
@@ -1901,6 +1933,8 @@ snapshots:
   js-sha3@0.8.0: {}
 
   js-sha512@0.8.0: {}
+
+  js-sha512@0.9.0: {}
 
   js-tokens@9.0.1: {}
 

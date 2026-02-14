@@ -68,7 +68,7 @@ export class TweakedSigner {
     this.publicKey = publicKey;
   }
 
-  derive(spendSeed: SpendSeed, tweakScalar: bigint): TweakedSigner {
+  static derive(spendSeed: SpendSeed, tweakScalar: bigint): TweakedSigner {
     const tweakedScalar = scalar.add(spendSeed.aScalar(), tweakScalar);
 
     const tweakdPrefix = sha512(

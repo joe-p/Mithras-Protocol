@@ -20,6 +20,7 @@ import {
 } from "../src/hpke";
 import { MithrasAddr } from "../src/address";
 import { UtxoInputs, UtxoSecrets } from "../src/utxo";
+import { mimcSum } from "../src/mimc";
 
 describe("mithras protocol", () => {
   it("keypair generation", () => {
@@ -60,11 +61,7 @@ describe("mithras protocol", () => {
     const tweakedPubSender = deriveTweakedPubkey(spend.publicKey, tweakScalar);
 
     // TweakedSigner.derive is an instance method; create a dummy to call it
-    const tweakedReceiver = new TweakedSigner(
-      new Uint8Array(32),
-      new Uint8Array(32),
-      new Uint8Array(32),
-    ).derive(spend, tweakScalar);
+    const tweakedReceiver = TweakedSigner.derive(spend, tweakScalar);
 
     expect(tweakedPubSender).toEqual(tweakedReceiver.publicKey);
   });
@@ -104,9 +101,7 @@ describe("mithras protocol", () => {
   });
 
   it("hpke encryption decryption", async () => {
-    const hpke = getHpkeSuite(
-      SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
-    );
+    const hpke = getHpkeSuite(SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305);
     const recipient = DiscoveryKeypair.generate();
 
     const info = new TextEncoder().encode("mithras|network:0|app:1337|v:1");
@@ -162,11 +157,7 @@ describe("mithras protocol", () => {
     const discovery = DiscoveryKeypair.generate();
     const tweakScalar = deriveTweakScalar(new Uint8Array(32).fill(42));
 
-    const tweakedReceiver = new TweakedSigner(
-      new Uint8Array(32),
-      new Uint8Array(32),
-      new Uint8Array(32),
-    ).derive(spend, tweakScalar);
+    const tweakedReceiver = TweakedSigner.derive(spend, tweakScalar);
 
     const addr = MithrasAddr.fromKeys(
       tweakedReceiver.publicKey,
@@ -226,5 +217,14 @@ describe("mithras protocol", () => {
     expect(recoveredSecrets.tweakedPubkey).toEqual(
       utxoInputs.secrets.tweakedPubkey,
     );
+  });
+
+  it("mimc matches avm", () => {
+    const expected =
+      49105172669127360405434456472687549054927962593265498033454743191558675115881n;
+
+    const input = [13n, 37n];
+
+    expect(mimcSum(input)).toBe(expected);
   });
 });

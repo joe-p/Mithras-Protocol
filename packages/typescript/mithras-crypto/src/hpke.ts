@@ -1,32 +1,7 @@
 import { CipherSuite, DhkemX25519HkdfSha256, HkdfSha256 } from "@hpke/core";
 import { Chacha20Poly1305 } from "@hpke/chacha20poly1305";
-
-// use std::fmt::Display;
-//
-// use ed25519_dalek::VerifyingKey as Ed25519PublicKey;
-// use hpke_rs::Hpke;
-// use hpke_rs_libcrux::HpkeLibcrux;
-//
-// use serde::{Deserialize, Deserializer, Serialize, Serializer};
-//
-// pub const CIPHER_TEXT_SIZE: usize = crate::utxo::SECRET_SIZE + 16;
-//
-// fn serialize_ciphertext<S>(data: &[u8; CIPHER_TEXT_SIZE], serializer: S) -> Result<S::Ok, S::Error>
-// where
-//     S: Serializer,
-// {
-//     data.serialize(serializer)
-// }
-//
-// fn deserialize_ciphertext<'de, D>(deserializer: D) -> Result<[u8; CIPHER_TEXT_SIZE], D::Error>
-// where
-//     D: Deserializer<'de>,
-// {
-//     let vec: Vec<u8> = Vec::deserialize(deserializer)?;
-//     vec.try_into()
-//         .map_err(|_| serde::de::Error::custom("wrong length"))
-// }
-//
+import { x25519 } from "@noble/curves/ed25519.js";
+import { computeDiscoveryTag } from "./discovery";
 
 export const CIPHER_TEXT_SIZE = 136 + 16; // SECRET_SIZE + AEAD tag
 export const HPKE_SIZE = 1 + 1 + 32 + CIPHER_TEXT_SIZE + 32 + 32;
@@ -154,5 +129,25 @@ export class HpkeEnvelope {
     data.set(this.discoveryTag, 34 + CIPHER_TEXT_SIZE);
     data.set(this.discoveryEphemeral, 34 + CIPHER_TEXT_SIZE + 32);
     return data;
+  }
+
+  discoveryCheck(
+    discoveryPrivate: Uint8Array,
+    txnMetadata: TransactionMetadata,
+  ): boolean {
+    const discoverySecret = x25519.getSharedSecret(
+      discoveryPrivate,
+      this.discoveryEphemeral,
+    );
+
+    const computedTag = computeDiscoveryTag(
+      discoverySecret,
+      txnMetadata.sender,
+      txnMetadata.firstValid,
+      txnMetadata.lastValid,
+      txnMetadata.lease,
+    );
+
+    return Buffer.from(computedTag).equals(Buffer.from(this.discoveryTag));
   }
 }
