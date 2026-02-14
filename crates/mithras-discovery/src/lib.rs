@@ -30,6 +30,26 @@ fn compute_nullifier(utxo: &UtxoSecrets) -> [u8; 32] {
     nullifier
 }
 
+enum MithrasMethod {
+    Deposit,
+    Spend,
+}
+
+impl MithrasMethod {
+    fn from_method_selector(args: &[u8]) -> Option<Self> {
+        if args.is_empty() {
+            return None;
+        }
+
+        // TODO: calculate the actual selectors
+        match args {
+            b"deposit" => Some(MithrasMethod::Deposit),
+            b"spend" => Some(MithrasMethod::Spend),
+            _ => None,
+        }
+    }
+}
+
 pub struct MithrasSubscriber {
     pub subscriber: Subscriber,
     amount: Arc<AtomicU64>,
@@ -137,8 +157,19 @@ impl MithrasSubscriber {
                     }
 
                     // TODO: Checks before adding UTXO amount
-                    // - Ensure nullifier isn't already spent on-chain
-                    // - Ensure UTXO commitment exists in merkle tree
+                    // - Ensure UTXO commitment matches the one in the app args
+
+                    match MithrasMethod::from_method_selector(&args[0]) {
+                        Some(MithrasMethod::Deposit) => {
+                            // TODO: Check that commitment matches the one in the first app arg
+                        }
+
+                        Some(MithrasMethod::Spend) => {
+                            // TODO: Check that the commitment matche the one in the corresponding
+                            // (first or second) app arg
+                        }
+                        None => continue,
+                    }
 
                     match TweakedSigner::derive(&spend_seed, &utxo.tweak_scalar) {
                         Ok(signer) => {
