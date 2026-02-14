@@ -158,11 +158,11 @@ describe("Spend Circuit", () => {
     const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
 
     const algorand = AlgorandClient.defaultLocalNet();
-    const verifier = new PlonkAppVerifier(
+    const verifier = new PlonkAppVerifier({
       algorand,
-      "circuits/spend_test.zkey",
-      "circuits/spend_js/spend.wasm",
-    );
+      zKey: "circuits/spend_test.zkey",
+      wasmProver: "circuits/spend_js/spend.wasm",
+    });
 
     await verifier.deploy({
       defaultSender: await algorand.account.localNetDispenser(),

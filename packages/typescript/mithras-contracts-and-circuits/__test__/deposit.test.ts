@@ -68,11 +68,12 @@ describe("Deposit Circuit", () => {
 
   it("verifies on chain", async () => {
     const algorand = AlgorandClient.defaultLocalNet();
-    const verifier = new PlonkAppVerifier(
+    const verifier = new PlonkAppVerifier({
       algorand,
-      "circuits/deposit_test.zkey",
-      "circuits/deposit_js/deposit.wasm",
-    );
+      zKey: "circuits/deposit_test.zkey",
+
+      wasmProver: "circuits/deposit_js/deposit.wasm",
+    });
 
     await verifier.deploy({
       defaultSender: await algorand.account.localNetDispenser(),
