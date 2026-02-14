@@ -1,0 +1,48 @@
+#pragma version 10
+#pragma typetrack false
+
+// @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
+main:
+    // contracts/mithras.algo.ts:73
+    // export class MithrasLogger extends Contract {
+    txn NumAppArgs
+    bz main_bare_routing@7
+    pushbytess 0x1d18a7c7 0x2ded82ee // method "newLeaf((byte[32],byte[32][24],uint64,uint64))void", method "newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void"
+    txna ApplicationArgs 0
+    match main_newLeaf_route@3 main_newLeaf2_route@4
+
+main_after_if_else@11:
+    err
+
+main_newLeaf2_route@4:
+    // contracts/mithras.algo.ts:75
+    // newLeaf2(_newLeaf: NewLeaf, _newLeaf2: NewLeaf) {}
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    pushint 1 // 1
+    return
+
+main_newLeaf_route@3:
+    // contracts/mithras.algo.ts:74
+    // newLeaf(_newLeaf: NewLeaf) {}
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    pushint 1 // 1
+    return
+
+main_bare_routing@7:
+    // contracts/mithras.algo.ts:73
+    // export class MithrasLogger extends Contract {
+    txn OnCompletion
+    bnz main_after_if_else@11
+    txn ApplicationID
+    !
+    assert // can only call when creating
+    pushint 1 // 1
+    return
