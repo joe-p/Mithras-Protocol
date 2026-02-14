@@ -6,6 +6,7 @@ import {
   TestDataBuilder,
 } from "./utils/test-utils";
 import { MimcMerkleHelper } from "./utils/contract-helpers";
+import { TREE_DEPTH } from "../src/constants";
 
 describe("Merkle Path Verify Circuit Tests", () => {
   let circuit: any;
@@ -103,7 +104,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const pathElements: bigint[] = [];
     const pathSelectors: number[] = [];
 
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < TREE_DEPTH; i++) {
       pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[i]));
       pathSelectors.push(0);
     }
@@ -147,7 +148,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const pathSelectors: number[] = [];
 
     let index = leafIndex;
-    for (let level = 0; level < 32; level++) {
+    for (let level = 0; level < TREE_DEPTH; level++) {
       if (level === 0) {
         pathElements.push(MerkleTestHelpers.bytesToBigInt(subtree[0]));
         pathSelectors.push(1);
@@ -187,7 +188,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const pathElements: bigint[] = [];
     const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
 
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < TREE_DEPTH; i++) {
       pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[i]));
     }
 

@@ -2,6 +2,7 @@ import circom_tester from "circom_tester";
 import { AlgorandClient } from "@algorandfoundation/algokit-utils/types/algorand-client";
 import { microAlgos, Config } from "@algorandfoundation/algokit-utils";
 import algosdk from "algosdk";
+import { TREE_DEPTH } from "../../src/constants";
 
 Config.configure({
   logger: {
@@ -130,11 +131,11 @@ export class MimcCalculator {
 }
 
 export class MerkleTestHelpers {
-  static createDefaultPathElements(size: number = 32): bigint[] {
+  static createDefaultPathElements(size: number = TREE_DEPTH): bigint[] {
     return new Array(size).fill(0n);
   }
 
-  static createDefaultPathSelectors(size: number = 32): number[] {
+  static createDefaultPathSelectors(size: number = TREE_DEPTH): number[] {
     return new Array(size).fill(0);
   }
 

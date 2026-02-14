@@ -16,6 +16,7 @@ import {
   SpendSeed,
   SupportedHpkeSuite,
 } from "../../mithras-crypto/src";
+import { TREE_DEPTH } from "../src/constants";
 
 const SPEND_LSIGS = 12;
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
@@ -153,7 +154,7 @@ describe("Mithras App", () => {
     const pathElements: bigint[] = [];
     let currentZero = 0n; // bzero(32) = 0n
 
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < TREE_DEPTH; i++) {
       pathElements[i] = currentZero;
       currentZero = await mimcCalculator.calculateHash(
         currentZero,

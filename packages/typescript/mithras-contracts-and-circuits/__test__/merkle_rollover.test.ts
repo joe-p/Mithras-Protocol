@@ -6,6 +6,7 @@ import {
   TestDataBuilder,
 } from "./utils/test-utils";
 import { MimcMerkleHelper } from "./utils/contract-helpers";
+import { TREE_DEPTH } from "../src/constants";
 
 // These tests validate epoch rollover and sealed root verification
 
@@ -27,7 +28,7 @@ describe("Merkle rollover + sealed roots", () => {
 
     const pathElements: bigint[] = [];
     const pathSelectors: number[] = [];
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < TREE_DEPTH; i++) {
       pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[i]));
       pathSelectors.push(0);
     }
@@ -51,7 +52,7 @@ describe("Merkle rollover + sealed roots", () => {
     expect(sealedOk).toBe(true);
 
     // After rotate, empty-root must be in recent cache
-    const emptyRootBytes = zeroHashes[31];
+    const emptyRootBytes = zeroHashes[TREE_DEPTH - 1];
     const { return: emptyOk } = await appClient.send.isValidRootTest({
       args: { root: emptyRootBytes },
     });
@@ -66,7 +67,7 @@ describe("Merkle rollover + sealed roots", () => {
     // Compute the expected new root for leaf2
     const pe2: bigint[] = [];
     const pi2: number[] = [];
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < TREE_DEPTH; i++) {
       pe2.push(MerkleTestHelpers.bytesToBigInt(zero2[i]));
       pi2.push(0);
     }

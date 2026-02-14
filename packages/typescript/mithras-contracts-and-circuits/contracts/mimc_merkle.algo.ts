@@ -13,14 +13,14 @@ import {
   Global,
   BoxMap,
 } from "@algorandfoundation/algorand-typescript";
+import { TREE_DEPTH } from "../src/constants";
 
 const ROOT_CACHE_SIZE = 50;
-const TREE_HEIGHT = 32;
 
 const EPOCHS_PER_BOX = 32;
 
 // Base cost for mimc is 10 uALGO, and each bytes<32> costs 550 uALGO
-const MIMC_OPCODE_COST = 1100 * TREE_HEIGHT;
+const MIMC_OPCODE_COST = 1100 * TREE_DEPTH;
 
 @contract({ avmVersion: 11 })
 export class MimcMerkle extends Contract {
@@ -28,11 +28,11 @@ export class MimcMerkle extends Contract {
 
   rootCounter = GlobalState<uint64>({ key: "c" });
 
-  subtree = Box<FixedArray<bytes<32>, typeof TREE_HEIGHT>>({ key: "t" });
+  subtree = Box<FixedArray<bytes<32>, typeof TREE_DEPTH>>({ key: "t" });
 
   treeIndex = GlobalState<uint64>({ key: "i" });
 
-  zeroHashes = Box<FixedArray<bytes<32>, typeof TREE_HEIGHT>>({ key: "z" });
+  zeroHashes = Box<FixedArray<bytes<32>, typeof TREE_DEPTH>>({ key: "z" });
 
   // Track epochs and cache the last computed root for sealing
   epochId = GlobalState<uint64>({ key: "e" });
@@ -44,11 +44,11 @@ export class MimcMerkle extends Contract {
 
   protected bootstrap(): void {
     ensureBudget(MIMC_OPCODE_COST);
-    const tree = new FixedArray<bytes<32>, typeof TREE_HEIGHT>();
+    const tree = new FixedArray<bytes<32>, typeof TREE_DEPTH>();
 
     tree[0] = op.bzero(32).toFixed({ length: 32 });
 
-    for (let i: uint64 = 1; i < TREE_HEIGHT; i++) {
+    for (let i: uint64 = 1; i < TREE_DEPTH; i++) {
       tree[i] = op.mimc(
         op.MimcConfigurations.BLS12_381Mp111,
         tree[i - 1].concat(tree[i - 1]),
@@ -62,7 +62,7 @@ export class MimcMerkle extends Contract {
     this.subtree.value = clone(tree);
     this.epochId.value = 0;
     // The empty tree root
-    this.lastComputedRoot.value = tree[TREE_HEIGHT - 1];
+    this.lastComputedRoot.value = tree[TREE_DEPTH - 1];
   }
 
   protected addLeaf(leafHash: bytes<32>): void {
@@ -71,7 +71,7 @@ export class MimcMerkle extends Contract {
 
     let index = this.treeIndex.value;
 
-    if (!(index < 2 ** TREE_HEIGHT)) {
+    if (!(index < 2 ** TREE_DEPTH)) {
       // tree is full — seal current epoch and rotate to a fresh tree
       this.sealAndRotate();
       // refresh local index after rotation
@@ -85,7 +85,7 @@ export class MimcMerkle extends Contract {
     let subtree = clone(this.subtree.value);
     const zeroHashes = clone(this.zeroHashes.value);
 
-    for (let i: uint64 = 0; i < TREE_HEIGHT; i++) {
+    for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
       if ((index & 1) === 0) {
         subtree[i] = currentHash;
         left = currentHash;
@@ -134,7 +134,7 @@ export class MimcMerkle extends Contract {
     // Optionally clear existing cache by recreating
     this.rootCache.delete();
     this.rootCache.create();
-    const emptyRoot = zeros[TREE_HEIGHT - 1];
+    const emptyRoot = zeros[TREE_DEPTH - 1];
     this.lastComputedRoot.value = emptyRoot;
     this.addRoot(emptyRoot);
   }
