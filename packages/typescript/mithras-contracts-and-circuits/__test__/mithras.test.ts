@@ -119,6 +119,7 @@ describe("Mithras App", () => {
 
         group.deposit({
           args: {
+            _outHpke: new Uint8Array(250),
             signalsAndProofCall,
             deposit: algorand.createTransaction.payment({
               sender: depositor,
@@ -168,6 +169,7 @@ describe("Mithras App", () => {
 
         depositGroup.deposit({
           args: {
+            _outHpke: new Uint8Array(250),
             signalsAndProofCall,
             deposit: algorand.createTransaction.payment({
               sender: depositor,
@@ -275,7 +277,11 @@ describe("Mithras App", () => {
 
         spendGroup.spend({
           sender: spender,
-          args: { verifierCall: signalsAndProofCall },
+          args: {
+            verifierCall: signalsAndProofCall,
+            _out0Hpke: new Uint8Array(250),
+            _out1Hpke: new Uint8Array(250),
+          },
           staticFee: microAlgos(0),
         });
       },

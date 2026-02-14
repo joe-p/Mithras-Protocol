@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 algod_client.workspace = true
+algokit_transact.workspace = true
 crossbeam-channel = "0.5.15"
 ed25519-dalek = "2.2.0"
 indexer_client.workspace = true

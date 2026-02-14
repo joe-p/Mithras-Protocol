@@ -30,6 +30,8 @@ function getSignal(signals: bytes, idx: uint64): bytes<32> {
   return op.extract(signals, 2 + start, 32).toFixed({ length: 32 });
 }
 
+const HPKE_SIZE = 250;
+
 @contract({ avmVersion: 11 })
 export class Mithras extends MimcMerkle {
   depositVerifier = GlobalState<Address>({ key: "d" });
@@ -49,6 +51,7 @@ export class Mithras extends MimcMerkle {
   deposit(
     signalsAndProofCall: gtxn.ApplicationCallTxn,
     deposit: gtxn.PaymentTxn,
+    _outHpke: bytes<typeof HPKE_SIZE>,
   ) {
     assert(signalsAndProofCall.sender === this.depositVerifier.value.native);
 
@@ -69,7 +72,11 @@ export class Mithras extends MimcMerkle {
     );
   }
 
-  spend(verifierCall: gtxn.ApplicationCallTxn) {
+  spend(
+    verifierCall: gtxn.ApplicationCallTxn,
+    _out0Hpke: bytes<typeof HPKE_SIZE>,
+    _out1Hpke: bytes<typeof HPKE_SIZE>,
+  ) {
     assert(
       verifierCall.sender === this.spendVerifier.value.native,
       "sender of verifier call must be the spend verifier lsig",

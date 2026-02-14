@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex, atomic::AtomicU64};
 
+use algokit_transact::Transaction;
 use ed25519_dalek::VerifyingKey;
 use mithras_crypto::{
     hpke::{HpkeEnvelope, TransactionMetadata},
@@ -66,75 +67,78 @@ impl MithrasSubscriber {
 
         std::thread::spawn(move || {
             while let Ok(txn) = txn_receiver.recv() {
-                let note = match txn.txn.signed_transaction.transaction.note() {
-                    Some(n) => n.to_vec(),
-                    None => continue,
-                };
-
-                let hpke_bytes = match note.try_into() {
-                    Ok(bytes) => bytes,
-                    Err(_) => continue,
-                };
-
-                let hpke_envelope = match HpkeEnvelope::from_bytes(&hpke_bytes) {
-                    Ok(env) => env,
-                    Err(_) => continue,
-                };
-
                 let txn = txn.txn.signed_transaction.transaction;
-                let header = txn.header();
-                let sender_bytes = header.sender.0;
-                let sender = VerifyingKey::from_bytes(&sender_bytes).unwrap();
 
-                let txn_metadata = TransactionMetadata {
-                    app_id,
-                    sender,
-                    first_valid: header.first_valid,
-                    last_valid: header.last_valid,
-                    lease: header.lease.unwrap(),
-                    network: mithras_crypto::hpke::SupportedNetwork::Custom(
-                        header.genesis_hash.unwrap(),
-                    ),
+                let args: Vec<Vec<u8>> = match &txn {
+                    Transaction::AppCall(appl) => appl.args.clone().unwrap_or_default(),
+                    _ => continue,
                 };
 
-                if !hpke_envelope
-                    .discovery_check(discovery_keypair.clone().private_key(), &txn_metadata)
-                {
-                    continue;
-                }
+                for arg in &args[1..] {
+                    let hpke_bytes = match arg.to_owned().try_into() {
+                        Ok(bytes) => bytes,
+                        Err(_) => continue,
+                    };
 
-                let utxo = UtxoSecrets::from_hpke_envelope(
-                    hpke_envelope,
-                    &discovery_keypair,
-                    &txn_metadata,
-                )
-                .unwrap();
+                    let hpke_envelope = match HpkeEnvelope::from_bytes(&hpke_bytes) {
+                        Ok(env) => env,
+                        Err(_) => continue,
+                    };
 
-                let utxo_commitment = compute_commitment(&utxo);
+                    let header = txn.header();
+                    let sender_bytes = header.sender.0;
+                    let sender = VerifyingKey::from_bytes(&sender_bytes).unwrap();
 
-                {
-                    let mut utxos_guard = cloned_recorded_utxos.lock().unwrap();
+                    let txn_metadata = TransactionMetadata {
+                        app_id,
+                        sender,
+                        first_valid: header.first_valid,
+                        last_valid: header.last_valid,
+                        lease: header.lease.unwrap_or([0u8; 32]),
+                        network: mithras_crypto::hpke::SupportedNetwork::Custom(
+                            header.genesis_hash.unwrap(),
+                        ),
+                    };
 
-                    if utxos_guard.contains(&utxo_commitment) {
+                    if !hpke_envelope
+                        .discovery_check(discovery_keypair.clone().private_key(), &txn_metadata)
+                    {
                         continue;
-                    } else {
-                        utxos_guard.push(utxo_commitment);
                     }
+
+                    let utxo = UtxoSecrets::from_hpke_envelope(
+                        hpke_envelope,
+                        &discovery_keypair,
+                        &txn_metadata,
+                    )
+                    .unwrap();
+
+                    let utxo_commitment = compute_commitment(&utxo);
+
+                    {
+                        let mut utxos_guard = cloned_recorded_utxos.lock().unwrap();
+
+                        if utxos_guard.contains(&utxo_commitment) {
+                            continue;
+                        } else {
+                            utxos_guard.push(utxo_commitment);
+                        }
+                    }
+
+                    // TODO: Checks before adding UTXO amount
+                    // - Ensure we can reconstruct the stealth keypair
+                    // - Ensure nullifier isn't already spent on-chain
+                    // - Ensure UTXO commitment exists in merkle tree
+
+                    cloned_amount.fetch_add(utxo.amount, std::sync::atomic::Ordering::SeqCst);
+
+                    cloned_addrs
+                        .lock()
+                        .unwrap()
+                        .push(utxo.tweaked_pubkey.to_bytes())
+
+                    // TODO: Add subscription to spends from the tweaked_pubkey
                 }
-
-                // TODO: Checks before adding UTXO amount
-                // - Ensure we can reconstruct the stealth keypair
-                // - Ensure nullifier isn't already spent on-chain
-                // - Ensure UTXO commitment exists in merkle tree
-
-                cloned_amount.fetch_add(utxo.amount, std::sync::atomic::Ordering::SeqCst);
-
-                cloned_addrs
-                    .lock()
-                    .unwrap()
-                    .push(utxo.tweaked_pubkey.to_bytes())
-
-                // TODO: Add subscription to spends from the tweaked_pubkey
             }
         });
 
