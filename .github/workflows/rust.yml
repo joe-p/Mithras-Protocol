@@ -19,5 +19,11 @@ jobs:
       - name: Install nexttest
         run: cargo install cargo-nextest --locked
 
+      - name: Install algokit
+        run: pip install algokit
+
+      - name: Run localnet
+        run: algokit localnet start
+
       - name: Run tests
         run: cargo t
