@@ -7,7 +7,7 @@ use algokit_transact::Transaction;
 use ed25519_dalek::VerifyingKey;
 use mithras_crypto::{
     hpke::{HpkeEnvelope, TransactionMetadata},
-    keypairs::DiscoveryKeypair,
+    keypairs::{DiscoveryKeypair, SpendSeed, TweakedSigner},
     utxo::UtxoSecrets,
 };
 use subscriber::{Subscriber, TransactionSubscription};
@@ -43,6 +43,7 @@ impl MithrasSubscriber {
         initial_round: u64,
         stop_round: Option<u64>,
         discovery_keypair: &DiscoveryKeypair,
+        spend_seed: &SpendSeed,
     ) -> Self {
         let mut subscriber = Subscriber::new(
             algod_client::AlgodClient::localnet(),
@@ -72,6 +73,8 @@ impl MithrasSubscriber {
 
         let recorded_utxos = Arc::new(Mutex::new(HashMap::new()));
         let cloned_recorded_utxos = recorded_utxos.clone();
+
+        let spend_seed = spend_seed.to_owned();
 
         std::thread::spawn(move || {
             while let Ok(txn) = txn_receiver.recv() {
@@ -134,9 +137,17 @@ impl MithrasSubscriber {
                     }
 
                     // TODO: Checks before adding UTXO amount
-                    // - Ensure we can reconstruct the stealth keypair
                     // - Ensure nullifier isn't already spent on-chain
                     // - Ensure UTXO commitment exists in merkle tree
+
+                    match TweakedSigner::derive(&spend_seed, &utxo.tweak_scalar) {
+                        Ok(signer) => {
+                            if *signer.public_key() != utxo.tweaked_pubkey {
+                                continue;
+                            }
+                        }
+                        Err(_) => continue,
+                    }
 
                     cloned_amount.fetch_add(utxo.amount, std::sync::atomic::Ordering::SeqCst);
 
