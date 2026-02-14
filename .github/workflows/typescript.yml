@@ -58,6 +58,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build ${{ matrix.package }}
+        if: matrix.package == 'mithras-contracts-and-circuits'
         run: pnpm build
         working-directory: packages/typescript/${{ matrix.package }}
 
