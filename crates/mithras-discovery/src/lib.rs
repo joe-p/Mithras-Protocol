@@ -34,14 +34,18 @@ fn compute_commitment(utxo: &UtxoSecrets) -> [u8; 32] {
     commitment
 }
 
+#[allow(clippy::large_enum_variant)]
 enum MithrasMethod {
     Deposit {
         commitment: [u8; 32],
+        hpke_envelope: HpkeEnvelope,
     },
     Spend {
         nullifier: [u8; 32],
         commitment0: [u8; 32],
         commitment1: [u8; 32],
+        hpke_envelope_0: HpkeEnvelope,
+        hpke_envelope_1: HpkeEnvelope,
     },
 }
 
@@ -60,7 +64,20 @@ impl MithrasMethod {
 
                 let commitment: [u8; 32] = args[1][0..32].try_into().ok()?;
 
-                Some(MithrasMethod::Deposit { commitment })
+                let hpke_bytes = match args[3].to_owned().try_into() {
+                    Ok(bytes) => bytes,
+                    Err(_) => return None,
+                };
+
+                let hpke_envelope = match HpkeEnvelope::from_bytes(&hpke_bytes) {
+                    Ok(env) => env,
+                    Err(_) => return None,
+                };
+
+                Some(MithrasMethod::Deposit {
+                    commitment,
+                    hpke_envelope,
+                })
             }
             b"spend" => {
                 if args.len() != 4 {
@@ -71,10 +88,32 @@ impl MithrasMethod {
                 let commitment1: [u8; 32] = args[1][32..64].try_into().ok()?; // signal[1]
                 let nullifier: [u8; 32] = args[1][96..128].try_into().ok()?; // signal[3]
 
+                let hpke_bytes_0 = match args[3].to_owned().try_into() {
+                    Ok(bytes) => bytes,
+                    Err(_) => return None,
+                };
+
+                let hpke_envelope_0 = match HpkeEnvelope::from_bytes(&hpke_bytes_0) {
+                    Ok(env) => env,
+                    Err(_) => return None,
+                };
+
+                let hpke_bytes_1 = match args[4].to_owned().try_into() {
+                    Ok(bytes) => bytes,
+                    Err(_) => return None,
+                };
+
+                let hpke_envelope_1 = match HpkeEnvelope::from_bytes(&hpke_bytes_1) {
+                    Ok(env) => env,
+                    Err(_) => return None,
+                };
+
                 Some(MithrasMethod::Spend {
                     nullifier,
                     commitment0,
                     commitment1,
+                    hpke_envelope_0,
+                    hpke_envelope_1,
                 })
             }
             _ => None,
@@ -86,12 +125,24 @@ impl MithrasMethod {
         match self {
             MithrasMethod::Deposit {
                 commitment: expected,
+                ..
             } => *expected == commitment,
             MithrasMethod::Spend {
-                nullifier: _,
                 commitment0: expected0,
                 commitment1: expected1,
+                ..
             } => *expected0 == commitment || *expected1 == commitment,
+        }
+    }
+
+    fn hpke_envelopes(&self) -> Vec<&HpkeEnvelope> {
+        match self {
+            MithrasMethod::Deposit { hpke_envelope, .. } => vec![hpke_envelope],
+            MithrasMethod::Spend {
+                hpke_envelope_0,
+                hpke_envelope_1,
+                ..
+            } => vec![hpke_envelope_0, hpke_envelope_1],
         }
     }
 }
@@ -169,17 +220,7 @@ impl MithrasSubscriber {
                     _ => { /* no-op */ }
                 }
 
-                for arg in &args[3..] {
-                    let hpke_bytes = match arg.to_owned().try_into() {
-                        Ok(bytes) => bytes,
-                        Err(_) => continue,
-                    };
-
-                    let hpke_envelope = match HpkeEnvelope::from_bytes(&hpke_bytes) {
-                        Ok(env) => env,
-                        Err(_) => continue,
-                    };
-
+                for hpke_envelope in method.hpke_envelopes() {
                     let header = txn.header();
                     let sender_bytes = header.sender.0;
                     let sender = VerifyingKey::from_bytes(&sender_bytes).unwrap();

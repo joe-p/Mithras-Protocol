@@ -394,7 +394,7 @@ mod tests {
             .map_err(|e| anyhow::anyhow!(e))?;
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
-            utxo_inputs.hpke_envelope,
+            &utxo_inputs.hpke_envelope,
             &keypairs.discovery,
             &txn_metadata,
         )?;
@@ -477,7 +477,7 @@ mod tests {
 
         let hpke_env_from_tx = HpkeEnvelope::from_bytes(&note_bytes)?;
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
-            hpke_env_from_tx,
+            &hpke_env_from_tx,
             &ctx.keypairs.discovery.clone(),
             &ctx.txn_metadata,
         )?;
@@ -541,7 +541,7 @@ mod tests {
         let hpke_env_from_tx = HpkeEnvelope::from_bytes(&note_bytes)?;
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
-            hpke_env_from_tx,
+            &hpke_env_from_tx,
             &ctx.keypairs.discovery.clone(),
             &ctx.txn_metadata,
         )?;
@@ -602,7 +602,7 @@ mod tests {
         let hpke_env_from_tx = HpkeEnvelope::from_bytes(&note_bytes)?;
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
-            hpke_env_from_tx,
+            &hpke_env_from_tx,
             &ctx.keypairs.discovery.clone(),
             &ctx.txn_metadata,
         )?;

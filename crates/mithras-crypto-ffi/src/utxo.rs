@@ -39,7 +39,7 @@ impl UtxoSecrets {
             .map_err(|e| MithrasCryptoError::Error(e.to_string()))?;
 
         let rust_utxo_secrets = RustUtxoSecrets::from_hpke_envelope(
-            rust_hpke_envelope,
+            &rust_hpke_envelope,
             &discovery_keypair,
             &(<mithras_crypto::hpke::TransactionMetadata as TryFrom<TransactionMetadata>>::try_from(txn_metadata)
                 .map_err(|e| MithrasCryptoError::Error(e.to_string()))?),

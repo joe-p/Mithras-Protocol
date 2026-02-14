@@ -23,7 +23,7 @@ pub struct UtxoSecrets {
 
 impl UtxoSecrets {
     pub fn from_hpke_envelope(
-        hpke_envelope: HpkeEnvelope,
+        hpke_envelope: &HpkeEnvelope,
         discovery_keypair: &DiscoveryKeypair,
         txn_metadata: &crate::hpke::TransactionMetadata,
     ) -> Result<Self, MithrasError> {
