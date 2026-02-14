@@ -9,6 +9,13 @@ import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";
 import { Address } from "algosdk";
+import { depositVerifier, MithrasProtocolClient, spendVerifier } from "../src";
+import {
+  DiscoveryKeypair,
+  MithrasAddr,
+  SpendSeed,
+  SupportedHpkeSuite,
+} from "../../mithras-crypto/src";
 
 const SPEND_LSIGS = 12;
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
@@ -28,11 +35,8 @@ function addressInScalarField(addr: Address): bigint {
 }
 
 describe("Mithras App", () => {
-  let depositVerifier: PlonkLsigVerifier;
-  let spendVerifier: PlonkLsigVerifier;
   let appClient: MithrasClient;
   let algorand: AlgorandClient;
-  let signalsAndProofClient: PlonkSignalsAndProofClient;
   let mimcCalculator: MimcCalculator;
   let depositor: Address;
   let spender: Address;
@@ -44,96 +48,28 @@ describe("Mithras App", () => {
 
     algorand.setSuggestedParamsCacheTimeout(0);
     mimcCalculator = await MimcCalculator.create();
-    depositVerifier = new PlonkLsigVerifier({
-      algorand,
-      zKey: "circuits/deposit_test.zkey",
-      wasmProver: "circuits/deposit_js/deposit.wasm",
-      totalLsigs: 7,
-      appOffset: 1,
-    });
 
-    spendVerifier = new PlonkLsigVerifier({
-      algorand,
-      zKey: "circuits/spend_test.zkey",
-      wasmProver: "circuits/spend_js/spend.wasm",
-      totalLsigs: SPEND_LSIGS,
-      appOffset: 1,
-    });
-
-    const signalsAndProofFactory = new PlonkSignalsAndProofFactory({
+    const deployment = await MithrasProtocolClient.deploy(algorand, depositor);
+    appClient = algorand.client.getTypedAppClientById(MithrasClient, {
+      appId: deployment.appClient.appId,
       defaultSender: depositor,
-      algorand,
-    });
-
-    const { appClient: sapc } = await signalsAndProofFactory.deploy({
-      onUpdate: "append",
-    });
-
-    signalsAndProofClient = sapc;
-
-    const factory = new MithrasFactory({
-      algorand,
-      defaultSender: depositor,
-    });
-
-    const { appClient: ac } = await factory.send.create.createApplication({
-      args: {
-        depositVerifier: (await depositVerifier.lsigAccount()).addr.toString(),
-        spendVerifier: (await spendVerifier.lsigAccount()).addr.toString(),
-      },
-    });
-
-    appClient = ac;
-
-    await appClient.appClient.fundAppAccount({ amount: microAlgos(APP_MBR) });
-
-    await appClient.send.bootstrapMerkleTree({
-      args: {},
-      extraFee: microAlgos(BOOTSTRAP_FEE),
     });
   });
 
   it("deposit", async () => {
-    const spending_secret = 1n;
-    const nullifier_secret = 2n;
-    const amount = 3n;
-    const receiver = addressInScalarField(spender);
+    const client = new MithrasProtocolClient(algorand, appClient.appId);
 
-    const group = appClient.newGroup();
-
-    await depositVerifier.verificationParams({
-      composer: group,
-      inputs: {
-        spending_secret,
-        nullifier_secret,
-        amount,
-        receiver,
-      },
-      paramsCallback: async (params) => {
-        const { lsigParams, lsigsFee, args } = params;
-
-        const verifierTxn = algorand.createTransaction.payment({
-          ...lsigParams,
-          receiver: lsigParams.sender,
-          amount: microAlgos(0),
-        });
-
-        group.deposit({
-          args: {
-            _outHpke: new Uint8Array(250),
-            verifierTxn,
-            signals: args.signals,
-            _proof: args.proof,
-            deposit: algorand.createTransaction.payment({
-              sender: depositor,
-              receiver: appClient.appAddress,
-              amount: microAlgos(amount),
-            }),
-          },
-          extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos + 1000n),
-        });
-      },
-    });
+    const { group } = await client.composeDepositGroup(
+      depositor,
+      1n,
+      MithrasAddr.fromKeys(
+        SpendSeed.generate().publicKey,
+        DiscoveryKeypair.generate().publicKey,
+        1,
+        0,
+        SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
+      ),
+    );
 
     const simRes = await group.simulate({
       allowUnnamedResources: true,
@@ -152,7 +88,7 @@ describe("Mithras App", () => {
 
     const depositGroup = appClient.newGroup();
 
-    await depositVerifier.verificationParams({
+    await depositVerifier(algorand).verificationParams({
       composer: depositGroup,
       inputs: {
         spending_secret: utxo_spending_secret,
@@ -267,7 +203,7 @@ describe("Mithras App", () => {
 
     const spendGroup = appClient.newGroup();
 
-    await spendVerifier.verificationParams({
+    await spendVerifier(algorand).verificationParams({
       composer: spendGroup,
       inputs: inputSignals,
       paramsCallback: async (params) => {

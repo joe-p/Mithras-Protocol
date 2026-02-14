@@ -126,6 +126,7 @@ export class MithrasSubscriber {
           const amount = this.utxos.get(method.nullifier!)!;
           this.amount -= amount;
           this.utxos.delete(method.nullifier!);
+          return;
         }
       }
 
