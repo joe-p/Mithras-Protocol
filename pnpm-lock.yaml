@@ -11,8 +11,8 @@ importers:
   packages/typescript/mithras-contracts-and-circuits:
     dependencies:
       snarkjs-algorand:
-        specifier: 0.8.0
-        version: 0.8.0(typescript@5.9.2)
+        specifier: ^0.11.0
+        version: 0.11.0(typescript@5.9.2)
     devDependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.1.2
@@ -258,6 +258,10 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
+
+  '@noble/curves@2.0.1':
+    resolution: {integrity: sha512-vs1Az2OOTBiP4q0pwjW5aF0xp9n4MxVrmkFBxc6EKZc6ddYx5gaZiAsZoq0uRRXWbi3AT/sBqn05eRPtn1JCPw==}
+    engines: {node: '>= 20.19.0'}
 
   '@noble/ed25519@3.0.0':
     resolution: {integrity: sha512-QyteqMNm0GLqfa5SoYbSC3+Pvykwpn95Zgth4MFVSMKBB75ELl9tX1LAVsN4c3HXOrakHsF2gL4zWDAYCcsnzg==}
@@ -936,8 +940,8 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
-  snarkjs-algorand@0.8.0:
-    resolution: {integrity: sha512-SjespUHkXj34w6cxM5h+s32wHrWjmSSyPV5AdhoZ1oW+6vGrhVUlzmPnnQnISqcrRrKtWy2s4HgHq+IwSOCARQ==}
+  snarkjs-algorand@0.11.0:
+    resolution: {integrity: sha512-aPn+8eEMwSqY+/wIsx/8YmqhK3g+3Al5CS7ye5gKtmIlKsXW8TUbsFYxbWZVlbTXunVODqY+p2uvjDuedQK9XQ==}
     peerDependencies:
       typescript: ^5
 
@@ -1335,6 +1339,10 @@ snapshots:
       minipass: 7.1.2
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
+
+  '@noble/curves@2.0.1':
+    dependencies:
+      '@noble/hashes': 2.0.1
 
   '@noble/ed25519@3.0.0': {}
 
@@ -2005,9 +2013,10 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  snarkjs-algorand@0.8.0(typescript@5.9.2):
+  snarkjs-algorand@0.11.0(typescript@5.9.2):
     dependencies:
       '@algorandfoundation/algokit-utils': 9.1.2(algosdk@3.5.2)
+      '@noble/curves': 2.0.1
       algosdk: 3.5.2
       snarkjs: 0.7.5
       typescript: 5.9.2

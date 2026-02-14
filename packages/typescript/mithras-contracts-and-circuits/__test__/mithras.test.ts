@@ -44,19 +44,21 @@ describe("Mithras App", () => {
 
     algorand.setSuggestedParamsCacheTimeout(0);
     mimcCalculator = await MimcCalculator.create();
-    depositVerifier = new PlonkLsigVerifier(
+    depositVerifier = new PlonkLsigVerifier({
       algorand,
-      "circuits/deposit_test.zkey",
-      "circuits/deposit_js/deposit.wasm",
-      7,
-    );
+      zKey: "circuits/deposit_test.zkey",
+      wasmProver: "circuits/deposit_js/deposit.wasm",
+      totalLsigs: 7,
+      appOffset: 0,
+    });
 
-    spendVerifier = new PlonkLsigVerifier(
+    spendVerifier = new PlonkLsigVerifier({
       algorand,
-      "circuits/spend_test.zkey",
-      "circuits/spend_js/spend.wasm",
-      SPEND_LSIGS,
-    );
+      zKey: "circuits/spend_test.zkey",
+      wasmProver: "circuits/spend_js/spend.wasm",
+      totalLsigs: SPEND_LSIGS,
+      appOffset: 0,
+    });
 
     const signalsAndProofFactory = new PlonkSignalsAndProofFactory({
       defaultSender: depositor,
@@ -108,13 +110,14 @@ describe("Mithras App", () => {
         receiver,
       },
       paramsCallback: async (params) => {
-        const { appParams, lsigsFee } = params;
+        const { lsigParams, lsigsFee, args } = params;
 
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
-          await signalsAndProofClient.createTransaction.signalsAndProof(
-            appParams,
-          )
+          await signalsAndProofClient.createTransaction.signalsAndProof({
+            ...lsigParams,
+            args,
+          })
         ).transactions[0];
 
         group.deposit({
@@ -158,13 +161,14 @@ describe("Mithras App", () => {
         receiver: utxo_spender,
       },
       paramsCallback: async (params) => {
-        const { appParams, lsigsFee } = params;
+        const { lsigParams, args, lsigsFee } = params;
 
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
-          await signalsAndProofClient.createTransaction.signalsAndProof(
-            appParams,
-          )
+          await signalsAndProofClient.createTransaction.signalsAndProof({
+            ...lsigParams,
+            args,
+          })
         ).transactions[0];
 
         depositGroup.deposit({
@@ -266,13 +270,14 @@ describe("Mithras App", () => {
       composer: spendGroup,
       inputs: inputSignals,
       paramsCallback: async (params) => {
-        const { appParams } = params;
+        const { lsigParams, args } = params;
 
         // App call from lsig to expose the signals and proof to our app
         const signalsAndProofCall = (
-          await signalsAndProofClient.createTransaction.signalsAndProof(
-            appParams,
-          )
+          await signalsAndProofClient.createTransaction.signalsAndProof({
+            ...lsigParams,
+            args,
+          })
         ).transactions[0];
 
         spendGroup.spend({
