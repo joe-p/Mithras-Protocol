@@ -52,6 +52,7 @@ impl MithrasSubscriber {
             app: Some(app_id),
             txn_channel: txn_sender,
             app_args: None,
+            id: "outputs".to_string(),
         };
 
         let discovery_keypair = discovery_keypair.to_owned();

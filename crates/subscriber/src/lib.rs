@@ -4,7 +4,7 @@ use algod_client::{
     AlgodClient,
     models::{BlockAppEvalDelta, SignedTxnInBlock},
 };
-use algokit_transact::{AppCallTransactionFields, TransactionId};
+use algokit_transact::AppCallTransactionFields;
 use base64::{Engine as _, engine::general_purpose};
 use crossbeam_channel::Sender;
 use indexer_client::{IndexerClient, apis::AddressRole, models::Transaction as IndexerTransaction};
@@ -14,11 +14,13 @@ pub struct SubscriberTxn {
     pub root_txn: SignedTxnInBlock,
     pub intra_round_offset: Option<u64>,
     pub confirmed_round: Option<u64>,
+    pub sub_id: String,
 }
 
 fn indexer_to_subscriber_txn(
     indexer_txn: IndexerTransaction,
     root_txn: SignedTxnInBlock,
+    sub_id: String,
 ) -> SubscriberTxn {
     let intra_round_offset = indexer_txn.intra_round_offset;
     let confirmed_round = indexer_txn.confirmed_round;
@@ -27,6 +29,7 @@ fn indexer_to_subscriber_txn(
         root_txn,
         intra_round_offset,
         confirmed_round,
+        sub_id,
     }
 }
 
@@ -245,6 +248,7 @@ pub struct TransactionSubscription {
     pub sender: Option<String>,
     pub note: Option<Vec<u8>>,
     pub txn_channel: Sender<SubscriberTxn>,
+    pub id: String,
 }
 
 pub struct Subscriber {
@@ -354,6 +358,7 @@ impl Subscriber {
                     root_txn: root_txn.clone(),
                     intra_round_offset: subscriber_txn.intra_round_offset,
                     confirmed_round: subscriber_txn.confirmed_round,
+                    sub_id: sub.id.clone(),
                 })
                 .map_err(|e| e.to_string())?;
 
@@ -384,6 +389,7 @@ impl Subscriber {
                                 .intra_round_offset
                                 .map(|offset| offset + idx as u64 + 1),
                             confirmed_round: subscriber_txn.confirmed_round,
+                            sub_id: sub.id.clone(),
                         }
                     })
                     .collect::<Vec<SubscriberTxn>>();
@@ -485,7 +491,13 @@ impl Subscriber {
                     search_result
                         .transactions
                         .into_iter()
-                        .map(|t| indexer_to_subscriber_txn(t.clone(), indexer_to_algod(t)))
+                        .map(|t| {
+                            indexer_to_subscriber_txn(
+                                t.clone(),
+                                indexer_to_algod(t),
+                                sub.id.clone(),
+                            )
+                        })
                         .collect::<Vec<SubscriberTxn>>(),
                     sub,
                     SignedTxnInBlock::default(),
@@ -542,6 +554,7 @@ impl Subscriber {
                             root_txn: txn.clone(),
                             intra_round_offset: Some(idx as u64),
                             confirmed_round: Some(round),
+                            sub_id: sub.id.clone(),
                         })
                         .collect::<Vec<SubscriberTxn>>();
 
@@ -604,6 +617,7 @@ mod tests {
             app: Some(app_txn.application_id),
             txn_channel: txn_sender,
             app_args: Some(subbed_args),
+            id: "test_sub".to_string(),
         };
 
         subscriber.subscribe(sub.clone());

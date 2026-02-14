@@ -50,7 +50,6 @@ mod tests {
     use algokit_transact::{
         Address, AlgorandMsgpack, PaymentTransactionFields, Transaction, TransactionHeader,
     };
-    use anyhow::Context;
     use curve25519_dalek::Scalar;
     use ed25519_dalek::{Verifier, VerifyingKey, ed25519::signature::SignerMut};
     use indexer_client::IndexerClient;
@@ -396,7 +395,7 @@ mod tests {
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
             utxo_inputs.hpke_envelope,
-            keypairs.discovery,
+            &keypairs.discovery,
             &txn_metadata,
         )?;
 
@@ -479,7 +478,7 @@ mod tests {
         let hpke_env_from_tx = HpkeEnvelope::from_bytes(&note_bytes)?;
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
             hpke_env_from_tx,
-            ctx.keypairs.discovery.clone(),
+            &ctx.keypairs.discovery.clone(),
             &ctx.txn_metadata,
         )?;
 
@@ -519,6 +518,7 @@ mod tests {
             app: None,
             txn_channel: txn_sender,
             app_args: None,
+            id: "test_sub".to_string(),
         };
 
         subscriber.subscribe(sub);
@@ -542,7 +542,7 @@ mod tests {
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
             hpke_env_from_tx,
-            ctx.keypairs.discovery.clone(),
+            &ctx.keypairs.discovery.clone(),
             &ctx.txn_metadata,
         )?;
 
@@ -578,6 +578,7 @@ mod tests {
             app: None,
             txn_channel: txn_sender,
             app_args: None,
+            id: "test_sub".to_string(),
         };
 
         subscriber.subscribe(sub);
@@ -602,7 +603,7 @@ mod tests {
 
         let recovered_secrets = UtxoSecrets::from_hpke_envelope(
             hpke_env_from_tx,
-            ctx.keypairs.discovery.clone(),
+            &ctx.keypairs.discovery.clone(),
             &ctx.txn_metadata,
         )?;
 
