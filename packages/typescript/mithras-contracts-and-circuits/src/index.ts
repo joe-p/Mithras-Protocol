@@ -5,10 +5,20 @@ import path from "path";
 import { Address } from "algosdk";
 import {
   bytesToNumberBE,
+  getMerklePath,
   MithrasAddr,
+  SpendSeed,
   TransactionMetadata,
   UtxoInputs,
+  UtxoSecrets,
 } from "../../mithras-crypto/src";
+
+export type LeafInfo = {
+  leaf: bigint;
+  subtree: bigint[];
+  epochId: bigint;
+  treeIndex: bigint;
+};
 
 const SPEND_LSIGS = 12;
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
@@ -60,10 +70,16 @@ export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
   });
 }
 
+type Output = {
+  receiver: MithrasAddr;
+  amount: bigint;
+};
+
 export class MithrasProtocolClient {
   depositVerifier: PlonkLsigVerifier;
   spendVerifier: PlonkLsigVerifier;
   appClient: MithrasClient;
+  private _zeroHashes?: bigint[];
 
   constructor(
     public algorand: AlgorandClient,
@@ -105,6 +121,10 @@ export class MithrasProtocolClient {
     });
 
     return new MithrasProtocolClient(algorand, appClient.appId);
+  }
+
+  async getZeroHashes(): Promise<bigint[]> {
+    return this._zeroHashes ?? (await this.appClient.state.box.zeroHashes())!;
   }
 
   async composeDepositGroup(
@@ -164,5 +184,112 @@ export class MithrasProtocolClient {
     });
 
     return { group, txnMetadata };
+  }
+
+  async composeSpendGroup(
+    spender: MithrasAddr,
+    spendSeed: SpendSeed,
+    utxoSecrets: UtxoSecrets,
+    leafInfo: LeafInfo,
+    out0: Output,
+    out1?: Output,
+  ) {
+    const spendGroup = this.appClient.newGroup();
+
+    const addr = new Address(spendSeed.publicKey);
+
+    const feePayment = await this.algorand.createTransaction.payment({
+      sender: addr,
+      receiver: addr,
+      amount: microAlgos(0),
+      extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE + 1000n),
+    });
+
+    const fee = NULLIFIER_MBR + feePayment.fee;
+
+    const sp = await this.algorand.getSuggestedParams();
+    const txnMetadata = new TransactionMetadata(
+      spendSeed.publicKey,
+      BigInt(sp.firstValid),
+      BigInt(sp.lastValid),
+      new Uint8Array(32),
+      0,
+      this.appClient.appId,
+    );
+
+    const inputs0 = await UtxoInputs.generate(
+      txnMetadata,
+      out0.amount,
+      out0.receiver,
+    );
+
+    const out1Amount = out1?.amount ?? utxoSecrets.amount - out0.amount - fee;
+    if (
+      out1 !== undefined &&
+      out0.amount + out1.amount !== utxoSecrets.amount - fee
+    ) {
+      throw new Error(
+        `Output amounts must sum to input amount minus fee. Got ${out0.amount} + ${out1.amount} != ${utxoSecrets.amount} - ${fee}`,
+      );
+    }
+
+    const inputs1 = await UtxoInputs.generate(
+      txnMetadata,
+      out1?.amount ?? out1Amount,
+      out1?.receiver ?? spender,
+    );
+
+    const proof = getMerklePath(
+      leafInfo.leaf,
+      leafInfo.treeIndex,
+      leafInfo.subtree,
+      await this.getZeroHashes(),
+    );
+
+    const inputSignals = {
+      fee,
+      utxo_spender: addressInScalarField(spendSeed.publicKey),
+      utxo_spending_secret: utxoSecrets.spendingSecret,
+      utxo_nullifier_secret: utxoSecrets.nullifierSecret,
+      utxo_amount: utxoSecrets.amount,
+      path_selectors: proof.pathSelectors,
+      utxo_path: proof.pathElements,
+      out0_amount: out0.amount,
+      out0_receiver: addressInScalarField(inputs0.secrets.tweakedPubkey),
+      out0_spending_secret: inputs0.secrets.spendingSecret,
+      out0_nullifier_secret: inputs0.secrets.nullifierSecret,
+      out1_amount: out1Amount,
+      out1_receiver: addressInScalarField(inputs1.secrets.tweakedPubkey),
+      out1_spending_secret: inputs1.secrets.spendingSecret,
+      out1_nullifier_secret: inputs1.secrets.nullifierSecret,
+    };
+
+    await this.spendVerifier.verificationParams({
+      composer: spendGroup,
+      inputs: inputSignals,
+      paramsCallback: async (params) => {
+        const { lsigParams, args } = params;
+
+        const verifierTxn = this.algorand.createTransaction.payment({
+          ...lsigParams,
+          receiver: lsigParams.sender,
+          amount: microAlgos(0),
+        });
+
+        spendGroup.spend({
+          sender: addr,
+          args: {
+            verifierTxn,
+            signals: args.signals,
+            _proof: args.proof,
+            _out0Hpke: inputs0.hpkeEnvelope.toBytes(),
+            _out1Hpke: inputs1.hpkeEnvelope.toBytes(),
+          },
+          staticFee: microAlgos(0),
+        });
+      },
+    });
+
+    spendGroup.addTransaction(feePayment);
   }
 }

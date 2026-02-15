@@ -15,6 +15,7 @@ import {
   UtxoSecrets,
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
+import { LeafInfo } from "../../mithras-contracts-and-circuits/src";
 
 const DEPOSIT_SIGNATURE =
   "deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)void";
@@ -104,13 +105,6 @@ export type UtxoInfo = {
   amount: Uint8Array;
   round: Uint8Array;
   txid: Uint8Array;
-};
-
-type LeafInfo = {
-  leaf: bigint;
-  subtree: bigint[];
-  epochId: bigint;
-  treeIndex: bigint;
 };
 
 export async function algodUtxoLookup(
