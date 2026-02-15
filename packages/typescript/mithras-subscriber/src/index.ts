@@ -181,8 +181,8 @@ export async function algodUtxoLookup(
 
     const decodedLog = logType.decode(log);
     const leafInfo = {
-      leaf: decodedLog[0],
-      subtree: decodedLog[1],
+      leaf: new Uint8Array(decodedLog[0]),
+      subtree: decodedLog[1].map((b: number[]) => new Uint8Array(b)),
       epochId: decodedLog[2],
       treeIndex: decodedLog[3],
     };

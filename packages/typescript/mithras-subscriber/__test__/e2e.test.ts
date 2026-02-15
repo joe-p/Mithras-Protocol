@@ -6,9 +6,11 @@ import { Address } from "algosdk";
 import { MithrasProtocolClient } from "../../mithras-contracts-and-circuits/src";
 import {
   DiscoveryKeypair,
+  getMerklePath,
   MithrasAddr,
   SpendSeed,
   SupportedHpkeSuite,
+  bytesToNumberBE,
 } from "../../mithras-crypto/src";
 import { algodUtxoLookup, MithrasSubscriber } from "../src";
 
@@ -79,5 +81,20 @@ describe("Mithras App", () => {
     expect(utxoInfo.secrets.amount).toBe(1n);
     expect(utxoInfo.leafInfo.epochId).toBe(0n);
     expect(utxoInfo.leafInfo.treeIndex).toBe(0n);
+
+    const zeroHashes = await appClient.state.box.zeroHashes();
+
+    const path = getMerklePath(
+      utxoInfo.leafInfo.leaf,
+      utxoInfo.leafInfo.treeIndex,
+      utxoInfo.leafInfo.subtree,
+      zeroHashes!,
+    );
+
+    const contractRoot = (
+      await appClient.state.global.lastComputedRoot()
+    ).asByteArray();
+
+    expect(path.root).toEqual(bytesToNumberBE(contractRoot!));
   });
 });

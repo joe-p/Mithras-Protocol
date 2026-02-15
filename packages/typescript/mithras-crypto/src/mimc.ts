@@ -1,3 +1,6 @@
+import { bytesToNumberBE } from "@noble/curves/utils.js";
+import { TREE_DEPTH } from "../../mithras-contracts-and-circuits/src/constants";
+
 const MODULUS = BigInt(
   "52435875175126190479447740508185965837690552500527637822603658699938581184513",
 );
@@ -149,4 +152,50 @@ function checksum(data: bigint[], h: bigint): bigint {
 export function mimcSum(msgs: bigint[]): bigint {
   const h = 0n;
   return checksum(msgs, h);
+}
+
+export interface MerklePath {
+  pathElements: bigint[];
+  pathSelectors: number[];
+  root: bigint;
+}
+
+export function getMerklePath(
+  leaf: Uint8Array,
+  treeIndex: bigint,
+  subtree: Uint8Array[],
+  zeroHashes: Uint8Array[],
+): MerklePath {
+  const pathElements: bigint[] = [];
+  const pathSelectors: number[] = [];
+  let index = treeIndex;
+
+  for (let level = 0; level < TREE_DEPTH; level++) {
+    // Determine if current node is left (0) or right (1) child
+    const isRightChild = (index & 1n) === 1n;
+    pathSelectors.push(isRightChild ? 1 : 0);
+
+    // Get sibling hash:
+    // - If right child: sibling is in subtree[level] (the left sibling stored from previous even index)
+    // - If left child: sibling is zeroHashes[level] (no left sibling exists yet)
+    const sibling = isRightChild ? subtree[level] : zeroHashes[level];
+    pathElements.push(bytesToNumberBE(sibling));
+
+    // Move up to parent level
+    index >>= 1n;
+  }
+
+  // Compute the root by traversing up the tree
+  let currentHash = bytesToNumberBE(leaf);
+  for (let i = 0; i < pathElements.length; i++) {
+    const left = pathSelectors[i] === 0 ? currentHash : pathElements[i];
+    const right = pathSelectors[i] === 0 ? pathElements[i] : currentHash;
+    currentHash = mimcSum([left, right]);
+  }
+
+  return {
+    pathElements,
+    pathSelectors,
+    root: currentHash,
+  };
 }
