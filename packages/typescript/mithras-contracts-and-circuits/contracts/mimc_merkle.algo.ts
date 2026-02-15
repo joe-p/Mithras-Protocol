@@ -151,6 +151,7 @@ export class MimcMerkle extends Contract {
   }
 
   protected isValidRoot(root: Uint256): boolean {
+    ensureBudget(700); // TODO: Determine budget needed here
     for (const validRoot of this.rootCache.value) {
       if (root === validRoot) {
         return true;

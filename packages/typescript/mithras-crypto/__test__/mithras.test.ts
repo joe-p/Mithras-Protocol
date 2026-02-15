@@ -6,6 +6,7 @@ import {
   deriveTweakedPubkey,
   deriveTweakScalar,
 } from "../src/keypairs";
+import { ed25519 } from "@noble/curves/ed25519.js";
 import {
   computeDiscoverySecretSender,
   computeDiscoverySecretReceiver,
@@ -217,6 +218,42 @@ describe("mithras protocol", () => {
     expect(recoveredSecrets.tweakedPubkey).toEqual(
       utxoInputs.secrets.tweakedPubkey,
     );
+  });
+
+  it("tweaked signer signing and verification", () => {
+    const spend = SpendSeed.generate();
+    const discovery = DiscoveryKeypair.generate();
+    const ephemeral = DiscoveryKeypair.generate();
+
+    const discoverySecret = computeDiscoverySecretSender(
+      ephemeral.privateKey,
+      discovery.publicKey,
+    );
+    const tweakScalar = deriveTweakScalar(discoverySecret);
+
+    const tweakedSigner = TweakedSigner.derive(spend, tweakScalar);
+
+    const message = new TextEncoder().encode("hello mithras");
+    const signature = tweakedSigner.rawSign(message);
+
+    expect(signature).toHaveLength(64);
+
+    // Verify the signature using ed25519.verify against the tweaked public key
+    const isValid = ed25519.verify(signature, message, tweakedSigner.publicKey);
+    expect(isValid).toBe(true);
+
+    // Verify that a different message fails verification
+    const wrongMessage = new TextEncoder().encode("wrong message");
+    const isInvalid = ed25519.verify(
+      signature,
+      wrongMessage,
+      tweakedSigner.publicKey,
+    );
+    expect(isInvalid).toBe(false);
+
+    const derivedPubkey = deriveTweakedPubkey(spend.publicKey, tweakScalar);
+
+    expect(derivedPubkey).toEqual(tweakedSigner.publicKey);
   });
 
   it("mimc matches avm", () => {

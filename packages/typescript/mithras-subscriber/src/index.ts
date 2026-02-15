@@ -8,7 +8,7 @@ import {
   bytesToNumberBE,
   DiscoveryKeypair,
   HpkeEnvelope,
-  MerklePath as MerkleProof,
+  MerkleProof as MerkleProof,
   MimcMerkleTree,
   SpendSeed,
   TransactionMetadata,
@@ -31,7 +31,7 @@ const DEPOSIT_SELECTOR =
 const SPEND_SELECTOR =
   algosdk.ABIMethod.fromSignature(SPEND_SIGNATURE).getSelector();
 
-function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
+export function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
 
   for (let i = 0; i < a.length; i++) {
@@ -177,7 +177,7 @@ export async function algodUtxoLookup(
 
     return {
       secrets,
-      treeIndex: Number(index),
+      treeIndex: Number(index - 1n),
     };
   }
 
@@ -333,7 +333,7 @@ export class MithrasSubscriber {
   }
 
   getMerkleProof(leafIndex: number): MerkleProof {
-    return this.merkleTree.getMerklePath(leafIndex);
+    return this.merkleTree.getMerkleProof(leafIndex);
   }
 
   getMerkleRoot(): bigint {

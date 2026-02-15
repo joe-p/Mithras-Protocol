@@ -1,4 +1,8 @@
-import { bytesToNumberBE, numberToBytesBE } from "@noble/curves/utils.js";
+import {
+  bytesToNumberBE,
+  concatBytes,
+  numberToBytesBE,
+} from "@noble/curves/utils.js";
 import {
   getHpkeSuite,
   HpkeEnvelope,

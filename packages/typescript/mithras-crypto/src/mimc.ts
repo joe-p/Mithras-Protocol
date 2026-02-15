@@ -154,7 +154,7 @@ export function mimcSum(msgs: bigint[]): bigint {
   return checksum(msgs, h);
 }
 
-export interface MerklePath {
+export interface MerkleProof {
   pathElements: bigint[];
   pathSelectors: number[];
   root: bigint;
@@ -241,7 +241,7 @@ export class MimcMerkleTree {
     return currentHash;
   }
 
-  getMerklePath(leafIndex: number): MerklePath {
+  getMerkleProof(leafIndex: number): MerkleProof {
     if (leafIndex < 0 || leafIndex >= this.leaves.length) {
       throw new Error(`Leaf index ${leafIndex} out of bounds`);
     }
@@ -267,6 +267,10 @@ export class MimcMerkleTree {
       const left = pathSelectors[i] === 0 ? currentHash : pathElements[i];
       const right = pathSelectors[i] === 0 ? pathElements[i] : currentHash;
       currentHash = mimcSum([left, right]);
+    }
+
+    if (currentHash !== this.getRoot()) {
+      throw new Error("Merkle proof does not match the current root");
     }
 
     return {

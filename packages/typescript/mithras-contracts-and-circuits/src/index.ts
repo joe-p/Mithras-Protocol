@@ -2,23 +2,19 @@ import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
 import { PlonkLsigVerifier } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import path from "path";
-import { Address } from "algosdk";
+
 import {
   bytesToNumberBE,
-  getMerklePath,
+  MerkleProof,
   MithrasAddr,
   SpendSeed,
   TransactionMetadata,
+  TweakedSigner,
   UtxoInputs,
   UtxoSecrets,
 } from "../../mithras-crypto/src";
-
-export type LeafInfo = {
-  leaf: bigint;
-  subtree: bigint[];
-  epochId: bigint;
-  treeIndex: bigint;
-};
+import algosdk from "algosdk";
+import { equalBytes } from "../../mithras-subscriber/src";
 
 const SPEND_LSIGS = 12;
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
@@ -95,7 +91,7 @@ export class MithrasProtocolClient {
 
   static async deploy(
     algorand: AlgorandClient,
-    deployer: Address,
+    deployer: algosdk.Address,
   ): Promise<MithrasProtocolClient> {
     const factory = new MithrasFactory({
       algorand,
@@ -128,7 +124,7 @@ export class MithrasProtocolClient {
   }
 
   async composeDepositGroup(
-    depositor: Address,
+    depositor: algosdk.Address,
     amount: bigint,
     receiver: MithrasAddr,
   ) {
@@ -190,16 +186,54 @@ export class MithrasProtocolClient {
     spender: MithrasAddr,
     spendSeed: SpendSeed,
     utxoSecrets: UtxoSecrets,
-    leafInfo: LeafInfo,
+    merkleProof: MerkleProof,
     out0: Output,
     out1?: Output,
   ) {
+    const contractRoot = await this.appClient.state.global.lastComputedRoot();
+
+    if (contractRoot !== merkleProof.root) {
+      throw new Error(
+        `Merkle proof root does not match contract's last computed root. Got ${merkleProof.root}, expected ${contractRoot}`,
+      );
+    }
+
     const spendGroup = this.appClient.newGroup();
 
-    const addr = new Address(spendSeed.publicKey);
+    const addr = new algosdk.Address(utxoSecrets.tweakedPubkey);
+    const tweakedSigner = TweakedSigner.derive(
+      spendSeed,
+      utxoSecrets.tweakScalar,
+    );
+
+    if (!equalBytes(tweakedSigner.publicKey, utxoSecrets.tweakedPubkey)) {
+      throw new Error(
+        `Tweaked signer does not derive the expected tweaked public key. Got ${tweakedSigner.publicKey}, expected ${utxoSecrets.tweakedPubkey}`,
+      );
+    }
+
+    const signer: algosdk.TransactionSigner = async (
+      txns: algosdk.Transaction[],
+      indexesToSign: number[],
+    ) => {
+      const signedTxns: Uint8Array[] = [];
+
+      for (const index of indexesToSign) {
+        const txn = txns[index];
+        const sig = tweakedSigner.rawSign(txn.bytesToSign());
+        const stxn = new algosdk.SignedTransaction({ txn, sig });
+        signedTxns.push(algosdk.encodeMsgpack(stxn));
+      }
+
+      return signedTxns;
+    };
+
+    const senderSigner = { sender: addr, signer };
+
+    this.algorand.account.setSigner(addr, signer);
 
     const feePayment = await this.algorand.createTransaction.payment({
-      sender: addr,
+      ...senderSigner,
       receiver: addr,
       amount: microAlgos(0),
       extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE + 1000n),
@@ -233,35 +267,34 @@ export class MithrasProtocolClient {
       );
     }
 
+    if (out0.amount + out1Amount > utxoSecrets.amount - fee) {
+      throw new Error(
+        `Output amounts cannot exceed input amount minus fee. Got ${out0.amount} + ${out1Amount} > ${utxoSecrets.amount} - ${fee}`,
+      );
+    }
+
     const inputs1 = await UtxoInputs.generate(
       txnMetadata,
       out1?.amount ?? out1Amount,
       out1?.receiver ?? spender,
     );
 
-    const proof = getMerklePath(
-      leafInfo.leaf,
-      leafInfo.treeIndex,
-      leafInfo.subtree,
-      await this.getZeroHashes(),
-    );
-
-    const inputSignals = {
+    const inputSignals: Record<string, bigint | bigint[]> = {
       fee,
-      utxo_spender: addressInScalarField(spendSeed.publicKey),
-      utxo_spending_secret: utxoSecrets.spendingSecret,
-      utxo_nullifier_secret: utxoSecrets.nullifierSecret,
+      utxo_spender: addressInScalarField(utxoSecrets.tweakedPubkey),
+      utxo_spending_secret: bytesToNumberBE(utxoSecrets.spendingSecret),
+      utxo_nullifier_secret: bytesToNumberBE(utxoSecrets.nullifierSecret),
       utxo_amount: utxoSecrets.amount,
-      path_selectors: proof.pathSelectors,
-      utxo_path: proof.pathElements,
+      path_selectors: merkleProof.pathSelectors.map((b) => BigInt(b)),
+      utxo_path: merkleProof.pathElements,
       out0_amount: out0.amount,
       out0_receiver: addressInScalarField(inputs0.secrets.tweakedPubkey),
-      out0_spending_secret: inputs0.secrets.spendingSecret,
-      out0_nullifier_secret: inputs0.secrets.nullifierSecret,
+      out0_spending_secret: bytesToNumberBE(inputs0.secrets.spendingSecret),
+      out0_nullifier_secret: bytesToNumberBE(inputs0.secrets.nullifierSecret),
       out1_amount: out1Amount,
       out1_receiver: addressInScalarField(inputs1.secrets.tweakedPubkey),
-      out1_spending_secret: inputs1.secrets.spendingSecret,
-      out1_nullifier_secret: inputs1.secrets.nullifierSecret,
+      out1_spending_secret: bytesToNumberBE(inputs1.secrets.spendingSecret),
+      out1_nullifier_secret: bytesToNumberBE(inputs1.secrets.nullifierSecret),
     };
 
     await this.spendVerifier.verificationParams({
@@ -270,6 +303,7 @@ export class MithrasProtocolClient {
       paramsCallback: async (params) => {
         const { lsigParams, args } = params;
 
+        console.debug("lsigSender", lsigParams.sender.toString());
         const verifierTxn = this.algorand.createTransaction.payment({
           ...lsigParams,
           receiver: lsigParams.sender,
@@ -277,7 +311,7 @@ export class MithrasProtocolClient {
         });
 
         spendGroup.spend({
-          sender: addr,
+          ...senderSigner,
           args: {
             verifierTxn,
             signals: args.signals,
@@ -291,5 +325,7 @@ export class MithrasProtocolClient {
     });
 
     spendGroup.addTransaction(feePayment);
+
+    return spendGroup;
   }
 }

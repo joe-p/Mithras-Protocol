@@ -1,4 +1,7 @@
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
+import {
+  AlgorandClient,
+  populateAppCallResources,
+} from "@algorandfoundation/algokit-utils";
 import { MithrasClient } from "../../mithras-contracts-and-circuits/contracts/clients/Mithras";
 
 import { beforeAll, describe, expect, it } from "vitest";
@@ -52,9 +55,15 @@ describe("Mithras App", () => {
   it("deposit", async () => {
     const client = new MithrasProtocolClient(algorand, appClient.appId);
 
-    const { group } = await client.composeDepositGroup(depositor, 1n, receiver);
+    const initialAmount = 500_000n;
 
-    await group.send();
+    const { group: depositGroup } = await client.composeDepositGroup(
+      depositor,
+      initialAmount,
+      receiver,
+    );
+
+    await depositGroup.send();
 
     const subscriber = new MithrasSubscriber(
       algorand.client.algod,
@@ -68,17 +77,17 @@ describe("Mithras App", () => {
 
     await subscriber.subscriber.pollOnce();
 
-    expect(subscriber.amount).toBe(1n);
+    expect(subscriber.amount).toBe(initialAmount);
 
     const utxo = subscriber.utxos.entries().next().value;
 
-    const { secrets } = await algodUtxoLookup(
+    const { secrets, treeIndex } = await algodUtxoLookup(
       algorand.client.algod,
       utxo[1],
       receiverDiscovery,
     );
 
-    expect(secrets.amount).toBe(1n);
+    expect(secrets.amount).toBe(initialAmount);
 
     const contractRoot = await appClient.state.global.lastComputedRoot();
 
@@ -88,6 +97,40 @@ describe("Mithras App", () => {
 
     expect(mt.getRoot()).toEqual(contractRoot);
 
+    const secondReceiverSpendSeed = SpendSeed.generate();
+    const secondReceiverDiscovery = DiscoveryKeypair.generate();
+
+    const secondReceiver = MithrasAddr.fromKeys(
+      secondReceiverSpendSeed.publicKey,
+      secondReceiverDiscovery.publicKey,
+      1,
+      0,
+      SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
+    );
+
     expect(contractRoot).toEqual(subscriber.getMerkleRoot());
+
+    const spendGroup = await client.composeSpendGroup(
+      receiver,
+      receivedSpendSeed,
+      secrets,
+      subscriber.getMerkleProof(treeIndex),
+      { receiver: secondReceiver, amount: initialAmount / 2n },
+    );
+
+    // NOTE: There seems to be a bug with the signer for the lsig, for some reason the lsig txn is getting a ed25519 sig
+    const innerComposer = await spendGroup.composer();
+    const { atc } = await innerComposer.build();
+    const txnsWithSigners = atc.buildGroup();
+    txnsWithSigners[0]!.signer = (
+      await client.spendVerifier.lsigAccount()
+    ).signer;
+
+    const populated = await populateAppCallResources(
+      atc,
+      algorand.client.algod,
+    );
+
+    await populated.execute(algorand.client.algod, 3);
   });
 });
