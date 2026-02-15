@@ -10,7 +10,6 @@ import {
   MithrasAddr,
   SpendSeed,
   SupportedHpkeSuite,
-  bytesToNumberBE,
 } from "../../mithras-crypto/src";
 import { algodUtxoLookup, MithrasSubscriber } from "../src";
 

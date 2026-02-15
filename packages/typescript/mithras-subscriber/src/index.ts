@@ -106,13 +106,6 @@ export type UtxoInfo = {
   txid: Uint8Array;
 };
 
-// type NewLeaf = {
-//   leaf: bytes<32>;
-//   subtree: FixedArray<bytes<32>, typeof TREE_DEPTH>;
-//   epochId: uint64;
-//   treeIndex: uint64;
-// };
-
 type LeafInfo = {
   leaf: bigint;
   subtree: bigint[];
@@ -153,9 +146,7 @@ export async function algodUtxoLookup(
       .applicationCall;
 
   if (method.type === "deposit") {
-    const logType = algosdk.ABIType.from(
-      "(byte[32],byte[32][24],uint64,uint64)",
-    );
+    const logType = algosdk.ABIType.from("(uint256,uint256[24],uint64,uint64)");
     const log = newLeafCall?.appArgs[1];
 
     if (log === undefined) {
@@ -182,10 +173,8 @@ export async function algodUtxoLookup(
 
     const decodedLog = logType.decode(log);
     const leafInfo = {
-      leaf: bytesToNumberBE(new Uint8Array(decodedLog[0])),
-      subtree: decodedLog[1].map((b: number[]) =>
-        bytesToNumberBE(new Uint8Array(b)),
-      ),
+      leaf: decodedLog[0],
+      subtree: decodedLog[1],
       epochId: decodedLog[2],
       treeIndex: decodedLog[3],
     };
