@@ -22,14 +22,17 @@ describe("Merkle rollover + sealed roots", () => {
 
     // Add a single leaf and compute the expected root using zero path
     const leaf = TestDataBuilder.createTestLeaf(0xabcddcba);
-    await MimcMerkleHelper.addLeaf(appClient, leaf);
+    await MimcMerkleHelper.addLeaf(
+      appClient,
+      MerkleTestHelpers.bytesToBigInt(leaf),
+    );
 
     const { zeroHashes } = await MimcMerkleHelper.getContractState(appClient);
 
     const pathElements: bigint[] = [];
     const pathSelectors: number[] = [];
     for (let i = 0; i < TREE_DEPTH; i++) {
-      pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[i]));
+      pathElements.push(zeroHashes[i]);
       pathSelectors.push(0);
     }
     const rootBig = await mimc.calculateMerkleRoot(
@@ -37,7 +40,6 @@ describe("Merkle rollover + sealed roots", () => {
       pathElements,
       pathSelectors,
     );
-    const rootBytes = MerkleTestHelpers.bigIntToBytes(rootBig);
 
     // Rollover (seal epoch 0)
     // Extra fee for box write + ops
@@ -47,7 +49,7 @@ describe("Merkle rollover + sealed roots", () => {
     const sealedOk = await MimcMerkleHelper.isValidSealedRoot(
       appClient,
       0n,
-      rootBytes,
+      rootBig,
     );
     expect(sealedOk).toBe(true);
 
@@ -60,7 +62,10 @@ describe("Merkle rollover + sealed roots", () => {
 
     // Add another leaf in new epoch (epoch 1)
     const leaf2 = TestDataBuilder.createTestLeaf(0x01020304);
-    await MimcMerkleHelper.addLeaf(appClient, leaf2);
+    await MimcMerkleHelper.addLeaf(
+      appClient,
+      MerkleTestHelpers.bytesToBigInt(leaf2),
+    );
     const { zeroHashes: zero2 } =
       await MimcMerkleHelper.getContractState(appClient);
 
@@ -68,7 +73,7 @@ describe("Merkle rollover + sealed roots", () => {
     const pe2: bigint[] = [];
     const pi2: number[] = [];
     for (let i = 0; i < TREE_DEPTH; i++) {
-      pe2.push(MerkleTestHelpers.bytesToBigInt(zero2[i]));
+      pe2.push(zero2[i]);
       pi2.push(0);
     }
     const root2Big = await mimc.calculateMerkleRoot(
@@ -76,7 +81,7 @@ describe("Merkle rollover + sealed roots", () => {
       pe2,
       pi2,
     );
-    const root2 = MerkleTestHelpers.bigIntToBytes(root2Big);
+    const root2 = root2Big;
 
     const { return: isValid2 } = await appClient.send.isValidRootTest({
       args: { root: root2 },

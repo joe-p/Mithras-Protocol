@@ -12,8 +12,10 @@ import {
   ensureBudget,
   Global,
   BoxMap,
+  BigUint,
 } from "@algorandfoundation/algorand-typescript";
 import { TREE_DEPTH } from "../src/constants";
+import { Uint, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 
 const ROOT_CACHE_SIZE = 50;
 
@@ -24,34 +26,38 @@ const MIMC_OPCODE_COST = 1100 * TREE_DEPTH;
 
 @contract({ avmVersion: 11 })
 export class MimcMerkle extends Contract {
-  rootCache = Box<FixedArray<bytes<32>, typeof ROOT_CACHE_SIZE>>({ key: "r" });
+  rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
 
   rootCounter = GlobalState<uint64>({ key: "c" });
 
-  subtree = Box<FixedArray<bytes<32>, typeof TREE_DEPTH>>({ key: "t" });
+  subtree = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "t" });
 
   treeIndex = GlobalState<uint64>({ key: "i" });
 
-  zeroHashes = Box<FixedArray<bytes<32>, typeof TREE_DEPTH>>({ key: "z" });
+  zeroHashes = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "z" });
 
   // Track epochs and cache the last computed root for sealing
   epochId = GlobalState<uint64>({ key: "e" });
-  lastComputedRoot = GlobalState<bytes<32>>({ key: "lr" });
+  lastComputedRoot = GlobalState<Uint256>({ key: "lr" });
 
-  epochBoxes = BoxMap<uint64, FixedArray<bytes<32>, typeof EPOCHS_PER_BOX>>({
+  epochBoxes = BoxMap<uint64, FixedArray<Uint256, typeof EPOCHS_PER_BOX>>({
     keyPrefix: "e",
   });
 
   protected bootstrap(): void {
     ensureBudget(MIMC_OPCODE_COST);
-    const tree = new FixedArray<bytes<32>, typeof TREE_DEPTH>();
+    const tree = new FixedArray<Uint256, typeof TREE_DEPTH>();
 
-    tree[0] = op.bzero(32).toFixed({ length: 32 });
+    tree[0] = new Uint256(0);
 
     for (let i: uint64 = 1; i < TREE_DEPTH; i++) {
-      tree[i] = op.mimc(
-        op.MimcConfigurations.BLS12_381Mp111,
-        tree[i - 1].concat(tree[i - 1]),
+      tree[i] = new Uint256(
+        BigUint(
+          op.mimc(
+            op.MimcConfigurations.BLS12_381Mp111,
+            tree[i - 1].bytes.concat(tree[i - 1].bytes),
+          ),
+        ),
       );
     }
 
@@ -65,7 +71,7 @@ export class MimcMerkle extends Contract {
     this.lastComputedRoot.value = tree[TREE_DEPTH - 1];
   }
 
-  protected addLeaf(leafHash: bytes<32>): void {
+  protected addLeaf(leafHash: Uint256): void {
     // Some extra budget needed for the loop logic opcodes
     ensureBudget(MIMC_OPCODE_COST + Global.minTxnFee * 2);
 
@@ -80,8 +86,8 @@ export class MimcMerkle extends Contract {
 
     this.treeIndex.value += 1;
     let currentHash = leafHash;
-    let left: bytes<32>;
-    let right: bytes<32>;
+    let left: Uint256;
+    let right: Uint256;
     let subtree = clone(this.subtree.value);
     const zeroHashes = clone(this.zeroHashes.value);
 
@@ -95,9 +101,13 @@ export class MimcMerkle extends Contract {
         right = currentHash;
       }
 
-      currentHash = op.mimc(
-        op.MimcConfigurations.BLS12_381Mp111,
-        left.concat(right),
+      currentHash = new Uint256(
+        BigUint(
+          op.mimc(
+            op.MimcConfigurations.BLS12_381Mp111,
+            left.bytes.concat(right.bytes),
+          ),
+        ),
       );
 
       index >>= 1;
@@ -139,7 +149,7 @@ export class MimcMerkle extends Contract {
     this.addRoot(emptyRoot);
   }
 
-  protected isValidRoot(root: bytes<32>): boolean {
+  protected isValidRoot(root: Uint256): boolean {
     for (const validRoot of this.rootCache.value) {
       if (root === validRoot) {
         return true;
@@ -150,13 +160,13 @@ export class MimcMerkle extends Contract {
   }
 
   // Validate a sealed epoch final root by epochId
-  protected isValidSealedRoot(epochId: uint64, root: bytes<32>): boolean {
+  protected isValidSealedRoot(epochId: uint64, root: Uint256): boolean {
     const epochBoxId: uint64 = epochId / EPOCHS_PER_BOX;
     const index: uint64 = epochId % EPOCHS_PER_BOX;
     return this.epochBoxes(epochBoxId).value[index] === root;
   }
 
-  protected addRoot(rootHash: bytes<32>): void {
+  protected addRoot(rootHash: Uint256): void {
     const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
     this.rootCache.value[index] = rootHash;
 

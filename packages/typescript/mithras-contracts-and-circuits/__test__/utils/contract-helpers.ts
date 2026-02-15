@@ -50,7 +50,7 @@ export class MimcMerkleHelper {
 
   static async addLeaf(
     appClient: MimcMerkleTestClient,
-    leafHash: Uint8Array,
+    leafHash: bigint,
   ): Promise<void> {
     await appClient.send.addLeafTest({
       args: { leafHash },
@@ -68,7 +68,7 @@ export class MimcMerkleHelper {
   static async isValidSealedRoot(
     appClient: MimcMerkleTestClient,
     epochId: bigint,
-    root: Uint8Array,
+    root: bigint,
   ): Promise<boolean> {
     const result = await appClient.send.isValidSealedRootTest({
       args: { epochId, root },
@@ -90,7 +90,7 @@ export class MimcMerkleHelper {
 
   static async verifyRoot(
     appClient: MimcMerkleTestClient,
-    root: Uint8Array,
+    root: bigint,
   ): Promise<boolean> {
     const { return: isValid } = await appClient.send.isValidRootTest({
       args: { root },

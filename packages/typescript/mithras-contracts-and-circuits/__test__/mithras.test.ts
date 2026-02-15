@@ -178,11 +178,8 @@ describe("Mithras App", () => {
     );
 
     const onChainRoot = await appClient.state.global.lastComputedRoot();
-    const onChainRootBigInt = BigInt(
-      "0x" + Buffer.from(onChainRoot.asByteArray()!).toString("hex"),
-    );
 
-    expect(expectedRoot).toBe(onChainRootBigInt);
+    expect(expectedRoot).toBe(onChainRoot);
 
     const inputSignals = {
       fee,

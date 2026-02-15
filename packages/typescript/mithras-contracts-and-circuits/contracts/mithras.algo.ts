@@ -34,8 +34,8 @@ const BLS12_381_SCALAR_MODULUS = BigUint(
   ),
 );
 
-function getSignal(signals: Uint256[], idx: uint64): bytes<32> {
-  return signals[idx].bytes.toFixed({ length: 32 });
+function getSignal(signals: Uint256[], idx: uint64): Uint256 {
+  return signals[idx];
 }
 
 const HPKE_SIZE = 250;
@@ -64,8 +64,8 @@ export type PlonkProof = {
 };
 
 type NewLeaf = {
-  leaf: bytes<32>;
-  subtree: FixedArray<bytes<32>, typeof TREE_DEPTH>;
+  leaf: Uint256;
+  subtree: FixedArray<Uint256, typeof TREE_DEPTH>;
   epochId: uint64;
   treeIndex: uint64;
 };
@@ -87,7 +87,7 @@ export class Mithras extends MimcMerkle {
   spendVerifier = GlobalState<Address>({ key: "s" });
   logger = GlobalState<Application>({ key: "l" });
 
-  nullifiers = BoxMap<bytes<32>, bytes<0>>({ keyPrefix: "n" });
+  nullifiers = BoxMap<Uint256, bytes<0>>({ keyPrefix: "n" });
 
   createApplication(depositVerifier: Address, spendVerifier: Address) {
     this.depositVerifier.value = depositVerifier;
@@ -111,7 +111,7 @@ export class Mithras extends MimcMerkle {
     assert(verifierTxn.sender === this.depositVerifier.value.native);
 
     const commitment = getSignal(signals, 0);
-    const amount = op.extractUint64(getSignal(signals, 1), 24);
+    const amount = op.extractUint64(getSignal(signals, 1).bytes, 24);
 
     this.addLeaf(commitment);
 
@@ -155,7 +155,7 @@ export class Mithras extends MimcMerkle {
     const out1Commitment = getSignal(signals, 1);
     const utxoRoot = getSignal(signals, 2);
     const nullifier = getSignal(signals, 3);
-    const fee = op.extractUint64(getSignal(signals, 4), 24);
+    const fee = op.extractUint64(getSignal(signals, 4).bytes, 24);
     const spender = getSignal(signals, 5);
 
     assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
@@ -180,7 +180,7 @@ export class Mithras extends MimcMerkle {
     const senderInScalarField: biguint =
       BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
 
-    assert(BigUint(spender) === senderInScalarField, "Invalid spender");
+    assert(spender.native === senderInScalarField, "Invalid spender");
 
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 

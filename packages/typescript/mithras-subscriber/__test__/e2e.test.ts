@@ -88,13 +88,11 @@ describe("Mithras App", () => {
       utxoInfo.leafInfo.leaf,
       utxoInfo.leafInfo.treeIndex,
       utxoInfo.leafInfo.subtree,
-      zeroHashes!.map((h) => bytesToNumberBE(h)),
+      zeroHashes!,
     );
 
-    const contractRoot = (
-      await appClient.state.global.lastComputedRoot()
-    ).asByteArray();
+    const contractRoot = await appClient.state.global.lastComputedRoot();
 
-    expect(path.root).toEqual(bytesToNumberBE(contractRoot!));
+    expect(path.root).toEqual(contractRoot!);
   });
 });

@@ -96,8 +96,9 @@ describe("Merkle Path Verify Circuit Tests", () => {
 
     const leafHash = new Uint8Array(32);
     leafHash.set([0x12, 0x34, 0x56, 0x78], 0);
+    const leafHashBigInt = MerkleTestHelpers.bytesToBigInt(leafHash);
 
-    await MimcMerkleHelper.addLeaf(appClient, leafHash);
+    await MimcMerkleHelper.addLeaf(appClient, leafHashBigInt);
     const { zeroHashes } = await MimcMerkleHelper.getContractState(appClient);
 
     const leaf = MerkleTestHelpers.bytesToBigInt(leafHash);
@@ -105,7 +106,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const pathSelectors: number[] = [];
 
     for (let i = 0; i < TREE_DEPTH; i++) {
-      pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[i]));
+      pathElements.push(zeroHashes[i]);
       pathSelectors.push(0);
     }
 
@@ -135,7 +136,10 @@ describe("Merkle Path Verify Circuit Tests", () => {
     ];
 
     for (const leaf of leaves) {
-      await MimcMerkleHelper.addLeaf(appClient, leaf);
+      await MimcMerkleHelper.addLeaf(
+        appClient,
+        MerkleTestHelpers.bytesToBigInt(leaf),
+      );
     }
 
     const { subtree, zeroHashes } =
@@ -150,10 +154,10 @@ describe("Merkle Path Verify Circuit Tests", () => {
     let index = leafIndex;
     for (let level = 0; level < TREE_DEPTH; level++) {
       if (level === 0) {
-        pathElements.push(MerkleTestHelpers.bytesToBigInt(subtree[0]));
+        pathElements.push(subtree[0]);
         pathSelectors.push(1);
       } else {
-        pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[level]));
+        pathElements.push(zeroHashes[level]);
         pathSelectors.push(0);
       }
       index >>= 1;
@@ -181,7 +185,10 @@ describe("Merkle Path Verify Circuit Tests", () => {
 
     const leafHash = TestDataBuilder.createTestLeaf(0xdeadbeef);
 
-    await MimcMerkleHelper.addLeaf(appClient, leafHash);
+    await MimcMerkleHelper.addLeaf(
+      appClient,
+      MerkleTestHelpers.bytesToBigInt(leafHash),
+    );
     const { zeroHashes } = await MimcMerkleHelper.getContractState(appClient);
 
     const leaf = MerkleTestHelpers.bytesToBigInt(leafHash);
@@ -189,7 +196,7 @@ describe("Merkle Path Verify Circuit Tests", () => {
     const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
 
     for (let i = 0; i < TREE_DEPTH; i++) {
-      pathElements.push(MerkleTestHelpers.bytesToBigInt(zeroHashes[i]));
+      pathElements.push(zeroHashes[i]);
     }
 
     const root = await mimcCalculator.calculateMerkleRoot(
@@ -197,12 +204,8 @@ describe("Merkle Path Verify Circuit Tests", () => {
       pathElements,
       pathSelectors,
     );
-    const computedRootBytes = MerkleTestHelpers.bigIntToBytes(root);
 
-    const isValid = await MimcMerkleHelper.verifyRoot(
-      appClient,
-      computedRootBytes,
-    );
+    const isValid = await MimcMerkleHelper.verifyRoot(appClient, root);
     expect(isValid).toBe(true);
 
     const input = TestDataBuilder.createMerklePathInput(

@@ -5,6 +5,7 @@ import {
   uint64,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "../../contracts/mimc_merkle.algo";
+import { Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 
 @contract({ avmVersion: 11 })
 export class MimcMerkleTest extends MimcMerkle {
@@ -12,7 +13,7 @@ export class MimcMerkleTest extends MimcMerkle {
     this.bootstrap();
   }
 
-  addLeafTest(leafHash: bytes<32>) {
+  addLeafTest(leafHash: Uint256) {
     this.addLeaf(leafHash);
   }
 
@@ -20,15 +21,15 @@ export class MimcMerkleTest extends MimcMerkle {
     this.sealAndRotate();
   }
 
-  isValidRootTest(root: bytes<32>) {
+  isValidRootTest(root: Uint256) {
     return this.isValidRoot(root);
   }
 
-  isValidSealedRootTest(epochId: uint64, root: bytes<32>) {
+  isValidSealedRootTest(epochId: uint64, root: Uint256) {
     return this.isValidSealedRoot(epochId, root);
   }
 
-  addRootTest(rootHash: bytes<32>) {
+  addRootTest(rootHash: Uint256) {
     this.addRoot(rootHash);
   }
 }

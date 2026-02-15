@@ -23,7 +23,7 @@ import { TransactionComposer, AppCallMethodCall, AppMethodCallTransactionArgumen
 import { SendParams, SendSingleTransactionResult, SendAtomicTransactionComposerResults } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Address, encodeAddress, modelsv2, OnApplicationComplete, Transaction, TransactionSigner } from 'algosdk'
 
-export const APP_SPEC: Arc56Contract = {"name":"MithrasLogger","structs":{"NewLeaf":[{"name":"leaf","type":"byte[32]"},{"name":"subtree","type":"byte[32][24]"},{"name":"epochId","type":"uint64"},{"name":"treeIndex","type":"uint64"}]},"methods":[{"name":"newLeaf","args":[{"type":"(byte[32],byte[32][24],uint64,uint64)","struct":"NewLeaf","name":"_newLeaf"}],"returns":{"type":"void"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}},{"name":"newLeaf2","args":[{"type":"(byte[32],byte[32][24],uint64,uint64)","struct":"NewLeaf","name":"_newLeaf"},{"type":"(byte[32],byte[32][24],uint64,uint64)","struct":"NewLeaf","name":"_newLeaf2"}],"returns":{"type":"void"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}}],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":0,"bytes":0},"local":{"ints":0,"bytes":0}},"keys":{"global":{},"local":{},"box":{}},"maps":{"global":{},"local":{},"box":{}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[{"pc":[31,41],"errorMessage":"OnCompletion is not NoOp"},{"pc":[56],"errorMessage":"can only call when creating"},{"pc":[34,44],"errorMessage":"can only call when not creating"}],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDEwCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICAvLyBjb250cmFjdHMvbWl0aHJhcy5hbGdvLnRzOjczCiAgICAvLyBleHBvcnQgY2xhc3MgTWl0aHJhc0xvZ2dlciBleHRlbmRzIENvbnRyYWN0IHsKICAgIHR4biBOdW1BcHBBcmdzCiAgICBieiBtYWluX2JhcmVfcm91dGluZ0A3CiAgICBwdXNoYnl0ZXNzIDB4MWQxOGE3YzcgMHgyZGVkODJlZSAvLyBtZXRob2QgIm5ld0xlYWYoKGJ5dGVbMzJdLGJ5dGVbMzJdWzI0XSx1aW50NjQsdWludDY0KSl2b2lkIiwgbWV0aG9kICJuZXdMZWFmMigoYnl0ZVszMl0sYnl0ZVszMl1bMjRdLHVpbnQ2NCx1aW50NjQpLChieXRlWzMyXSxieXRlWzMyXVsyNF0sdWludDY0LHVpbnQ2NCkpdm9pZCIKICAgIHR4bmEgQXBwbGljYXRpb25BcmdzIDAKICAgIG1hdGNoIG1haW5fbmV3TGVhZl9yb3V0ZUAzIG1haW5fbmV3TGVhZjJfcm91dGVANAoKbWFpbl9hZnRlcl9pZl9lbHNlQDExOgogICAgZXJyCgptYWluX25ld0xlYWYyX3JvdXRlQDQ6CiAgICAvLyBjb250cmFjdHMvbWl0aHJhcy5hbGdvLnRzOjc1CiAgICAvLyBuZXdMZWFmMihfbmV3TGVhZjogTmV3TGVhZiwgX25ld0xlYWYyOiBOZXdMZWFmKSB7fQogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgYXNzZXJ0IC8vIE9uQ29tcGxldGlvbiBpcyBub3QgTm9PcAogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgIGFzc2VydCAvLyBjYW4gb25seSBjYWxsIHdoZW4gbm90IGNyZWF0aW5nCiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCgptYWluX25ld0xlYWZfcm91dGVAMzoKICAgIC8vIGNvbnRyYWN0cy9taXRocmFzLmFsZ28udHM6NzQKICAgIC8vIG5ld0xlYWYoX25ld0xlYWY6IE5ld0xlYWYpIHt9CiAgICB0eG4gT25Db21wbGV0aW9uCiAgICAhCiAgICBhc3NlcnQgLy8gT25Db21wbGV0aW9uIGlzIG5vdCBOb09wCiAgICB0eG4gQXBwbGljYXRpb25JRAogICAgYXNzZXJ0IC8vIGNhbiBvbmx5IGNhbGwgd2hlbiBub3QgY3JlYXRpbmcKICAgIHB1c2hpbnQgMSAvLyAxCiAgICByZXR1cm4KCm1haW5fYmFyZV9yb3V0aW5nQDc6CiAgICAvLyBjb250cmFjdHMvbWl0aHJhcy5hbGdvLnRzOjczCiAgICAvLyBleHBvcnQgY2xhc3MgTWl0aHJhc0xvZ2dlciBleHRlbmRzIENvbnRyYWN0IHsKICAgIHR4biBPbkNvbXBsZXRpb24KICAgIGJueiBtYWluX2FmdGVyX2lmX2Vsc2VAMTEKICAgIHR4biBBcHBsaWNhdGlvbklECiAgICAhCiAgICBhc3NlcnQgLy8gY2FuIG9ubHkgY2FsbCB3aGVuIGNyZWF0aW5nCiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCg==","clear":"I3ByYWdtYSB2ZXJzaW9uIDEwCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCg=="},"byteCode":{"approval":"CjEbQQAqggIEHRinxwQt7YLuNhoAjgIACwABADEZFEQxGESBAUMxGRREMRhEgQFDMRlA/+YxGBREgQFD","clear":"CoEBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
+export const APP_SPEC: Arc56Contract = {"name":"MithrasLogger","structs":{"NewLeaf":[{"name":"leaf","type":"uint256"},{"name":"subtree","type":"uint256[24]"},{"name":"epochId","type":"uint64"},{"name":"treeIndex","type":"uint64"}]},"methods":[{"name":"newLeaf","args":[{"type":"(uint256,uint256[24],uint64,uint64)","struct":"NewLeaf","name":"_newLeaf"}],"returns":{"type":"void"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}},{"name":"newLeaf2","args":[{"type":"(uint256,uint256[24],uint64,uint64)","struct":"NewLeaf","name":"_newLeaf"},{"type":"(uint256,uint256[24],uint64,uint64)","struct":"NewLeaf","name":"_newLeaf2"}],"returns":{"type":"void"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}}],"arcs":[22,28],"desc":"The AVM has a 1k log limit. Each NewLeaf log is about 800 bytes, so we can only log one per app call.\nTo work around this, we have a separate contract that we call from the outer contract and use the args\nas a way to log the events. This breaks compatibility with ARC28, but that is an acceptable tradeoff\nas parsing the args from the inner transactions will be fairly straightforward","networks":{},"state":{"schema":{"global":{"ints":0,"bytes":0},"local":{"ints":0,"bytes":0}},"keys":{"global":{},"local":{},"box":{}},"maps":{"global":{},"local":{},"box":{}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[{"pc":[31,41],"errorMessage":"OnCompletion is not NoOp"},{"pc":[56],"errorMessage":"can only call when creating"},{"pc":[34,44],"errorMessage":"can only call when not creating"}],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDEwCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICAvLyBjb250cmFjdHMvbWl0aHJhcy5hbGdvLnRzOjc5CiAgICAvLyBleHBvcnQgY2xhc3MgTWl0aHJhc0xvZ2dlciBleHRlbmRzIENvbnRyYWN0IHsKICAgIHR4biBOdW1BcHBBcmdzCiAgICBieiBtYWluX2JhcmVfcm91dGluZ0A3CiAgICBwdXNoYnl0ZXNzIDB4ZGQ5ZTY4NjIgMHg0ZDQzYzNlZCAvLyBtZXRob2QgIm5ld0xlYWYoKHVpbnQyNTYsdWludDI1NlsyNF0sdWludDY0LHVpbnQ2NCkpdm9pZCIsIG1ldGhvZCAibmV3TGVhZjIoKHVpbnQyNTYsdWludDI1NlsyNF0sdWludDY0LHVpbnQ2NCksKHVpbnQyNTYsdWludDI1NlsyNF0sdWludDY0LHVpbnQ2NCkpdm9pZCIKICAgIHR4bmEgQXBwbGljYXRpb25BcmdzIDAKICAgIG1hdGNoIG1haW5fbmV3TGVhZl9yb3V0ZUAzIG1haW5fbmV3TGVhZjJfcm91dGVANAoKbWFpbl9hZnRlcl9pZl9lbHNlQDExOgogICAgZXJyCgptYWluX25ld0xlYWYyX3JvdXRlQDQ6CiAgICAvLyBjb250cmFjdHMvbWl0aHJhcy5hbGdvLnRzOjgxCiAgICAvLyBuZXdMZWFmMihfbmV3TGVhZjogTmV3TGVhZiwgX25ld0xlYWYyOiBOZXdMZWFmKSB7fQogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgYXNzZXJ0IC8vIE9uQ29tcGxldGlvbiBpcyBub3QgTm9PcAogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgIGFzc2VydCAvLyBjYW4gb25seSBjYWxsIHdoZW4gbm90IGNyZWF0aW5nCiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCgptYWluX25ld0xlYWZfcm91dGVAMzoKICAgIC8vIGNvbnRyYWN0cy9taXRocmFzLmFsZ28udHM6ODAKICAgIC8vIG5ld0xlYWYoX25ld0xlYWY6IE5ld0xlYWYpIHt9CiAgICB0eG4gT25Db21wbGV0aW9uCiAgICAhCiAgICBhc3NlcnQgLy8gT25Db21wbGV0aW9uIGlzIG5vdCBOb09wCiAgICB0eG4gQXBwbGljYXRpb25JRAogICAgYXNzZXJ0IC8vIGNhbiBvbmx5IGNhbGwgd2hlbiBub3QgY3JlYXRpbmcKICAgIHB1c2hpbnQgMSAvLyAxCiAgICByZXR1cm4KCm1haW5fYmFyZV9yb3V0aW5nQDc6CiAgICAvLyBjb250cmFjdHMvbWl0aHJhcy5hbGdvLnRzOjc5CiAgICAvLyBleHBvcnQgY2xhc3MgTWl0aHJhc0xvZ2dlciBleHRlbmRzIENvbnRyYWN0IHsKICAgIHR4biBPbkNvbXBsZXRpb24KICAgIGJueiBtYWluX2FmdGVyX2lmX2Vsc2VAMTEKICAgIHR4biBBcHBsaWNhdGlvbklECiAgICAhCiAgICBhc3NlcnQgLy8gY2FuIG9ubHkgY2FsbCB3aGVuIGNyZWF0aW5nCiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCg==","clear":"I3ByYWdtYSB2ZXJzaW9uIDEwCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCg=="},"byteCode":{"approval":"CjEbQQAqggIE3Z5oYgRNQ8PtNhoAjgIACwABADEZFEQxGESBAUMxGRREMRhEgQFDMRlA/+YxGBREgQFD","clear":"CoEBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
 
 /**
  * A state record containing binary data
@@ -65,8 +65,8 @@ export type Expand<T> = T extends (...args: infer A) => infer R
 // Type definitions for ARC-56 structs
 
 export type NewLeaf = {
-  leaf: Uint8Array,
-  subtree: [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array],
+  leaf: bigint,
+  subtree: [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint],
   epochId: bigint,
   treeIndex: bigint
 }
@@ -75,7 +75,7 @@ export type NewLeaf = {
 /**
  * Converts the ABI tuple representation of a NewLeaf to the struct representation
  */
-export function NewLeafFromTuple(abiTuple: [Uint8Array, [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array], bigint, bigint]) {
+export function NewLeafFromTuple(abiTuple: [bigint, [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint], bigint, bigint]) {
   return getABIStructFromABITuple(abiTuple, APP_SPEC.structs.NewLeaf, APP_SPEC.structs) as NewLeaf
 }
 
@@ -87,10 +87,10 @@ export type MithrasLoggerArgs = {
    * The object representation of the arguments for each method
    */
   obj: {
-    'newLeaf((byte[32],byte[32][24],uint64,uint64))void': {
+    'newLeaf((uint256,uint256[24],uint64,uint64))void': {
       _newLeaf: NewLeaf
     }
-    'newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void': {
+    'newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void': {
       _newLeaf: NewLeaf
       _newLeaf2: NewLeaf
     }
@@ -99,8 +99,8 @@ export type MithrasLoggerArgs = {
    * The tuple representation of the arguments for each method
    */
   tuple: {
-    'newLeaf((byte[32],byte[32][24],uint64,uint64))void': [_newLeaf: NewLeaf]
-    'newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void': [_newLeaf: NewLeaf, _newLeaf2: NewLeaf]
+    'newLeaf((uint256,uint256[24],uint64,uint64))void': [_newLeaf: NewLeaf]
+    'newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void': [_newLeaf: NewLeaf, _newLeaf2: NewLeaf]
   }
 }
 
@@ -108,8 +108,8 @@ export type MithrasLoggerArgs = {
  * The return type for each method
  */
 export type MithrasLoggerReturns = {
-  'newLeaf((byte[32],byte[32][24],uint64,uint64))void': void
-  'newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void': void
+  'newLeaf((uint256,uint256[24],uint64,uint64))void': void
+  'newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void': void
 }
 
 /**
@@ -120,15 +120,15 @@ export type MithrasLoggerTypes = {
    * Maps method signatures / names to their argument and return types.
    */
   methods:
-    & Record<'newLeaf((byte[32],byte[32][24],uint64,uint64))void' | 'newLeaf', {
-      argsObj: MithrasLoggerArgs['obj']['newLeaf((byte[32],byte[32][24],uint64,uint64))void']
-      argsTuple: MithrasLoggerArgs['tuple']['newLeaf((byte[32],byte[32][24],uint64,uint64))void']
-      returns: MithrasLoggerReturns['newLeaf((byte[32],byte[32][24],uint64,uint64))void']
+    & Record<'newLeaf((uint256,uint256[24],uint64,uint64))void' | 'newLeaf', {
+      argsObj: MithrasLoggerArgs['obj']['newLeaf((uint256,uint256[24],uint64,uint64))void']
+      argsTuple: MithrasLoggerArgs['tuple']['newLeaf((uint256,uint256[24],uint64,uint64))void']
+      returns: MithrasLoggerReturns['newLeaf((uint256,uint256[24],uint64,uint64))void']
     }>
-    & Record<'newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void' | 'newLeaf2', {
-      argsObj: MithrasLoggerArgs['obj']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void']
-      argsTuple: MithrasLoggerArgs['tuple']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void']
-      returns: MithrasLoggerReturns['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void']
+    & Record<'newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void' | 'newLeaf2', {
+      argsObj: MithrasLoggerArgs['obj']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void']
+      argsTuple: MithrasLoggerArgs['tuple']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void']
+      returns: MithrasLoggerReturns['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void']
     }>
 }
 
@@ -177,28 +177,28 @@ export type MithrasLoggerDeployParams = Expand<Omit<AppFactoryDeployParams, 'cre
  */
 export abstract class MithrasLoggerParamsFactory {
   /**
-   * Constructs a no op call for the newLeaf((byte[32],byte[32][24],uint64,uint64))void ABI method
+   * Constructs a no op call for the newLeaf((uint256,uint256[24],uint64,uint64))void ABI method
    *
    * @param params Parameters for the call
    * @returns An `AppClientMethodCallParams` object for the call
    */
-  static newLeaf(params: CallParams<MithrasLoggerArgs['obj']['newLeaf((byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((byte[32],byte[32][24],uint64,uint64))void']> & CallOnComplete): AppClientMethodCallParams & CallOnComplete {
+  static newLeaf(params: CallParams<MithrasLoggerArgs['obj']['newLeaf((uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((uint256,uint256[24],uint64,uint64))void']> & CallOnComplete): AppClientMethodCallParams & CallOnComplete {
     return {
       ...params,
-      method: 'newLeaf((byte[32],byte[32][24],uint64,uint64))void' as const,
+      method: 'newLeaf((uint256,uint256[24],uint64,uint64))void' as const,
       args: Array.isArray(params.args) ? params.args : [params.args._newLeaf],
     }
   }
   /**
-   * Constructs a no op call for the newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void ABI method
+   * Constructs a no op call for the newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void ABI method
    *
    * @param params Parameters for the call
    * @returns An `AppClientMethodCallParams` object for the call
    */
-  static newLeaf2(params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void']> & CallOnComplete): AppClientMethodCallParams & CallOnComplete {
+  static newLeaf2(params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void']> & CallOnComplete): AppClientMethodCallParams & CallOnComplete {
     return {
       ...params,
-      method: 'newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void' as const,
+      method: 'newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void' as const,
       args: Array.isArray(params.args) ? params.args : [params.args._newLeaf, params.args._newLeaf2],
     }
   }
@@ -435,22 +435,22 @@ export class MithrasLoggerClient {
     },
 
     /**
-     * Makes a call to the MithrasLogger smart contract using the `newLeaf((byte[32],byte[32][24],uint64,uint64))void` ABI method.
+     * Makes a call to the MithrasLogger smart contract using the `newLeaf((uint256,uint256[24],uint64,uint64))void` ABI method.
      *
      * @param params The params for the smart contract call
      * @returns The call params
      */
-    newLeaf: (params: CallParams<MithrasLoggerArgs['obj']['newLeaf((byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((byte[32],byte[32][24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+    newLeaf: (params: CallParams<MithrasLoggerArgs['obj']['newLeaf((uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((uint256,uint256[24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       return this.appClient.params.call(MithrasLoggerParamsFactory.newLeaf(params))
     },
 
     /**
-     * Makes a call to the MithrasLogger smart contract using the `newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void` ABI method.
+     * Makes a call to the MithrasLogger smart contract using the `newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void` ABI method.
      *
      * @param params The params for the smart contract call
      * @returns The call params
      */
-    newLeaf2: (params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+    newLeaf2: (params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       return this.appClient.params.call(MithrasLoggerParamsFactory.newLeaf2(params))
     },
 
@@ -471,22 +471,22 @@ export class MithrasLoggerClient {
     },
 
     /**
-     * Makes a call to the MithrasLogger smart contract using the `newLeaf((byte[32],byte[32][24],uint64,uint64))void` ABI method.
+     * Makes a call to the MithrasLogger smart contract using the `newLeaf((uint256,uint256[24],uint64,uint64))void` ABI method.
      *
      * @param params The params for the smart contract call
      * @returns The call transaction
      */
-    newLeaf: (params: CallParams<MithrasLoggerArgs['obj']['newLeaf((byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((byte[32],byte[32][24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+    newLeaf: (params: CallParams<MithrasLoggerArgs['obj']['newLeaf((uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((uint256,uint256[24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       return this.appClient.createTransaction.call(MithrasLoggerParamsFactory.newLeaf(params))
     },
 
     /**
-     * Makes a call to the MithrasLogger smart contract using the `newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void` ABI method.
+     * Makes a call to the MithrasLogger smart contract using the `newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void` ABI method.
      *
      * @param params The params for the smart contract call
      * @returns The call transaction
      */
-    newLeaf2: (params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+    newLeaf2: (params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       return this.appClient.createTransaction.call(MithrasLoggerParamsFactory.newLeaf2(params))
     },
 
@@ -507,25 +507,25 @@ export class MithrasLoggerClient {
     },
 
     /**
-     * Makes a call to the MithrasLogger smart contract using the `newLeaf((byte[32],byte[32][24],uint64,uint64))void` ABI method.
+     * Makes a call to the MithrasLogger smart contract using the `newLeaf((uint256,uint256[24],uint64,uint64))void` ABI method.
      *
      * @param params The params for the smart contract call
      * @returns The call result
      */
-    newLeaf: async (params: CallParams<MithrasLoggerArgs['obj']['newLeaf((byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((byte[32],byte[32][24],uint64,uint64))void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+    newLeaf: async (params: CallParams<MithrasLoggerArgs['obj']['newLeaf((uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((uint256,uint256[24],uint64,uint64))void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(MithrasLoggerParamsFactory.newLeaf(params))
-      return {...result, return: result.return as unknown as (undefined | MithrasLoggerReturns['newLeaf((byte[32],byte[32][24],uint64,uint64))void'])}
+      return {...result, return: result.return as unknown as (undefined | MithrasLoggerReturns['newLeaf((uint256,uint256[24],uint64,uint64))void'])}
     },
 
     /**
-     * Makes a call to the MithrasLogger smart contract using the `newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void` ABI method.
+     * Makes a call to the MithrasLogger smart contract using the `newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void` ABI method.
      *
      * @param params The params for the smart contract call
      * @returns The call result
      */
-    newLeaf2: async (params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+    newLeaf2: async (params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(MithrasLoggerParamsFactory.newLeaf2(params))
-      return {...result, return: result.return as unknown as (undefined | MithrasLoggerReturns['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void'])}
+      return {...result, return: result.return as unknown as (undefined | MithrasLoggerReturns['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void'])}
     },
 
   }
@@ -553,17 +553,17 @@ export class MithrasLoggerClient {
     const resultMappers: Array<undefined | ((x: ABIReturn | undefined) => any)> = []
     return {
       /**
-       * Add a newLeaf((byte[32],byte[32][24],uint64,uint64))void method call against the MithrasLogger contract
+       * Add a newLeaf((uint256,uint256[24],uint64,uint64))void method call against the MithrasLogger contract
        */
-      newLeaf(params: CallParams<MithrasLoggerArgs['obj']['newLeaf((byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((byte[32],byte[32][24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
+      newLeaf(params: CallParams<MithrasLoggerArgs['obj']['newLeaf((uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((uint256,uint256[24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
         promiseChain = promiseChain.then(async () => composer.addAppCallMethodCall(await client.params.newLeaf(params)))
         resultMappers.push(undefined)
         return this
       },
       /**
-       * Add a newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void method call against the MithrasLogger contract
+       * Add a newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void method call against the MithrasLogger contract
        */
-      newLeaf2(params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
+      newLeaf2(params: CallParams<MithrasLoggerArgs['obj']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
         promiseChain = promiseChain.then(async () => composer.addAppCallMethodCall(await client.params.newLeaf2(params)))
         resultMappers.push(undefined)
         return this
@@ -604,22 +604,22 @@ export class MithrasLoggerClient {
 }
 export type MithrasLoggerComposer<TReturns extends [...any[]] = []> = {
   /**
-   * Calls the newLeaf((byte[32],byte[32][24],uint64,uint64))void ABI method.
+   * Calls the newLeaf((uint256,uint256[24],uint64,uint64))void ABI method.
    *
    * @param args The arguments for the contract call
    * @param params Any additional parameters for the call
    * @returns The typed transaction composer so you can fluently chain multiple calls or call execute to execute all queued up transactions
    */
-  newLeaf(params?: CallParams<MithrasLoggerArgs['obj']['newLeaf((byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((byte[32],byte[32][24],uint64,uint64))void']>): MithrasLoggerComposer<[...TReturns, MithrasLoggerReturns['newLeaf((byte[32],byte[32][24],uint64,uint64))void'] | undefined]>
+  newLeaf(params?: CallParams<MithrasLoggerArgs['obj']['newLeaf((uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf((uint256,uint256[24],uint64,uint64))void']>): MithrasLoggerComposer<[...TReturns, MithrasLoggerReturns['newLeaf((uint256,uint256[24],uint64,uint64))void'] | undefined]>
 
   /**
-   * Calls the newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void ABI method.
+   * Calls the newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void ABI method.
    *
    * @param args The arguments for the contract call
    * @param params Any additional parameters for the call
    * @returns The typed transaction composer so you can fluently chain multiple calls or call execute to execute all queued up transactions
    */
-  newLeaf2(params?: CallParams<MithrasLoggerArgs['obj']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void']>): MithrasLoggerComposer<[...TReturns, MithrasLoggerReturns['newLeaf2((byte[32],byte[32][24],uint64,uint64),(byte[32],byte[32][24],uint64,uint64))void'] | undefined]>
+  newLeaf2(params?: CallParams<MithrasLoggerArgs['obj']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void'] | MithrasLoggerArgs['tuple']['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void']>): MithrasLoggerComposer<[...TReturns, MithrasLoggerReturns['newLeaf2((uint256,uint256[24],uint64,uint64),(uint256,uint256[24],uint64,uint64))void'] | undefined]>
 
   /**
    * Makes a clear_state call to an existing instance of the MithrasLogger smart contract.
