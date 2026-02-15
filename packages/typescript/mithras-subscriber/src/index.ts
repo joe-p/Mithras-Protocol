@@ -43,7 +43,7 @@ export class MithrasMethod {
     public nullifier?: Uint8Array,
   ) {}
 
-  static fromArgs(args: Uint8Array[]): MithrasMethod | null {
+  static fromArgs(args: readonly Uint8Array[]): MithrasMethod | null {
     if (args.length === 0) {
       console.debug("No arguments provided in application call");
       return null;
@@ -105,25 +105,92 @@ export type UtxoInfo = {
   txid: Uint8Array;
 };
 
+// type NewLeaf = {
+//   leaf: bytes<32>;
+//   subtree: FixedArray<bytes<32>, typeof TREE_DEPTH>;
+//   epochId: uint64;
+//   treeIndex: uint64;
+// };
+
+type LeafInfo = {
+  leaf: Uint8Array;
+  subtree: Uint8Array[];
+  epochId: bigint;
+  treeIndex: bigint;
+};
+
 export async function algodUtxoLookup(
   algod: algosdk.Algodv2,
   info: UtxoInfo,
-): Promise<void> {
+  discvoveryKeypair: DiscoveryKeypair,
+): Promise<{ leafInfo: LeafInfo; secrets: UtxoSecrets }> {
   const block = await algod.block(algosdk.decodeUint64(info.round)).do();
   const transaction = block.block.payset.find((t) => {
     const txn = t.signedTxn.signedTxn.txn;
 
     // @ts-expect-error - readonly
     txn.genesisHash = block.block.header.genesisHash;
+
     // @ts-expect-error - readonly
     txn.genesisID = block.block.header.genesisID;
 
-    return txn.txID() === base32.encode(info.txid);
+    return equalBytes(info.txid, txn.rawTxID());
   });
+
+  console.debug("Found transaction for UTXO lookup:", transaction);
+
+  const appl = transaction?.signedTxn.signedTxn.txn.applicationCall;
+
+  const method = MithrasMethod.fromArgs(appl?.appArgs ?? []);
+
+  if (method === null) {
+    throw new Error("Failed to parse method from transaction application call");
+  }
 
   const newLeafCall =
     transaction?.signedTxn.applyData.evalDelta?.innerTxns.at(-1)?.signedTxn.txn
       .applicationCall;
+
+  if (method.type === "deposit") {
+    const logType = algosdk.ABIType.from(
+      "(byte[32],byte[32][24],uint64,uint64)",
+    );
+    const log = newLeafCall?.appArgs[1];
+
+    if (log === undefined) {
+      throw new Error("No log found in inner transaction for deposit method");
+    }
+
+    const hpkeEnv = method.hpke_envelopes[0];
+
+    const txn = transaction?.signedTxn.signedTxn.txn!;
+
+    const txnMetadata = new TransactionMetadata(
+      txn.sender.publicKey!,
+      txn.firstValid,
+      txn.lastValid,
+      txn.lease ?? new Uint8Array(32),
+      0, // TODO: handle network ID
+      appl?.appIndex!,
+    );
+    const secrets = await UtxoSecrets.fromHpkeEnvelope(
+      hpkeEnv,
+      discvoveryKeypair,
+      txnMetadata,
+    );
+
+    const decodedLog = logType.decode(log);
+    const leafInfo = {
+      leaf: decodedLog[0],
+      subtree: decodedLog[1],
+      epochId: decodedLog[2],
+      treeIndex: decodedLog[3],
+    };
+
+    return { leafInfo, secrets };
+  }
+
+  throw new Error("UTXO lookup is only supported for deposit transactions");
 }
 
 export class MithrasSubscriber {
