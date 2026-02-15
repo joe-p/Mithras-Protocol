@@ -1,8 +1,4 @@
-import {
-  bytesToNumberBE,
-  concatBytes,
-  numberToBytesBE,
-} from "@noble/curves/utils.js";
+import { bytesToNumberBE, numberToBytesBE } from "@noble/curves/utils.js";
 import {
   getHpkeSuite,
   HpkeEnvelope,
@@ -17,6 +13,7 @@ import {
 import { computeDiscoverySecretSender, computeDiscoveryTag } from "./discovery";
 import { MithrasAddr } from "./address";
 import { mimcSum } from "./mimc";
+import { addressInScalarField } from "../../mithras-contracts-and-circuits/src";
 
 export const SECRET_SIZE: number = 136;
 
@@ -96,32 +93,14 @@ export class UtxoSecrets {
     return UtxoSecrets.fromBytes(new Uint8Array(plaintext));
   }
 
-  // fn compute_nullifier(utxo: &UtxoSecrets) -> [u8; 32] {
-  //     mimc::mimc_sum(&[compute_commitment(utxo), utxo.nullifier_secret])
-  // }
-  //
-  // fn compute_commitment(utxo: &UtxoSecrets) -> [u8; 32] {
-  //     let mut amount_bytes = [0u8; 32];
-  //     amount_bytes[24..].copy_from_slice(&utxo.amount.to_be_bytes());
-  //
-  //     mimc::mimc_sum(&[
-  //         utxo.spending_secret,
-  //         utxo.nullifier_secret,
-  //         amount_bytes,
-  //         utxo.tweaked_pubkey.to_bytes(),
-  //     ])
-  // }
-
   computeCommitment(): Uint8Array {
-    return numberToBytesBE(
-      mimcSum([
-        bytesToNumberBE(this.spendingSecret),
-        bytesToNumberBE(this.nullifierSecret),
-        this.amount,
-        bytesToNumberBE(this.tweakedPubkey),
-      ]),
-      32,
-    );
+    const input = [
+      bytesToNumberBE(this.spendingSecret),
+      bytesToNumberBE(this.nullifierSecret),
+      this.amount,
+      addressInScalarField(this.tweakedPubkey),
+    ];
+    return numberToBytesBE(mimcSum(input), 32);
   }
 
   computeNullifier(): Uint8Array {

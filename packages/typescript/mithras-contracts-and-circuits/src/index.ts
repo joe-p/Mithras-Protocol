@@ -1,7 +1,7 @@
 import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
 import { PlonkLsigVerifier } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
-
+import path from "path";
 import { Address } from "algosdk";
 import {
   bytesToNumberBE,
@@ -21,26 +21,40 @@ const BLS12_381_SCALAR_MODULUS = BigInt(
   "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
 );
 
-function addressInScalarField(addr: Uint8Array): bigint {
+export function addressInScalarField(addr: Uint8Array): bigint {
   const asBigint = BigInt("0x" + Buffer.from(addr).toString("hex"));
   return asBigint % BLS12_381_SCALAR_MODULUS;
 }
 
 export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+  const thisFileDir = new URL(".", import.meta.url);
+
+  const zKey = path.join(thisFileDir.pathname, "../circuits/deposit_test.zkey");
+  const wasmProver = path.join(
+    thisFileDir.pathname,
+    "../circuits/deposit_js/deposit.wasm",
+  );
   return new PlonkLsigVerifier({
     algorand,
-    zKey: "circuits/deposit_test.zkey",
-    wasmProver: "circuits/deposit_js/deposit.wasm",
+    zKey,
+    wasmProver,
     totalLsigs: 7,
     appOffset: 1,
   });
 }
 
 export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+  const thisFileDir = new URL(".", import.meta.url);
+  const zKey = path.join(thisFileDir.pathname, "../circuits/spend_test.zkey");
+  const wasmProver = path.join(
+    thisFileDir.pathname,
+    "../circuits/spend_js/spend.wasm",
+  );
+
   return new PlonkLsigVerifier({
     algorand,
-    zKey: "circuits/spend_test.zkey",
-    wasmProver: "circuits/spend_js/spend.wasm",
+    zKey,
+    wasmProver,
     totalLsigs: 12,
     appOffset: 1,
   });
@@ -117,7 +131,7 @@ export class MithrasProtocolClient {
         spending_secret: bytesToNumberBE(inputs.secrets.spendingSecret),
         nullifier_secret: bytesToNumberBE(inputs.secrets.nullifierSecret),
         amount,
-        receiver: addressInScalarField(receiver.spendEd25519),
+        receiver: addressInScalarField(inputs.secrets.tweakedPubkey),
       },
       paramsCallback: async (params) => {
         const { lsigParams, lsigsFee, args } = params;

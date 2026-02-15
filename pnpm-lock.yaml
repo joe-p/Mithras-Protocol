@@ -91,6 +91,12 @@ importers:
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
+      snarkjs-algorand:
+        specifier: ^0.11.0
+        version: 0.11.0(typescript@5.9.2)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@25.2.3)
 
 packages:
 

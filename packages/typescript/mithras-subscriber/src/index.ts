@@ -25,6 +25,16 @@ const DEPOSIT_SELECTOR =
 const SPEND_SELECTOR =
   algosdk.ABIMethod.fromSignature(SPEND_SIGNATURE).getSelector();
 
+function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+
+  return true;
+}
+
 export class MithrasMethod {
   constructor(
     public type: "deposit" | "spend",
@@ -35,30 +45,33 @@ export class MithrasMethod {
 
   static fromArgs(args: Uint8Array[]): MithrasMethod | null {
     if (args.length === 0) {
+      console.debug("No arguments provided in application call");
       return null;
     }
 
     const selector = args[0];
 
-    if (selector === DEPOSIT_SELECTOR) {
+    if (equalBytes(selector, DEPOSIT_SELECTOR)) {
+      console.debug("Parsing deposit method from application call arguments");
       if (args.length !== 4) {
         return null;
       }
 
-      const commitment = args[1].slice(0, 32);
+      const commitment = args[1].slice(0 + 2, 32 + 2);
 
       const hpkeBytes = args[3];
       const hpkeEnvelope = HpkeEnvelope.fromBytes(hpkeBytes);
 
       return new MithrasMethod("deposit", [hpkeEnvelope], [commitment]);
-    } else if (selector === SPEND_SELECTOR) {
+    } else if (equalBytes(selector, SPEND_SELECTOR)) {
+      console.debug("Parsing spend method from application call arguments");
       if (args.length !== 5) {
         return null;
       }
 
-      const commitment0 = args[1].slice(0, 32);
-      const commitment1 = args[1].slice(32, 64);
-      const nullifier = args[1].slice(96, 128);
+      const commitment0 = args[1].slice(0 + 2, 32 + 2);
+      const commitment1 = args[1].slice(32 + 2, 64 + 2);
+      const nullifier = args[1].slice(96 + 2, 128 + 2);
 
       const hpkeBytes0 = args[3];
       const hpkeEnvelope0 = HpkeEnvelope.fromBytes(hpkeBytes0);
@@ -73,13 +86,16 @@ export class MithrasMethod {
         nullifier,
       );
     } else {
+      console.debug(
+        `Unknown method selector: ${selector}. Expected ${DEPOSIT_SELECTOR} or ${SPEND_SELECTOR}`,
+      );
       return null;
     }
   }
 
   verifyCommitment(utxo: UtxoSecrets): boolean {
     const commitment = utxo.computeCommitment();
-    return this.commitments.some((c) => c.toString() === commitment.toString());
+    return this.commitments.some((c) => equalBytes(c, commitment));
   }
 }
 
@@ -125,6 +141,8 @@ export class MithrasSubscriber {
    */
   public utxos: Map<Uint8Array, UtxoInfo> = new Map();
 
+  public subscriber: AlgorandSubscriber;
+
   constructor(
     algod: algosdk.Algodv2,
     appId: bigint,
@@ -150,14 +168,18 @@ export class MithrasSubscriber {
         },
       },
     };
-    const subscriber = new AlgorandSubscriber(config, algod);
+    this.subscriber = new AlgorandSubscriber(config, algod);
 
-    subscriber.on("mithras", async (txn) => {
+    this.subscriber.on("mithras", async (txn) => {
+      console.debug(
+        `Processing transaction ${txn.id} in round ${txn.confirmedRound}`,
+      );
       const appl = txn.applicationTransaction!;
 
       const method = MithrasMethod.fromArgs(appl.applicationArgs!);
 
       if (method === null) {
+        console.debug(`Failed to parse method from transaction ${txn.id}`);
         return;
       }
 
@@ -180,19 +202,32 @@ export class MithrasSubscriber {
           appId,
         );
 
+        console.debug(
+          `Performing discovery check for HPKE envelope in transaction ${txn.id}...`,
+        );
         if (
           !envelope.discoveryCheck(discoveryKeypair.privateKey, txnMetadata)
         ) {
+          console.debug(
+            `HPKE envelope in transaction ${txn.id} failed discovery check, skipping...`,
+          );
           continue;
         }
 
+        console.debug(`Decrypting HPKE envelope for transaction ${txn.id}...`);
         const utxo = await UtxoSecrets.fromHpkeEnvelope(
           envelope,
           discoveryKeypair,
           txnMetadata,
         );
 
+        console.debug(
+          `Verifying commitment for UTXO from transaction ${txn.id}...`,
+        );
         if (!method.verifyCommitment(utxo)) {
+          console.debug(
+            `UTXO commitment verification failed for transaction ${txn.id}, got commitment ${utxo.computeCommitment()} but expected one of ${method.commitments}`,
+          );
           continue;
         }
         const nullifier = utxo.computeNullifier();
@@ -214,8 +249,13 @@ export class MithrasSubscriber {
           continue;
         }
 
+        console.debug(`Adding ammount ${utxo.amount} from tx ${txn.id}`);
         this.amount += utxo.amount;
       }
     });
+  }
+
+  start() {
+    this.subscriber.start();
   }
 }

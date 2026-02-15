@@ -17,6 +17,8 @@
     "hi-base32": "^0.5.1"
   },
   "devDependencies": {
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "snarkjs-algorand": "^0.11.0",
+    "vitest": "^3.2.4"
   }
 }
