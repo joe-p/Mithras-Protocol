@@ -106,6 +106,7 @@ export type UtxoInfo = {
   amount: Uint8Array;
   round: Uint8Array;
   txid: Uint8Array;
+  firstCommitment: boolean;
 };
 
 export async function algodUtxoLookup(
@@ -136,49 +137,52 @@ export async function algodUtxoLookup(
     throw new Error("Failed to parse method from transaction application call");
   }
 
-  if (method.type === "deposit") {
-    const hpkeEnv = method.hpke_envelopes[0];
+  const txn = transaction?.signedTxn.signedTxn.txn!;
 
-    const txn = transaction?.signedTxn.signedTxn.txn!;
+  const txnMetadata = new TransactionMetadata(
+    txn.sender.publicKey!,
+    txn.firstValid,
+    txn.lastValid,
+    txn.lease ?? new Uint8Array(32),
+    0, // TODO: handle network ID
+    appl?.appIndex!,
+  );
 
-    const txnMetadata = new TransactionMetadata(
-      txn.sender.publicKey!,
-      txn.firstValid,
-      txn.lastValid,
-      txn.lease ?? new Uint8Array(32),
-      0, // TODO: handle network ID
-      appl?.appIndex!,
-    );
-    const secrets = await UtxoSecrets.fromHpkeEnvelope(
-      hpkeEnv,
-      discvoveryKeypair,
-      txnMetadata,
-    );
+  const delta = transaction?.signedTxn.applyData.evalDelta?.globalDelta;
+  const key = new TextEncoder().encode("i");
 
-    const delta = transaction?.signedTxn.applyData.evalDelta?.globalDelta;
-    const key = new TextEncoder().encode("i");
+  let treeIndex: number | null = null;
 
-    let index: bigint | null = null;
-
-    for (const [k, v] of delta ?? []) {
-      if (equalBytes(k, key)) {
-        index = v.uint;
-      }
+  for (const [k, v] of delta ?? []) {
+    if (equalBytes(k, key)) {
+      treeIndex = Number(v.uint);
     }
-
-    if (index === null) {
-      throw new Error(
-        `Failed to find index in global delta for UTXO lookup: ${delta}`,
-      );
-    }
-
-    return {
-      secrets,
-      treeIndex: Number(index - 1n),
-    };
   }
 
-  throw new Error("UTXO lookup is only supported for deposit transactions");
+  if (treeIndex === null) {
+    throw new Error(
+      `Failed to find index in global delta for UTXO lookup: ${delta}`,
+    );
+  }
+
+  // The index in the global state delta is the next index to be used. This means that for a deposit (one commitment leaf), we need to subtract one. For a spend (two commitment leaves, thus two increments), we need to first know whether or not we are spending the first or second commitment (out0 vs out1) and then subtract either one or two.
+  if (method.type === "spend" && info.firstCommitment) {
+    treeIndex -= 2;
+  } else {
+    treeIndex -= 1;
+  }
+  const hpkeEnv = method.hpke_envelopes[info.firstCommitment ? 0 : 1];
+
+  const secrets = await UtxoSecrets.fromHpkeEnvelope(
+    hpkeEnv,
+    discvoveryKeypair,
+    txnMetadata,
+  );
+
+  return {
+    secrets,
+    treeIndex,
+  };
 }
 
 export class MithrasSubscriber {
@@ -262,7 +266,9 @@ export class MithrasSubscriber {
         }
       }
 
+      let firstCommitment = false;
       for (const envelope of method.hpke_envelopes) {
+        firstCommitment = !firstCommitment;
         const txnMetadata = new TransactionMetadata(
           algosdk.Address.fromString(txn.sender).publicKey,
           txn.firstValid,
@@ -308,6 +314,7 @@ export class MithrasSubscriber {
             round: algosdk.encodeUint64(txn.confirmedRound ?? 0n),
             amount: algosdk.encodeUint64(utxo.amount),
             txid: new Uint8Array(base32.decode.asBytes(txn.id)),
+            firstCommitment,
           });
         }
 

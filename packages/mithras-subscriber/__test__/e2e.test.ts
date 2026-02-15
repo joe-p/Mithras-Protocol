@@ -9,11 +9,8 @@ import { Address } from "algosdk";
 import { MithrasProtocolClient } from "../../mithras-contracts-and-circuits/src";
 import {
   bytesToNumberBE,
-  DiscoveryKeypair,
   MimcMerkleTree,
-  MithrasAddr,
-  SpendSeed,
-  SupportedHpkeSuite,
+  MithrasAccount,
 } from "../../mithras-crypto/src";
 import { algodUtxoLookup, MithrasSubscriber } from "../src";
 
@@ -21,101 +18,33 @@ describe("Mithras App", () => {
   let appClient: MithrasClient;
   let algorand: AlgorandClient;
   let depositor: Address;
-  let receiverDiscovery: DiscoveryKeypair;
-  let receivedSpendSeed: SpendSeed;
-  let receiver: MithrasAddr;
+
   let startRound: bigint;
 
-  beforeAll(async () => {
-    algorand = AlgorandClient.defaultLocalNet();
-    depositor = await algorand.account.localNetDispenser();
-
-    algorand.setSuggestedParamsCacheTimeout(0);
-
-    const deployment = await MithrasProtocolClient.deploy(algorand, depositor);
-    appClient = algorand.client.getTypedAppClientById(MithrasClient, {
-      appId: deployment.appClient.appId,
-      defaultSender: depositor,
-    });
-
-    receiverDiscovery = DiscoveryKeypair.generate();
-    receivedSpendSeed = SpendSeed.generate();
-
-    receiver = MithrasAddr.fromKeys(
-      receivedSpendSeed.publicKey,
-      receiverDiscovery.publicKey,
-      1,
-      0,
-      SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
-    );
-
-    startRound = (await algorand.client.algod.status().do()).lastRound;
-  });
-
-  it("deposit and spend", async () => {
-    const client = new MithrasProtocolClient(algorand, appClient.appId);
-
-    const initialAmount = 500_000n;
-
-    const { group: depositGroup } = await client.composeDepositGroup(
-      depositor,
-      initialAmount,
-      receiver,
-    );
-
-    await depositGroup.send();
-
-    const subscriber = new MithrasSubscriber(
-      algorand.client.algod,
-      appClient.appId,
-      startRound,
-      receiverDiscovery,
-      receivedSpendSeed,
-    );
-
-    expect(subscriber.amount).toBe(0n);
-
-    await subscriber.subscriber.pollOnce();
-
-    expect(subscriber.amount).toBe(initialAmount);
-
-    const utxo = subscriber.utxos.entries().next().value;
+  const testSpend = async (
+    client: MithrasProtocolClient,
+    spender: MithrasAccount,
+    spenderSubscriber: MithrasSubscriber,
+    amount: bigint,
+  ) => {
+    const utxo = spenderSubscriber.utxos.entries().next().value;
+    const spenderDisc = spender.discoveryKeypair;
+    const spenderSeed = spender.spendSeed;
 
     const { secrets, treeIndex } = await algodUtxoLookup(
       algorand.client.algod,
       utxo[1],
-      receiverDiscovery,
+      spenderDisc,
     );
 
-    expect(secrets.amount).toBe(initialAmount);
-
-    const contractRoot = await appClient.state.global.lastComputedRoot();
-
-    const mt = new MimcMerkleTree();
-
-    mt.addLeaf(bytesToNumberBE(secrets.computeCommitment()));
-
-    expect(mt.getRoot()).toEqual(contractRoot);
-
-    const secondReceiverSpendSeed = SpendSeed.generate();
-    const secondReceiverDiscovery = DiscoveryKeypair.generate();
-
-    const secondReceiver = MithrasAddr.fromKeys(
-      secondReceiverSpendSeed.publicKey,
-      secondReceiverDiscovery.publicKey,
-      1,
-      0,
-      SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
-    );
-
-    expect(contractRoot).toEqual(subscriber.getMerkleRoot());
+    const receiver = MithrasAccount.generate();
 
     const spendGroup = await client.composeSpendGroup(
-      receiver,
-      receivedSpendSeed,
+      spender.address,
+      spenderSeed,
       secrets,
-      subscriber.getMerkleProof(treeIndex),
-      { receiver: secondReceiver, amount: initialAmount / 2n },
+      spenderSubscriber.getMerkleProof(treeIndex),
+      { receiver: receiver.address, amount },
     );
 
     // NOTE: There seems to be a bug with the signer for the lsig, for some reason the lsig txn is getting a ed25519 sig
@@ -133,16 +62,99 @@ describe("Mithras App", () => {
 
     await populated.execute(algorand.client.algod, 3);
 
-    const secondSubscriber = new MithrasSubscriber(
+    const receiversSubscriber = new MithrasSubscriber(
       algorand.client.algod,
       appClient.appId,
       startRound,
-      secondReceiverDiscovery,
-      secondReceiverSpendSeed,
+      receiver.discoveryKeypair,
+      receiver.spendSeed,
     );
 
-    await secondSubscriber.subscriber.pollOnce();
+    await receiversSubscriber.subscriber.pollOnce();
 
-    expect(secondSubscriber.amount).toBe(initialAmount / 2n);
+    expect(receiversSubscriber.amount).toBe(amount);
+
+    return { receiver, receiversSubscriber };
+  };
+
+  beforeAll(async () => {
+    algorand = AlgorandClient.defaultLocalNet();
+    depositor = await algorand.account.localNetDispenser();
+
+    algorand.setSuggestedParamsCacheTimeout(0);
+
+    const deployment = await MithrasProtocolClient.deploy(algorand, depositor);
+    appClient = algorand.client.getTypedAppClientById(MithrasClient, {
+      appId: deployment.appClient.appId,
+      defaultSender: depositor,
+    });
+
+    startRound = (await algorand.client.algod.status().do()).lastRound;
+  });
+
+  it("deposit and spend", async () => {
+    const initialReceiver = MithrasAccount.generate();
+    const client = new MithrasProtocolClient(algorand, appClient.appId);
+
+    const initialAmount = 1_000_000n;
+
+    const { group: depositGroup } = await client.composeDepositGroup(
+      depositor,
+      initialAmount,
+      initialReceiver.address,
+    );
+
+    await depositGroup.send();
+
+    const subscriber = new MithrasSubscriber(
+      algorand.client.algod,
+      appClient.appId,
+      startRound,
+      initialReceiver.discoveryKeypair,
+      initialReceiver.spendSeed,
+    );
+
+    expect(subscriber.amount).toBe(0n);
+
+    await subscriber.subscriber.pollOnce();
+
+    expect(subscriber.amount).toBe(initialAmount);
+
+    const utxo = subscriber.utxos.entries().next().value;
+
+    const { secrets } = await algodUtxoLookup(
+      algorand.client.algod,
+      utxo[1],
+      initialReceiver.discoveryKeypair,
+    );
+
+    expect(secrets.amount).toBe(initialAmount);
+
+    const contractRoot = await appClient.state.global.lastComputedRoot();
+
+    expect(contractRoot).toEqual(subscriber.getMerkleRoot());
+
+    const mt = new MimcMerkleTree();
+
+    mt.addLeaf(bytesToNumberBE(secrets.computeCommitment()));
+
+    expect(mt.getRoot()).toEqual(contractRoot);
+
+    const {
+      receiver: secondReceiver,
+      receiversSubscriber: secondReceiversSubscriber,
+    } = await testSpend(
+      client,
+      initialReceiver,
+      subscriber,
+      initialAmount / 2n,
+    );
+
+    await testSpend(
+      client,
+      secondReceiver,
+      secondReceiversSubscriber,
+      initialAmount / 4n,
+    );
   });
 });

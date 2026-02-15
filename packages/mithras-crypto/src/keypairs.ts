@@ -8,6 +8,8 @@ import {
   numberToBytesLE,
 } from "@noble/curves/utils.js";
 import { sha512 } from "@noble/hashes/sha2.js";
+import { MithrasAddr } from "./address";
+import { SupportedHpkeSuite } from "./hpke";
 
 export class DiscoveryKeypair {
   privateKey: Uint8Array;
@@ -167,4 +169,29 @@ export function deriveTweakedPrefix(
     ),
   );
   return hash.slice(32, 64);
+}
+
+export class MithrasAccount {
+  spendSeed: SpendSeed;
+  discoveryKeypair: DiscoveryKeypair;
+  address: MithrasAddr;
+
+  constructor(spendSeed: SpendSeed, discoveryKeypair: DiscoveryKeypair) {
+    this.spendSeed = spendSeed;
+    this.discoveryKeypair = discoveryKeypair;
+    this.address = MithrasAddr.fromKeys(
+      spendSeed.publicKey,
+      discoveryKeypair.publicKey,
+      1,
+      0,
+      SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
+    );
+  }
+
+  static generate(): MithrasAccount {
+    return new MithrasAccount(
+      SpendSeed.generate(),
+      DiscoveryKeypair.generate(),
+    );
+  }
 }

@@ -162,7 +162,7 @@ export interface MerkleProof {
 
 export class MimcMerkleTree {
   private leaves: bigint[] = [];
-  private tree: bigint[][] = [];
+  private tree: Map<number, bigint>[] = [];
   private zeroHashes: bigint[];
 
   constructor(zeroHashes?: bigint[]) {
@@ -187,7 +187,7 @@ export class MimcMerkleTree {
   private initializeTree(): void {
     this.tree = [];
     for (let level = 0; level < TREE_DEPTH; level++) {
-      this.tree.push([]);
+      this.tree.push(new Map());
     }
   }
 
@@ -203,14 +203,19 @@ export class MimcMerkleTree {
     let index = BigInt(leafIndex);
 
     for (let level = 0; level < TREE_DEPTH; level++) {
+      const position = Number(index);
+      this.tree[level].set(position, currentHash);
+
       const isRightChild = (index & 1n) === 1n;
 
       if (isRightChild) {
-        const leftSibling = this.tree[level][this.tree[level].length - 1];
+        const leftSibling =
+          this.tree[level].get(position - 1) ?? this.zeroHashes[level];
         currentHash = mimcSum([leftSibling, currentHash]);
       } else {
-        this.tree[level].push(currentHash);
-        currentHash = mimcSum([currentHash, this.zeroHashes[level]]);
+        const rightSibling =
+          this.tree[level].get(position + 1) ?? this.zeroHashes[level];
+        currentHash = mimcSum([currentHash, rightSibling]);
       }
 
       index >>= 1n;
@@ -226,10 +231,11 @@ export class MimcMerkleTree {
     let index = 0n;
 
     for (let level = 0; level < TREE_DEPTH; level++) {
+      const position = Number(index);
       const isRightChild = (index & 1n) === 1n;
-      const sibling = isRightChild
-        ? this.tree[level][Number(index - 1n)]
-        : this.zeroHashes[level];
+      const siblingPosition = isRightChild ? position - 1 : position + 1;
+      const sibling =
+        this.tree[level].get(siblingPosition) ?? this.zeroHashes[level];
 
       currentHash = isRightChild
         ? mimcSum([sibling, currentHash])
@@ -251,12 +257,13 @@ export class MimcMerkleTree {
     let index = BigInt(leafIndex);
 
     for (let level = 0; level < TREE_DEPTH; level++) {
+      const position = Number(index);
       const isRightChild = (index & 1n) === 1n;
       pathSelectors.push(isRightChild ? 1 : 0);
 
-      const sibling = isRightChild
-        ? this.tree[level][Number(index - 1n)]
-        : this.zeroHashes[level];
+      const siblingPosition = isRightChild ? position - 1 : position + 1;
+      const sibling =
+        this.tree[level].get(siblingPosition) ?? this.zeroHashes[level];
       pathElements.push(sibling);
 
       index >>= 1n;
