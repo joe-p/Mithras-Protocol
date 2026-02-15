@@ -16,6 +16,7 @@ import {
 import algosdk from "algosdk";
 import { equalBytes } from "../../mithras-subscriber/src";
 
+const DEPOSIT_LSIGS = 7;
 const SPEND_LSIGS = 12;
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
 const SPEND_APP_FEE = 110n * 1000n;
@@ -44,7 +45,7 @@ export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
     algorand,
     zKey,
     wasmProver,
-    totalLsigs: 7,
+    totalLsigs: DEPOSIT_LSIGS,
     appOffset: 1,
   });
 }
@@ -61,7 +62,7 @@ export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
     algorand,
     zKey,
     wasmProver,
-    totalLsigs: 12,
+    totalLsigs: SPEND_LSIGS,
     appOffset: 1,
   });
 }
