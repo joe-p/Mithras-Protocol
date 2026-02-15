@@ -88,7 +88,7 @@ describe("Mithras App", () => {
       utxoInfo.leafInfo.leaf,
       utxoInfo.leafInfo.treeIndex,
       utxoInfo.leafInfo.subtree,
-      zeroHashes!,
+      zeroHashes!.map((h) => bytesToNumberBE(h)),
     );
 
     const contractRoot = (

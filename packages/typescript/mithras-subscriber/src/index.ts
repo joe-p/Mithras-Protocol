@@ -5,6 +5,7 @@ import {
 } from "@algorandfoundation/algokit-subscriber/types/subscription";
 import algosdk from "algosdk";
 import {
+  bytesToNumberBE,
   DiscoveryKeypair,
   HpkeEnvelope,
   SpendSeed,
@@ -113,8 +114,8 @@ export type UtxoInfo = {
 // };
 
 type LeafInfo = {
-  leaf: Uint8Array;
-  subtree: Uint8Array[];
+  leaf: bigint;
+  subtree: bigint[];
   epochId: bigint;
   treeIndex: bigint;
 };
@@ -181,8 +182,10 @@ export async function algodUtxoLookup(
 
     const decodedLog = logType.decode(log);
     const leafInfo = {
-      leaf: new Uint8Array(decodedLog[0]),
-      subtree: decodedLog[1].map((b: number[]) => new Uint8Array(b)),
+      leaf: bytesToNumberBE(new Uint8Array(decodedLog[0])),
+      subtree: decodedLog[1].map((b: number[]) =>
+        bytesToNumberBE(new Uint8Array(b)),
+      ),
       epochId: decodedLog[2],
       treeIndex: decodedLog[3],
     };

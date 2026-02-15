@@ -161,10 +161,10 @@ export interface MerklePath {
 }
 
 export function getMerklePath(
-  leaf: Uint8Array,
+  leaf: bigint,
   treeIndex: bigint,
-  subtree: Uint8Array[],
-  zeroHashes: Uint8Array[],
+  subtree: bigint[],
+  zeroHashes: bigint[],
 ): MerklePath {
   const pathElements: bigint[] = [];
   const pathSelectors: number[] = [];
@@ -179,14 +179,14 @@ export function getMerklePath(
     // - If right child: sibling is in subtree[level] (the left sibling stored from previous even index)
     // - If left child: sibling is zeroHashes[level] (no left sibling exists yet)
     const sibling = isRightChild ? subtree[level] : zeroHashes[level];
-    pathElements.push(bytesToNumberBE(sibling));
+    pathElements.push(sibling);
 
     // Move up to parent level
     index >>= 1n;
   }
 
   // Compute the root by traversing up the tree
-  let currentHash = bytesToNumberBE(leaf);
+  let currentHash = leaf;
   for (let i = 0; i < pathElements.length; i++) {
     const left = pathSelectors[i] === 0 ? currentHash : pathElements[i];
     const right = pathSelectors[i] === 0 ? pathElements[i] : currentHash;
