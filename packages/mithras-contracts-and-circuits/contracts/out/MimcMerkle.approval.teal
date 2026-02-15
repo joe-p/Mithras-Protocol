@@ -1,0 +1,24 @@
+#pragma version 11
+#pragma typetrack false
+
+// @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
+main:
+    // contracts/mimc_merkle.algo.ts:28-29
+    // @contract({ avmVersion: 11 })
+    // export class MimcMerkle extends Contract {
+    txn NumAppArgs
+    bnz main_after_if_else@7
+    txn OnCompletion
+    bnz main_after_if_else@7
+    txn ApplicationID
+    !
+    assert // can only call when creating
+    pushint 1 // 1
+    return
+
+main_after_if_else@7:
+    // contracts/mimc_merkle.algo.ts:28-29
+    // @contract({ avmVersion: 11 })
+    // export class MimcMerkle extends Contract {
+    pushint 0 // 0
+    return

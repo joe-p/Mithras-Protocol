@@ -1,19 +1,20 @@
 /target
 node_modules/
-packages/typescript/mithras-contracts-and-circuits/__test__/contracts/out/*
-packages/typescript/mithras-contracts-and-circuits/contracts/out/*
+packages/mithras-contracts-and-circuits/__test__/contracts/out/*
+packages/mithras-contracts-and-circuits/contracts/out/*
+!packages/mithras-contracts-and-circuits/contracts/out/Mithras.arc56.json
 *.dmypy
 
 # Keep approval programs so they have a record of past versions
-!packages/typescript/mithras-contracts-and-circuits/contracts/out/*.approval.teal
-!packages/typescript/mithras-contracts-and-circuits/__test__/contracts/out/*.approval.teal
+!packages/mithras-contracts-and-circuits/contracts/out/*.approval.teal
+!packages/mithras-contracts-and-circuits/__test__/contracts/out/*.approval.teal
 
 # Generated files from uniffi
-packages/typescript/*/rust_modules/
-packages/typescript/*/pkg/
+packages/*/rust_modules/
+packages/*/pkg/
 
-packages/typescript/mithras-contracts-and-circuits/ceremonies/*/*.ptau
-packages/typescript/mithras-contracts-and-circuits/circuits/*
+packages/mithras-contracts-and-circuits/ceremonies/*/*.ptau
+packages/mithras-contracts-and-circuits/circuits/*
 
-!packages/typescript/mithras-contracts-and-circuits/circuits/*.circom
-!packages/typescript/mithras-contracts-and-circuits/circuits/*.sh
+!packages/mithras-contracts-and-circuits/circuits/*.circom
+!packages/mithras-contracts-and-circuits/circuits/*.sh

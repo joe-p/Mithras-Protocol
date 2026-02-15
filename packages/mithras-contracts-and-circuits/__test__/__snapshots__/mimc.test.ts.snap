@@ -1,0 +1,7 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MiMC Circuit Tests > should match AVM output 1`] = `
+{
+  "out": 49105172669127360405434456472687549054927962593265498033454743191558675115881n,
+}
+`;
