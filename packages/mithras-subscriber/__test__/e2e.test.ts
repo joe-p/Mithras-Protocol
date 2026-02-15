@@ -21,10 +21,71 @@ describe("Mithras App", () => {
   let appClient: MithrasClient;
   let algorand: AlgorandClient;
   let depositor: Address;
-  let receiverDiscovery: DiscoveryKeypair;
-  let receivedSpendSeed: SpendSeed;
-  let receiver: MithrasAddr;
+
   let startRound: bigint;
+
+  const testSpend = async (
+    client: MithrasProtocolClient,
+    spender: MithrasAddr,
+    spenderSubscriber: MithrasSubscriber,
+    spenderSeed: SpendSeed,
+    spenderDisc: DiscoveryKeypair,
+    amount: bigint,
+  ) => {
+    const utxo = spenderSubscriber.utxos.entries().next().value;
+
+    const { secrets, treeIndex } = await algodUtxoLookup(
+      algorand.client.algod,
+      utxo[1],
+      spenderDisc,
+    );
+
+    const secondReceiverSpendSeed = SpendSeed.generate();
+    const secondReceiverDiscovery = DiscoveryKeypair.generate();
+
+    const secondReceiver = MithrasAddr.fromKeys(
+      secondReceiverSpendSeed.publicKey,
+      secondReceiverDiscovery.publicKey,
+      1,
+      0,
+      SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
+    );
+
+    const spendGroup = await client.composeSpendGroup(
+      spender,
+      spenderSeed,
+      secrets,
+      spenderSubscriber.getMerkleProof(treeIndex),
+      { receiver: secondReceiver, amount },
+    );
+
+    // NOTE: There seems to be a bug with the signer for the lsig, for some reason the lsig txn is getting a ed25519 sig
+    const innerComposer = await spendGroup.composer();
+    const { atc } = await innerComposer.build();
+    const txnsWithSigners = atc.buildGroup();
+    txnsWithSigners[0]!.signer = (
+      await client.spendVerifier.lsigAccount()
+    ).signer;
+
+    const populated = await populateAppCallResources(
+      atc,
+      algorand.client.algod,
+    );
+
+    await populated.execute(algorand.client.algod, 3);
+
+    const secondSubscriber = new MithrasSubscriber(
+      algorand.client.algod,
+      appClient.appId,
+      startRound,
+      secondReceiverDiscovery,
+      secondReceiverSpendSeed,
+    );
+
+    await secondSubscriber.subscriber.pollOnce();
+
+    expect(secondSubscriber.amount).toBe(amount);
+  };
 
   beforeAll(async () => {
     algorand = AlgorandClient.defaultLocalNet();
@@ -38,10 +99,14 @@ describe("Mithras App", () => {
       defaultSender: depositor,
     });
 
-    receiverDiscovery = DiscoveryKeypair.generate();
-    receivedSpendSeed = SpendSeed.generate();
+    startRound = (await algorand.client.algod.status().do()).lastRound;
+  });
 
-    receiver = MithrasAddr.fromKeys(
+  it("deposit and spend", async () => {
+    const receiverDiscovery = DiscoveryKeypair.generate();
+    const receivedSpendSeed = SpendSeed.generate();
+
+    const receiver = MithrasAddr.fromKeys(
       receivedSpendSeed.publicKey,
       receiverDiscovery.publicKey,
       1,
@@ -49,10 +114,6 @@ describe("Mithras App", () => {
       SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
     );
 
-    startRound = (await algorand.client.algod.status().do()).lastRound;
-  });
-
-  it("deposit and spend", async () => {
     const client = new MithrasProtocolClient(algorand, appClient.appId);
 
     const initialAmount = 500_000n;
@@ -91,58 +152,21 @@ describe("Mithras App", () => {
 
     const contractRoot = await appClient.state.global.lastComputedRoot();
 
+    expect(contractRoot).toEqual(subscriber.getMerkleRoot());
+
     const mt = new MimcMerkleTree();
 
     mt.addLeaf(bytesToNumberBE(secrets.computeCommitment()));
 
     expect(mt.getRoot()).toEqual(contractRoot);
 
-    const secondReceiverSpendSeed = SpendSeed.generate();
-    const secondReceiverDiscovery = DiscoveryKeypair.generate();
-
-    const secondReceiver = MithrasAddr.fromKeys(
-      secondReceiverSpendSeed.publicKey,
-      secondReceiverDiscovery.publicKey,
-      1,
-      0,
-      SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
-    );
-
-    expect(contractRoot).toEqual(subscriber.getMerkleRoot());
-
-    const spendGroup = await client.composeSpendGroup(
+    await testSpend(
+      client,
       receiver,
+      subscriber,
       receivedSpendSeed,
-      secrets,
-      subscriber.getMerkleProof(treeIndex),
-      { receiver: secondReceiver, amount: initialAmount / 2n },
+      receiverDiscovery,
+      initialAmount / 2n,
     );
-
-    // NOTE: There seems to be a bug with the signer for the lsig, for some reason the lsig txn is getting a ed25519 sig
-    const innerComposer = await spendGroup.composer();
-    const { atc } = await innerComposer.build();
-    const txnsWithSigners = atc.buildGroup();
-    txnsWithSigners[0]!.signer = (
-      await client.spendVerifier.lsigAccount()
-    ).signer;
-
-    const populated = await populateAppCallResources(
-      atc,
-      algorand.client.algod,
-    );
-
-    await populated.execute(algorand.client.algod, 3);
-
-    const secondSubscriber = new MithrasSubscriber(
-      algorand.client.algod,
-      appClient.appId,
-      startRound,
-      secondReceiverDiscovery,
-      secondReceiverSpendSeed,
-    );
-
-    await secondSubscriber.subscriber.pollOnce();
-
-    expect(secondSubscriber.amount).toBe(initialAmount / 2n);
   });
 });
