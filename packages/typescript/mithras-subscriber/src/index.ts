@@ -10,8 +10,10 @@ import {
   SpendSeed,
   TransactionMetadata,
   TweakedSigner,
+  UtxoInputs,
   UtxoSecrets,
 } from "../../mithras-crypto/src";
+import base32 from "hi-base32";
 
 const DEPOSIT_SIGNATURE =
   "deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)void";
@@ -81,9 +83,47 @@ export class MithrasMethod {
   }
 }
 
+export type UtxoInfo = {
+  amount: Uint8Array;
+  round: Uint8Array;
+  txid: Uint8Array;
+};
+
+export async function algodUtxoLookup(
+  algod: algosdk.Algodv2,
+  info: UtxoInfo,
+): Promise<void> {
+  const block = await algod.block(algosdk.decodeUint64(info.round)).do();
+  const transaction = block.block.payset.find((t) => {
+    const txn = t.signedTxn.signedTxn.txn;
+
+    // @ts-expect-error - readonly
+    txn.genesisHash = block.block.header.genesisHash;
+    // @ts-expect-error - readonly
+    txn.genesisID = block.block.header.genesisID;
+
+    return txn.txID() === base32.encode(info.txid);
+  });
+
+  const newLeafCall =
+    transaction?.signedTxn.applyData.evalDelta?.innerTxns.at(-1)?.signedTxn.txn
+      .applicationCall;
+}
+
 export class MithrasSubscriber {
   public amount: bigint = 0n;
-  public utxos: Map<Uint8Array, bigint> = new Map();
+  /**
+   * Maps nullifiers to the amount (BE uint64), round (BE uint64), and txid (raw 32 bytes) for the corresponding UTXO.
+   *
+   * To spend the UTXO, there needs to be a lookup of the transaction to get the merkle path from the
+   * NewLeaf "log" (inner txn args). The round is included to enable lookup of the transaction with
+   * an archival algod (and not a full indexer) by getting the block and then finding the tranasction
+   *
+   * The numbers are encoded as big-endian bytes so they have a fixed size in memory.
+   * Each map value is 8 (amount) + 8 (round) + 32 (txid) = 48 bytes
+   * so the memory usage of this map can be easily calculated based on the number of UTXOs stored.
+   */
+  public utxos: Map<Uint8Array, UtxoInfo> = new Map();
 
   constructor(
     algod: algosdk.Algodv2,
@@ -123,8 +163,8 @@ export class MithrasSubscriber {
 
       if (method.type === "spend") {
         if (this.utxos.has(method.nullifier!)) {
-          const amount = this.utxos.get(method.nullifier!)!;
-          this.amount -= amount;
+          const { amount } = this.utxos.get(method.nullifier!)!;
+          this.amount -= algosdk.decodeUint64(amount, "bigint");
           this.utxos.delete(method.nullifier!);
           return;
         }
@@ -159,7 +199,11 @@ export class MithrasSubscriber {
         if (this.utxos.has(nullifier)) {
           continue;
         } else {
-          this.utxos.set(nullifier, utxo.amount);
+          this.utxos.set(nullifier, {
+            round: algosdk.encodeUint64(txn.confirmedRound ?? 0n),
+            amount: algosdk.encodeUint64(utxo.amount),
+            txid: new Uint8Array(base32.decode.asBytes(txn.id)),
+          });
         }
 
         const derivedSigner = TweakedSigner.derive(spendSeed, utxo.tweakScalar);

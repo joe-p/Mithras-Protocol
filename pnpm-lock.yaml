@@ -84,6 +84,9 @@ importers:
       algosdk:
         specifier: ^3.5.2
         version: 3.5.2
+      hi-base32:
+        specifier: ^0.5.1
+        version: 0.5.1
     devDependencies:
       prettier:
         specifier: ^3.6.2

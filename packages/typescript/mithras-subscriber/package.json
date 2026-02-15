@@ -13,7 +13,8 @@
   "dependencies": {
     "@algorandfoundation/algokit-subscriber": "^3.2.0",
     "@algorandfoundation/algokit-utils": "^9.1.2",
-    "algosdk": "^3.5.2"
+    "algosdk": "^3.5.2",
+    "hi-base32": "^0.5.1"
   },
   "devDependencies": {
     "prettier": "^3.6.2"
