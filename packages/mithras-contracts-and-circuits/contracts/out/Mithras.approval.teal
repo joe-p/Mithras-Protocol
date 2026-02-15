@@ -18,7 +18,7 @@ main_after_if_else@12:
     err
 
 main_ensureBudget_route@8:
-    // contracts/mithras.algo.ts:172
+    // contracts/mithras.algo.ts:171
     // ensureBudget(budget: uint64) {
     txn OnCompletion
     !
@@ -30,7 +30,7 @@ main_ensureBudget_route@8:
     // export class Mithras extends MimcMerkle {
     txna ApplicationArgs 1
     btoi
-    // contracts/mithras.algo.ts:172
+    // contracts/mithras.algo.ts:171
     // ensureBudget(budget: uint64) {
     callsub ensureBudget
     intc_1 // 1
@@ -806,8 +806,6 @@ spend:
     //   verifierTxn: gtxn.Transaction,
     // ) {
     proto 5 0
-    intc_0 // 0
-    pushbytes ""
     // contracts/mithras.algo.ts:131
     // verifierTxn.sender === this.spendVerifier.value.native,
     frame_dig -1
@@ -847,11 +845,10 @@ spend:
     // return signals[idx];
     frame_dig -5
     extract 162 32
-    cover 2
     // contracts/mithras.algo.ts:80
     // nullifiers = BoxMap<Uint256, bytes<0>>({ keyPrefix: "n" });
     pushbytes "n"
-    uncover 2
+    uncover 3
     concat
     // contracts/mithras.algo.ts:142
     // assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
@@ -882,33 +879,35 @@ spend:
     -
     // contracts/mithras.algo.ts:150
     // assert(fee >= nullifierMbr, "Fee does not cover nullifier storage cost");
-    dup2
+    dig 2
+    dig 1
     >=
     assert // Fee does not cover nullifier storage cost
-    // contracts/mithras.algo.ts:152
-    // if (fee - nullifierMbr > 0) {
-    -
-    dup
-    bz spend_after_if_else@3
     // contracts/mithras.algo.ts:153-158
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
-    //     amount: fee - nullifierMbr,
+    //     amount: Global.minBalance + fee - nullifierMbr,
     //   })
     //   .submit();
     itxn_begin
     // contracts/mithras.algo.ts:155
     // receiver: Txn.sender,
     txn Sender
-    frame_dig 6
+    // contracts/mithras.algo.ts:156
+    // amount: Global.minBalance + fee - nullifierMbr,
+    global MinBalance
+    uncover 4
+    +
+    uncover 2
+    -
     itxn_field Amount
     itxn_field Receiver
     // contracts/mithras.algo.ts:153-157
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
-    //     amount: fee - nullifierMbr,
+    //     amount: Global.minBalance + fee - nullifierMbr,
     //   })
     intc_1 // 1
     itxn_field TypeEnum
@@ -918,20 +917,17 @@ spend:
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
-    //     amount: fee - nullifierMbr,
+    //     amount: Global.minBalance + fee - nullifierMbr,
     //   })
     //   .submit();
     itxn_submit
-
-spend_after_if_else@3:
-    // contracts/mithras.algo.ts:162
+    // contracts/mithras.algo.ts:161
     // BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
     txn Sender
     pushbytes 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
     b%
-    // contracts/mithras.algo.ts:164
+    // contracts/mithras.algo.ts:163
     // assert(spender.native === senderInScalarField, "Invalid spender");
-    frame_dig 5
     b==
     assert // Invalid spender
     // contracts/mimc_merkle.algo.ts:154
@@ -945,71 +941,68 @@ spend_after_if_else@3:
     // contracts/mimc_merkle.algo.ts:155
     // for (const validRoot of this.rootCache.value) {
     box_get
-    swap
-    frame_bury 0
     assert // Box must have value
     intc_0 // 0
-    frame_bury 1
 
-spend_for_header@5:
+spend_for_header@3:
     // contracts/mimc_merkle.algo.ts:155
     // for (const validRoot of this.rootCache.value) {
-    frame_dig 1
+    frame_dig 4
     pushint 50 // 50
     <
-    bz spend_after_for@10
-    frame_dig 1
+    bz spend_after_for@8
+    frame_dig 4
     intc_2 // 32
     *
-    frame_dig 0
+    frame_dig 3
     swap
     intc_2 // 32
     extract3 // on error: index access is out of bounds
     // contracts/mimc_merkle.algo.ts:156
     // if (root === validRoot) {
-    frame_dig 4
+    frame_dig 2
     ==
-    bz spend_after_if_else@8
+    bz spend_after_if_else@6
     // contracts/mimc_merkle.algo.ts:157
     // return true;
     intc_1 // 1
 
-spend_after_inlined_contracts/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@11:
-    // contracts/mithras.algo.ts:166
+spend_after_inlined_contracts/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@9:
+    // contracts/mithras.algo.ts:165
     // assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
     assert // Invalid UTXO root
-    // contracts/mithras.algo.ts:168
+    // contracts/mithras.algo.ts:167
     // this.addCommitment(out0Commitment);
-    frame_dig 2
+    frame_dig 0
     callsub addCommitment
-    // contracts/mithras.algo.ts:169
+    // contracts/mithras.algo.ts:168
     // this.addCommitment(out1Commitment);
-    frame_dig 3
+    frame_dig 1
     callsub addCommitment
     retsub
 
-spend_after_if_else@8:
-    frame_dig 1
+spend_after_if_else@6:
+    frame_dig 4
     intc_1 // 1
     +
-    frame_bury 1
-    b spend_for_header@5
+    frame_bury 4
+    b spend_for_header@3
 
-spend_after_for@10:
+spend_after_for@8:
     // contracts/mimc_merkle.algo.ts:161
     // return false;
     intc_0 // 0
-    // contracts/mithras.algo.ts:166
+    // contracts/mithras.algo.ts:165
     // assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
-    b spend_after_inlined_contracts/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@11
+    b spend_after_inlined_contracts/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@9
 
 
 // contracts/mithras.algo.ts::Mithras.ensureBudget(budget: uint64) -> void:
 ensureBudget:
-    // contracts/mithras.algo.ts:172
+    // contracts/mithras.algo.ts:171
     // ensureBudget(budget: uint64) {
     proto 1 0
-    // contracts/mithras.algo.ts:173
+    // contracts/mithras.algo.ts:172
     // ensureBudget(budget);
     frame_dig -1
     intc_0 // 0

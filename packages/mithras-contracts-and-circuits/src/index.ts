@@ -19,8 +19,8 @@ import { equalBytes } from "../../mithras-subscriber/src";
 const DEPOSIT_LSIGS = 7;
 const SPEND_LSIGS = 12;
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
-const SPEND_APP_FEE = 110n * 1000n;
-const DEPOSIT_APP_FEE = 53n * 1000n;
+const SPEND_APP_FEE = 57n * 1000n;
+const DEPOSIT_APP_FEE = 27n * 1000n;
 const APP_MBR = 1567900n;
 const BOOTSTRAP_FEE = 51n * 1000n;
 const NULLIFIER_MBR = 15_700n;
@@ -238,6 +238,7 @@ export class MithrasProtocolClient {
       receiver: addr,
       amount: microAlgos(0),
       extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE + 1000n),
+      closeRemainderTo: this.appClient.appAddress,
     });
 
     const fee = NULLIFIER_MBR + feePayment.fee;

@@ -149,14 +149,13 @@ export class Mithras extends MimcMerkle {
 
     assert(fee >= nullifierMbr, "Fee does not cover nullifier storage cost");
 
-    if (fee - nullifierMbr > 0) {
-      itxn
-        .payment({
-          receiver: Txn.sender,
-          amount: fee - nullifierMbr,
-        })
-        .submit();
-    }
+    // Send the fee to the sender so they can cover it later in the group. The assumption is that the sender is a 0 ALGO account
+    itxn
+      .payment({
+        receiver: Txn.sender,
+        amount: Global.minBalance + fee - nullifierMbr,
+      })
+      .submit();
 
     const senderInScalarField: biguint =
       BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
