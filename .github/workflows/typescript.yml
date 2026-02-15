@@ -60,8 +60,8 @@ jobs:
       - name: Build ${{ matrix.package }}
         if: matrix.package == 'mithras-contracts-and-circuits'
         run: pnpm build
-        working-directory: packages/typescript/${{ matrix.package }}
+        working-directory: packages/${{ matrix.package }}
 
       - name: Test ${{ matrix.package }}
         run: pnpm test
-        working-directory: packages/typescript/${{ matrix.package }}
+        working-directory: packages/${{ matrix.package }}
