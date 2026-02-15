@@ -243,7 +243,7 @@ export class MithrasProtocolClient {
 
     const sp = await this.algorand.getSuggestedParams();
     const txnMetadata = new TransactionMetadata(
-      spendSeed.publicKey,
+      tweakedSigner.publicKey,
       BigInt(sp.firstValid),
       BigInt(sp.lastValid),
       new Uint8Array(32),
@@ -303,7 +303,6 @@ export class MithrasProtocolClient {
       paramsCallback: async (params) => {
         const { lsigParams, args } = params;
 
-        console.debug("lsigSender", lsigParams.sender.toString());
         const verifierTxn = this.algorand.createTransaction.payment({
           ...lsigParams,
           receiver: lsigParams.sender,
@@ -320,6 +319,9 @@ export class MithrasProtocolClient {
             _out1Hpke: inputs1.hpkeEnvelope.toBytes(),
           },
           staticFee: microAlgos(0),
+          firstValidRound: txnMetadata.firstValid,
+          lastValidRound: txnMetadata.lastValid,
+          lease: txnMetadata.lease,
         });
       },
     });

@@ -52,7 +52,7 @@ describe("Mithras App", () => {
     startRound = (await algorand.client.algod.status().do()).lastRound;
   });
 
-  it("deposit", async () => {
+  it("deposit and spend", async () => {
     const client = new MithrasProtocolClient(algorand, appClient.appId);
 
     const initialAmount = 500_000n;
@@ -132,5 +132,17 @@ describe("Mithras App", () => {
     );
 
     await populated.execute(algorand.client.algod, 3);
+
+    const secondSubscriber = new MithrasSubscriber(
+      algorand.client.algod,
+      appClient.appId,
+      startRound,
+      secondReceiverDiscovery,
+      secondReceiverSpendSeed,
+    );
+
+    await secondSubscriber.subscriber.pollOnce();
+
+    expect(secondSubscriber.amount).toBe(initialAmount / 2n);
   });
 });
