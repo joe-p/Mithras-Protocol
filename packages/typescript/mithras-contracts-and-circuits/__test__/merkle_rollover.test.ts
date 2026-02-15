@@ -57,6 +57,7 @@ describe("Merkle rollover + sealed roots", () => {
     const emptyRootBytes = zeroHashes[TREE_DEPTH - 1];
     const { return: emptyOk } = await appClient.send.isValidRootTest({
       args: { root: emptyRootBytes },
+      extraFee: microAlgos(256 * 1000), // Extra fee for box read
     });
     expect(emptyOk).toBe(true);
 
@@ -85,6 +86,7 @@ describe("Merkle rollover + sealed roots", () => {
 
     const { return: isValid2 } = await appClient.send.isValidRootTest({
       args: { root: root2 },
+      extraFee: microAlgos(256 * 1000), // Extra fee for box read
     });
     expect(isValid2).toBe(true);
   });

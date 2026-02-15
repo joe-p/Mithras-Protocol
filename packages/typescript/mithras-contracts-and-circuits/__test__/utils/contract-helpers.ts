@@ -72,6 +72,7 @@ export class MimcMerkleHelper {
   ): Promise<boolean> {
     const result = await appClient.send.isValidSealedRootTest({
       args: { epochId, root },
+      extraFee: microAlgos(256 * 1000),
     });
 
     return result.return!;
@@ -94,6 +95,7 @@ export class MimcMerkleHelper {
   ): Promise<boolean> {
     const { return: isValid } = await appClient.send.isValidRootTest({
       args: { root },
+      extraFee: microAlgos(256 * 1000),
     });
     return isValid!;
   }

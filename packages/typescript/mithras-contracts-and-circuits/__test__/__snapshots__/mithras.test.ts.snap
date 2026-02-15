@@ -1,5 +1,5 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Mithras App > deposit > deposit app budget 1`] = `28775`;
+exports[`Mithras App > deposit > deposit app budget 1`] = `28736`;
 
-exports[`Mithras App > spend > spend app budget 1`] = `57559`;
+exports[`Mithras App > spend > spend app budget 1`] = `57518`;
