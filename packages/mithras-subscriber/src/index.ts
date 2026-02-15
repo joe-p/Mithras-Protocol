@@ -165,7 +165,7 @@ export async function algodUtxoLookup(
     );
   }
 
-  // The index in the global state delta is the next index to be used. This means that for a deposit (one commitment leaf), we need to substract one. For a spend (two commitment leaves, thus two increments), we need to first know whether or not we are spending the first or second commitment (out0 vs out1) and then substract either one or two.
+  // The index in the global state delta is the next index to be used. This means that for a deposit (one commitment leaf), we need to subtract one. For a spend (two commitment leaves, thus two increments), we need to first know whether or not we are spending the first or second commitment (out0 vs out1) and then subtract either one or two.
   if (method.type === "spend" && info.firstCommitment) {
     treeIndex -= 2;
   } else {
