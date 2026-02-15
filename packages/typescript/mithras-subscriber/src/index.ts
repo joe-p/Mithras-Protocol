@@ -8,6 +8,8 @@ import {
   bytesToNumberBE,
   DiscoveryKeypair,
   HpkeEnvelope,
+  MerklePath as MerkleProof,
+  MimcMerkleTree,
   SpendSeed,
   TransactionMetadata,
   TweakedSigner,
@@ -16,6 +18,8 @@ import {
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
 import { LeafInfo } from "../../mithras-contracts-and-circuits/src";
+import { MithrasClient } from "../../mithras-contracts-and-circuits/contracts/clients/Mithras";
+import appspec from "../../mithras-contracts-and-circuits/contracts/out/Mithras.arc56.json";
 
 const DEPOSIT_SIGNATURE =
   "deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)void";
@@ -111,7 +115,7 @@ export async function algodUtxoLookup(
   algod: algosdk.Algodv2,
   info: UtxoInfo,
   discvoveryKeypair: DiscoveryKeypair,
-): Promise<UtxoSecrets> {
+): Promise<{ secrets: UtxoSecrets; treeIndex: number }> {
   const block = await algod.block(algosdk.decodeUint64(info.round)).do();
   const transaction = block.block.payset.find((t) => {
     const txn = t.signedTxn.signedTxn.txn;
@@ -154,7 +158,27 @@ export async function algodUtxoLookup(
       txnMetadata,
     );
 
-    return secrets;
+    const delta = transaction?.signedTxn.applyData.evalDelta?.globalDelta;
+    const key = new TextEncoder().encode("i");
+
+    let index: bigint | null = null;
+
+    for (const [k, v] of delta ?? []) {
+      if (equalBytes(k, key)) {
+        index = v.uint;
+      }
+    }
+
+    if (index === null) {
+      throw new Error(
+        `Failed to find index in global delta for UTXO lookup: ${delta}`,
+      );
+    }
+
+    return {
+      secrets,
+      treeIndex: Number(index),
+    };
   }
 
   throw new Error("UTXO lookup is only supported for deposit transactions");
@@ -177,6 +201,8 @@ export class MithrasSubscriber {
 
   public subscriber: AlgorandSubscriber;
 
+  private merkleTree = new MimcMerkleTree();
+
   constructor(
     algod: algosdk.Algodv2,
     appId: bigint,
@@ -189,7 +215,9 @@ export class MithrasSubscriber {
     const filter: TransactionFilter = {
       appId,
       methodSignature: [DEPOSIT_SIGNATURE, SPEND_SIGNATURE],
+      arc28Events: [{ groupName: "mithras", eventName: "NewLeaf" }],
     };
+
     const config: AlgorandSubscriberConfig = {
       filters: [{ name: "mithras", filter }],
       syncBehaviour: "sync-oldest",
@@ -201,6 +229,12 @@ export class MithrasSubscriber {
           watermark = newWatermark;
         },
       },
+      arc28Events: [
+        {
+          groupName: "mithras",
+          events: appspec.events,
+        },
+      ],
     };
     this.subscriber = new AlgorandSubscriber(config, algod);
 
@@ -208,6 +242,11 @@ export class MithrasSubscriber {
       console.debug(
         `Processing transaction ${txn.id} in round ${txn.confirmedRound}`,
       );
+
+      for (const event of txn.arc28Events!) {
+        const { leaf } = event.argsByName;
+        this.merkleTree.addLeaf(leaf as bigint);
+      }
       const appl = txn.applicationTransaction!;
 
       const method = MithrasMethod.fromArgs(appl.applicationArgs!);
@@ -291,5 +330,13 @@ export class MithrasSubscriber {
 
   start() {
     this.subscriber.start();
+  }
+
+  getMerkleProof(leafIndex: number): MerkleProof {
+    return this.merkleTree.getMerklePath(leafIndex);
+  }
+
+  getMerkleRoot(): bigint {
+    return this.merkleTree.getRoot();
   }
 }

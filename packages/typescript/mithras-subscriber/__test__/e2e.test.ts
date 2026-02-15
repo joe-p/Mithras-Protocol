@@ -72,20 +72,22 @@ describe("Mithras App", () => {
 
     const utxo = subscriber.utxos.entries().next().value;
 
-    const utxoSecrets = await algodUtxoLookup(
+    const { secrets } = await algodUtxoLookup(
       algorand.client.algod,
       utxo[1],
       receiverDiscovery,
     );
 
-    expect(utxoSecrets.amount).toBe(1n);
+    expect(secrets.amount).toBe(1n);
 
     const contractRoot = await appClient.state.global.lastComputedRoot();
 
     const mt = new MimcMerkleTree();
 
-    mt.addLeaf(bytesToNumberBE(utxoSecrets.computeCommitment()));
+    mt.addLeaf(bytesToNumberBE(secrets.computeCommitment()));
 
     expect(mt.getRoot()).toEqual(contractRoot);
+
+    expect(contractRoot).toEqual(subscriber.getMerkleRoot());
   });
 });
