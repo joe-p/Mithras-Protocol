@@ -5,7 +5,6 @@ import {
 } from "@algorandfoundation/algokit-subscriber/types/subscription";
 import algosdk from "algosdk";
 import {
-  bytesToNumberBE,
   DiscoveryKeypair,
   HpkeEnvelope,
   MerkleProof as MerkleProof,
@@ -13,12 +12,10 @@ import {
   SpendSeed,
   TransactionMetadata,
   TweakedSigner,
-  UtxoInputs,
   UtxoSecrets,
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
-import { LeafInfo } from "../../mithras-contracts-and-circuits/src";
-import { MithrasClient } from "../../mithras-contracts-and-circuits/contracts/clients/Mithras";
+
 import appspec from "../../mithras-contracts-and-circuits/contracts/out/Mithras.arc56.json";
 
 const DEPOSIT_SIGNATURE =
