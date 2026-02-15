@@ -85,4 +85,4 @@ template Spend(DEPTH) {
     utxo_nullifier <== H_null.out;
 }
 
-component main {public [fee, utxo_spender]} = Spend(24);
+component main {public [fee, utxo_spender]} = Spend(16);
