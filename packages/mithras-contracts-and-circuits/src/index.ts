@@ -257,7 +257,14 @@ export class MithrasProtocolClient {
       out0.receiver,
     );
 
+    if (out0.amount + fee > utxoSecrets.amount) {
+      throw new Error(
+        `out0 amount plus fee cannot exceed input amount. Got ${out0.amount} + ${fee} > ${utxoSecrets.amount}`,
+      );
+    }
+
     const out1Amount = out1?.amount ?? utxoSecrets.amount - out0.amount - fee;
+
     if (
       out1 !== undefined &&
       out0.amount + out1.amount !== utxoSecrets.amount - fee

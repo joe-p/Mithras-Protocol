@@ -9,12 +9,8 @@ import { Address } from "algosdk";
 import { MithrasProtocolClient } from "../../mithras-contracts-and-circuits/src";
 import {
   bytesToNumberBE,
-  DiscoveryKeypair,
   MimcMerkleTree,
   MithrasAccount,
-  MithrasAddr,
-  SpendSeed,
-  SupportedHpkeSuite,
 } from "../../mithras-crypto/src";
 import { algodUtxoLookup, MithrasSubscriber } from "../src";
 
@@ -41,23 +37,14 @@ describe("Mithras App", () => {
       spenderDisc,
     );
 
-    const secondReceiverSpendSeed = SpendSeed.generate();
-    const secondReceiverDiscovery = DiscoveryKeypair.generate();
-
-    const secondReceiver = MithrasAddr.fromKeys(
-      secondReceiverSpendSeed.publicKey,
-      secondReceiverDiscovery.publicKey,
-      1,
-      0,
-      SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
-    );
+    const receiver = MithrasAccount.generate();
 
     const spendGroup = await client.composeSpendGroup(
       spender.address,
       spenderSeed,
       secrets,
       spenderSubscriber.getMerkleProof(treeIndex),
-      { receiver: secondReceiver, amount },
+      { receiver: receiver.address, amount },
     );
 
     // NOTE: There seems to be a bug with the signer for the lsig, for some reason the lsig txn is getting a ed25519 sig
@@ -75,17 +62,19 @@ describe("Mithras App", () => {
 
     await populated.execute(algorand.client.algod, 3);
 
-    const secondSubscriber = new MithrasSubscriber(
+    const receiversSubscriber = new MithrasSubscriber(
       algorand.client.algod,
       appClient.appId,
       startRound,
-      secondReceiverDiscovery,
-      secondReceiverSpendSeed,
+      receiver.discoveryKeypair,
+      receiver.spendSeed,
     );
 
-    await secondSubscriber.subscriber.pollOnce();
+    await receiversSubscriber.subscriber.pollOnce();
 
-    expect(secondSubscriber.amount).toBe(amount);
+    expect(receiversSubscriber.amount).toBe(amount);
+
+    return { receiver, receiversSubscriber };
   };
 
   beforeAll(async () => {
@@ -104,15 +93,15 @@ describe("Mithras App", () => {
   });
 
   it("deposit and spend", async () => {
-    const receiver = MithrasAccount.generate();
+    const initialReceiver = MithrasAccount.generate();
     const client = new MithrasProtocolClient(algorand, appClient.appId);
 
-    const initialAmount = 500_000n;
+    const initialAmount = 1_000_000n;
 
     const { group: depositGroup } = await client.composeDepositGroup(
       depositor,
       initialAmount,
-      receiver.address,
+      initialReceiver.address,
     );
 
     await depositGroup.send();
@@ -121,8 +110,8 @@ describe("Mithras App", () => {
       algorand.client.algod,
       appClient.appId,
       startRound,
-      receiver.discoveryKeypair,
-      receiver.spendSeed,
+      initialReceiver.discoveryKeypair,
+      initialReceiver.spendSeed,
     );
 
     expect(subscriber.amount).toBe(0n);
@@ -136,7 +125,7 @@ describe("Mithras App", () => {
     const { secrets } = await algodUtxoLookup(
       algorand.client.algod,
       utxo[1],
-      receiver.discoveryKeypair,
+      initialReceiver.discoveryKeypair,
     );
 
     expect(secrets.amount).toBe(initialAmount);
@@ -151,6 +140,21 @@ describe("Mithras App", () => {
 
     expect(mt.getRoot()).toEqual(contractRoot);
 
-    await testSpend(client, receiver, subscriber, initialAmount / 2n);
+    const {
+      receiver: secondReceiver,
+      receiversSubscriber: secondReceiversSubscriber,
+    } = await testSpend(
+      client,
+      initialReceiver,
+      subscriber,
+      initialAmount / 2n,
+    );
+
+    await testSpend(
+      client,
+      secondReceiver,
+      secondReceiversSubscriber,
+      initialAmount / 4n,
+    );
   });
 });
