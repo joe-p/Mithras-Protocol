@@ -11,6 +11,7 @@ import {
   bytesToNumberBE,
   DiscoveryKeypair,
   MimcMerkleTree,
+  MithrasAccount,
   MithrasAddr,
   SpendSeed,
   SupportedHpkeSuite,
@@ -26,13 +27,13 @@ describe("Mithras App", () => {
 
   const testSpend = async (
     client: MithrasProtocolClient,
-    spender: MithrasAddr,
+    spender: MithrasAccount,
     spenderSubscriber: MithrasSubscriber,
-    spenderSeed: SpendSeed,
-    spenderDisc: DiscoveryKeypair,
     amount: bigint,
   ) => {
     const utxo = spenderSubscriber.utxos.entries().next().value;
+    const spenderDisc = spender.discoveryKeypair;
+    const spenderSeed = spender.spendSeed;
 
     const { secrets, treeIndex } = await algodUtxoLookup(
       algorand.client.algod,
@@ -52,7 +53,7 @@ describe("Mithras App", () => {
     );
 
     const spendGroup = await client.composeSpendGroup(
-      spender,
+      spender.address,
       spenderSeed,
       secrets,
       spenderSubscriber.getMerkleProof(treeIndex),
@@ -103,17 +104,7 @@ describe("Mithras App", () => {
   });
 
   it("deposit and spend", async () => {
-    const receiverDiscovery = DiscoveryKeypair.generate();
-    const receivedSpendSeed = SpendSeed.generate();
-
-    const receiver = MithrasAddr.fromKeys(
-      receivedSpendSeed.publicKey,
-      receiverDiscovery.publicKey,
-      1,
-      0,
-      SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
-    );
-
+    const receiver = MithrasAccount.generate();
     const client = new MithrasProtocolClient(algorand, appClient.appId);
 
     const initialAmount = 500_000n;
@@ -121,7 +112,7 @@ describe("Mithras App", () => {
     const { group: depositGroup } = await client.composeDepositGroup(
       depositor,
       initialAmount,
-      receiver,
+      receiver.address,
     );
 
     await depositGroup.send();
@@ -130,8 +121,8 @@ describe("Mithras App", () => {
       algorand.client.algod,
       appClient.appId,
       startRound,
-      receiverDiscovery,
-      receivedSpendSeed,
+      receiver.discoveryKeypair,
+      receiver.spendSeed,
     );
 
     expect(subscriber.amount).toBe(0n);
@@ -142,10 +133,10 @@ describe("Mithras App", () => {
 
     const utxo = subscriber.utxos.entries().next().value;
 
-    const { secrets, treeIndex } = await algodUtxoLookup(
+    const { secrets } = await algodUtxoLookup(
       algorand.client.algod,
       utxo[1],
-      receiverDiscovery,
+      receiver.discoveryKeypair,
     );
 
     expect(secrets.amount).toBe(initialAmount);
@@ -160,13 +151,6 @@ describe("Mithras App", () => {
 
     expect(mt.getRoot()).toEqual(contractRoot);
 
-    await testSpend(
-      client,
-      receiver,
-      subscriber,
-      receivedSpendSeed,
-      receiverDiscovery,
-      initialAmount / 2n,
-    );
+    await testSpend(client, receiver, subscriber, initialAmount / 2n);
   });
 });
