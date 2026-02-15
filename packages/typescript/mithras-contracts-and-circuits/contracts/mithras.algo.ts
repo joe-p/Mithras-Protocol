@@ -18,6 +18,7 @@ import {
   FixedArray,
   Application,
   clone,
+  emit,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "./mimc_merkle.algo";
 import {
@@ -63,29 +64,18 @@ export type PlonkProof = {
   eval_zw: Uint256;
 };
 
+/**
+ * Event emitted when a new leaf is added to the tree. Global state deltas will contain the new index and root
+ */
 type NewLeaf = {
   leaf: Uint256;
-  subtree: FixedArray<Uint256, typeof TREE_DEPTH>;
   epochId: uint64;
-  treeIndex: uint64;
 };
-
-/**
- * The AVM has a 1k log limit. Each NewLeaf log is about 800 bytes, so we can only log one per app call.
- * To work around this, we have a separate contract that we call from the outer contract and use the args
- * as a way to log the events. This breaks compatibility with ARC28, but that is an acceptable tradeoff
- * as parsing the args from the inner transactions will be fairly straightforward
- */
-export class MithrasLogger extends Contract {
-  newLeaf(_newLeaf: NewLeaf) {}
-  newLeaf2(_newLeaf: NewLeaf, _newLeaf2: NewLeaf) {}
-}
 
 @contract({ avmVersion: 11 })
 export class Mithras extends MimcMerkle {
   depositVerifier = GlobalState<Address>({ key: "d" });
   spendVerifier = GlobalState<Address>({ key: "s" });
-  logger = GlobalState<Application>({ key: "l" });
 
   nullifiers = BoxMap<Uint256, bytes<0>>({ keyPrefix: "n" });
 
@@ -95,10 +85,15 @@ export class Mithras extends MimcMerkle {
   }
 
   bootstrapMerkleTree() {
-    const loggerClient = compileArc4(MithrasLogger, {});
     this.bootstrap();
-    const res = loggerClient.bareCreate();
-    this.logger.value = res.createdApp;
+  }
+
+  addCommitment(commitment: Uint256) {
+    this.addLeaf(commitment);
+    emit<NewLeaf>({
+      leaf: commitment,
+      epochId: this.epochId.value,
+    });
   }
 
   deposit(
@@ -113,21 +108,7 @@ export class Mithras extends MimcMerkle {
     const commitment = getSignal(signals, 0);
     const amount = op.extractUint64(getSignal(signals, 1).bytes, 24);
 
-    this.addLeaf(commitment);
-
-    const loggerClient = compileArc4(MithrasLogger, {});
-
-    const newLeaf: NewLeaf = {
-      leaf: commitment,
-      subtree: clone(this.subtree.value),
-      epochId: this.epochId.value,
-      treeIndex: this.treeIndex.value - 1,
-    };
-
-    loggerClient.call.newLeaf({
-      appId: this.logger.value,
-      args: [newLeaf],
-    });
+    this.addCommitment(commitment);
 
     assertMatch(
       deposit,
@@ -184,28 +165,8 @@ export class Mithras extends MimcMerkle {
 
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 
-    const loggerClient = compileArc4(MithrasLogger, {});
-
-    this.addLeaf(out0Commitment);
-    const newLeaf0: NewLeaf = {
-      leaf: out0Commitment,
-      subtree: clone(this.subtree.value),
-      epochId: this.epochId.value,
-      treeIndex: this.treeIndex.value - 1,
-    };
-
-    this.addLeaf(out1Commitment);
-    const newLeaf1: NewLeaf = {
-      leaf: out1Commitment,
-      subtree: clone(this.subtree.value),
-      epochId: this.epochId.value,
-      treeIndex: this.treeIndex.value - 1,
-    };
-
-    loggerClient.call.newLeaf2({
-      appId: this.logger.value,
-      args: [newLeaf0, newLeaf1],
-    });
+    this.addCommitment(out0Commitment);
+    this.addCommitment(out1Commitment);
   }
 
   ensureBudget(budget: uint64) {

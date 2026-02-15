@@ -111,7 +111,7 @@ export async function algodUtxoLookup(
   algod: algosdk.Algodv2,
   info: UtxoInfo,
   discvoveryKeypair: DiscoveryKeypair,
-): Promise<{ leafInfo: LeafInfo; secrets: UtxoSecrets }> {
+): Promise<UtxoSecrets> {
   const block = await algod.block(algosdk.decodeUint64(info.round)).do();
   const transaction = block.block.payset.find((t) => {
     const txn = t.signedTxn.signedTxn.txn;
@@ -135,18 +135,7 @@ export async function algodUtxoLookup(
     throw new Error("Failed to parse method from transaction application call");
   }
 
-  const newLeafCall =
-    transaction?.signedTxn.applyData.evalDelta?.innerTxns.at(-1)?.signedTxn.txn
-      .applicationCall;
-
   if (method.type === "deposit") {
-    const logType = algosdk.ABIType.from("(uint256,uint256[24],uint64,uint64)");
-    const log = newLeafCall?.appArgs[1];
-
-    if (log === undefined) {
-      throw new Error("No log found in inner transaction for deposit method");
-    }
-
     const hpkeEnv = method.hpke_envelopes[0];
 
     const txn = transaction?.signedTxn.signedTxn.txn!;
@@ -165,15 +154,7 @@ export async function algodUtxoLookup(
       txnMetadata,
     );
 
-    const decodedLog = logType.decode(log);
-    const leafInfo = {
-      leaf: decodedLog[0],
-      subtree: decodedLog[1],
-      epochId: decodedLog[2],
-      treeIndex: decodedLog[3],
-    };
-
-    return { leafInfo, secrets };
+    return secrets;
   }
 
   throw new Error("UTXO lookup is only supported for deposit transactions");

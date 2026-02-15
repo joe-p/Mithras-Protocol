@@ -5,8 +5,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { Address } from "algosdk";
 import { MithrasProtocolClient } from "../../mithras-contracts-and-circuits/src";
 import {
+  bytesToNumberBE,
   DiscoveryKeypair,
-  getMerklePath,
+  MimcMerkleTree,
   MithrasAddr,
   SpendSeed,
   SupportedHpkeSuite,
@@ -71,27 +72,20 @@ describe("Mithras App", () => {
 
     const utxo = subscriber.utxos.entries().next().value;
 
-    const utxoInfo = await algodUtxoLookup(
+    const utxoSecrets = await algodUtxoLookup(
       algorand.client.algod,
       utxo[1],
       receiverDiscovery,
     );
 
-    expect(utxoInfo.secrets.amount).toBe(1n);
-    expect(utxoInfo.leafInfo.epochId).toBe(0n);
-    expect(utxoInfo.leafInfo.treeIndex).toBe(0n);
-
-    const zeroHashes = await appClient.state.box.zeroHashes();
-
-    const path = getMerklePath(
-      utxoInfo.leafInfo.leaf,
-      utxoInfo.leafInfo.treeIndex,
-      utxoInfo.leafInfo.subtree,
-      zeroHashes!,
-    );
+    expect(utxoSecrets.amount).toBe(1n);
 
     const contractRoot = await appClient.state.global.lastComputedRoot();
 
-    expect(path.root).toEqual(contractRoot!);
+    const mt = new MimcMerkleTree();
+
+    mt.addLeaf(bytesToNumberBE(utxoSecrets.computeCommitment()));
+
+    expect(mt.getRoot()).toEqual(contractRoot);
   });
 });

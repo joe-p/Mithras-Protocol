@@ -13,6 +13,7 @@ import {
   Global,
   BoxMap,
   BigUint,
+  emit,
 } from "@algorandfoundation/algorand-typescript";
 import { TREE_DEPTH } from "../src/constants";
 import { Uint, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";

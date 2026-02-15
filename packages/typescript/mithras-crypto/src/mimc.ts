@@ -160,42 +160,127 @@ export interface MerklePath {
   root: bigint;
 }
 
-export function getMerklePath(
-  leaf: bigint,
-  treeIndex: bigint,
-  subtree: bigint[],
-  zeroHashes: bigint[],
-): MerklePath {
-  const pathElements: bigint[] = [];
-  const pathSelectors: number[] = [];
-  let index = treeIndex;
+export class MimcMerkleTree {
+  private leaves: bigint[] = [];
+  private tree: bigint[][] = [];
+  private zeroHashes: bigint[];
 
-  for (let level = 0; level < TREE_DEPTH; level++) {
-    // Determine if current node is left (0) or right (1) child
-    const isRightChild = (index & 1n) === 1n;
-    pathSelectors.push(isRightChild ? 1 : 0);
-
-    // Get sibling hash:
-    // - If right child: sibling is in subtree[level] (the left sibling stored from previous even index)
-    // - If left child: sibling is zeroHashes[level] (no left sibling exists yet)
-    const sibling = isRightChild ? subtree[level] : zeroHashes[level];
-    pathElements.push(sibling);
-
-    // Move up to parent level
-    index >>= 1n;
+  constructor(zeroHashes?: bigint[]) {
+    if (zeroHashes) {
+      this.zeroHashes = [...zeroHashes];
+    } else {
+      this.zeroHashes = this.computeZeroHashes();
+    }
+    this.initializeTree();
   }
 
-  // Compute the root by traversing up the tree
-  let currentHash = leaf;
-  for (let i = 0; i < pathElements.length; i++) {
-    const left = pathSelectors[i] === 0 ? currentHash : pathElements[i];
-    const right = pathSelectors[i] === 0 ? pathElements[i] : currentHash;
-    currentHash = mimcSum([left, right]);
+  private computeZeroHashes(): bigint[] {
+    const zeros: bigint[] = [];
+    let currentZero = 0n;
+    for (let i = 0; i < TREE_DEPTH; i++) {
+      zeros.push(currentZero);
+      currentZero = mimcSum([currentZero, currentZero]);
+    }
+    return zeros;
   }
 
-  return {
-    pathElements,
-    pathSelectors,
-    root: currentHash,
-  };
+  private initializeTree(): void {
+    this.tree = [];
+    for (let level = 0; level < TREE_DEPTH; level++) {
+      this.tree.push([]);
+    }
+  }
+
+  addLeaf(leaf: bigint): number {
+    const index = this.leaves.length;
+    this.leaves.push(leaf);
+    this.updateTree(index, leaf);
+    return index;
+  }
+
+  private updateTree(leafIndex: number, leafValue: bigint): void {
+    let currentHash = leafValue;
+    let index = BigInt(leafIndex);
+
+    for (let level = 0; level < TREE_DEPTH; level++) {
+      const isRightChild = (index & 1n) === 1n;
+
+      if (isRightChild) {
+        const leftSibling = this.tree[level][this.tree[level].length - 1];
+        currentHash = mimcSum([leftSibling, currentHash]);
+      } else {
+        this.tree[level].push(currentHash);
+        currentHash = mimcSum([currentHash, this.zeroHashes[level]]);
+      }
+
+      index >>= 1n;
+    }
+  }
+
+  getRoot(): bigint {
+    if (this.leaves.length === 0) {
+      return this.zeroHashes[TREE_DEPTH - 1];
+    }
+
+    let currentHash = this.leaves[0];
+    let index = 0n;
+
+    for (let level = 0; level < TREE_DEPTH; level++) {
+      const isRightChild = (index & 1n) === 1n;
+      const sibling = isRightChild
+        ? this.tree[level][Number(index - 1n)]
+        : this.zeroHashes[level];
+
+      currentHash = isRightChild
+        ? mimcSum([sibling, currentHash])
+        : mimcSum([currentHash, sibling]);
+
+      index >>= 1n;
+    }
+
+    return currentHash;
+  }
+
+  getMerklePath(leafIndex: number): MerklePath {
+    if (leafIndex < 0 || leafIndex >= this.leaves.length) {
+      throw new Error(`Leaf index ${leafIndex} out of bounds`);
+    }
+
+    const pathElements: bigint[] = [];
+    const pathSelectors: number[] = [];
+    let index = BigInt(leafIndex);
+
+    for (let level = 0; level < TREE_DEPTH; level++) {
+      const isRightChild = (index & 1n) === 1n;
+      pathSelectors.push(isRightChild ? 1 : 0);
+
+      const sibling = isRightChild
+        ? this.tree[level][Number(index - 1n)]
+        : this.zeroHashes[level];
+      pathElements.push(sibling);
+
+      index >>= 1n;
+    }
+
+    let currentHash = this.leaves[leafIndex];
+    for (let i = 0; i < pathElements.length; i++) {
+      const left = pathSelectors[i] === 0 ? currentHash : pathElements[i];
+      const right = pathSelectors[i] === 0 ? pathElements[i] : currentHash;
+      currentHash = mimcSum([left, right]);
+    }
+
+    return {
+      pathElements,
+      pathSelectors,
+      root: currentHash,
+    };
+  }
+
+  getLeaves(): bigint[] {
+    return [...this.leaves];
+  }
+
+  getLeafCount(): number {
+    return this.leaves.length;
+  }
 }
