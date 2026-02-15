@@ -2,6 +2,7 @@
 node_modules/
 packages/typescript/mithras-contracts-and-circuits/__test__/contracts/out/*
 packages/typescript/mithras-contracts-and-circuits/contracts/out/*
+!packages/typescript/mithras-contracts-and-circuits/contracts/out/Mithras.arc56.json
 *.dmypy
 
 # Keep approval programs so they have a record of past versions
