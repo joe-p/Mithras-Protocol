@@ -1,30 +1,21 @@
-import {
-  AlgorandClient,
-  populateAppCallResources,
-} from "@algorandfoundation/algokit-utils";
+import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { MithrasClient } from "../../mithras-contracts-and-circuits/contracts/clients/Mithras";
 
 import { beforeAll, describe, expect, it } from "vitest";
 import { Address } from "algosdk";
 import { MithrasProtocolClient } from "../../mithras-contracts-and-circuits/src";
-import {
-  bytesToNumberBE,
-  MimcMerkleTree,
-  MithrasAccount,
-} from "../../mithras-crypto/src";
-import { algodUtxoLookup, MithrasSubscriber } from "../src";
+import { MithrasAccount } from "../../mithras-crypto/src";
+import { algodUtxoLookup, BalanceAndTreeSubscriber } from "../src";
 
 describe("Mithras App", () => {
   let appClient: MithrasClient;
   let algorand: AlgorandClient;
   let depositor: Address;
 
-  let startRound: bigint;
-
   const testSpend = async (
     client: MithrasProtocolClient,
     spender: MithrasAccount,
-    spenderSubscriber: MithrasSubscriber,
+    spenderSubscriber: BalanceAndTreeSubscriber,
     amount: bigint,
   ) => {
     const utxo = spenderSubscriber.utxos.entries().next().value;
@@ -43,7 +34,7 @@ describe("Mithras App", () => {
       spender.address,
       spenderKeypair,
       secrets,
-      spenderSubscriber.getMerkleProof(treeIndex),
+      spenderSubscriber.merkleTree.getMerkleProof(treeIndex),
       { receiver: receiver.address, amount },
     );
 
@@ -60,13 +51,12 @@ describe("Mithras App", () => {
 
     await composer.send();
 
-    const receiversSubscriber = new MithrasSubscriber(
-      algorand.client.algod,
-      appClient.appId,
-      startRound,
-      receiver.discoveryKeypair,
-      receiver.spendKeypair,
-    );
+    const receiversSubscriber = await BalanceAndTreeSubscriber.fromAppId({
+      algod: algorand.client.algod,
+      appId: appClient.appId,
+      discoveryKeypair: receiver.discoveryKeypair,
+      spendKeypair: receiver.spendKeypair,
+    });
 
     await receiversSubscriber.subscriber.pollOnce();
 
@@ -86,8 +76,6 @@ describe("Mithras App", () => {
       appId: deployment.appClient.appId,
       defaultSender: depositor,
     });
-
-    startRound = (await algorand.client.algod.status().do()).lastRound;
   });
 
   it("deposit and spend", async () => {
@@ -104,13 +92,12 @@ describe("Mithras App", () => {
 
     await depositGroup.send();
 
-    const subscriber = new MithrasSubscriber(
-      algorand.client.algod,
-      appClient.appId,
-      startRound,
-      initialReceiver.discoveryKeypair,
-      initialReceiver.spendKeypair,
-    );
+    const subscriber = await BalanceAndTreeSubscriber.fromAppId({
+      algod: algorand.client.algod,
+      appId: appClient.appId,
+      discoveryKeypair: initialReceiver.discoveryKeypair,
+      spendKeypair: initialReceiver.spendKeypair,
+    });
 
     expect(subscriber.amount).toBe(0n);
 
@@ -130,13 +117,7 @@ describe("Mithras App", () => {
 
     const contractRoot = await appClient.state.global.lastComputedRoot();
 
-    expect(contractRoot).toEqual(subscriber.getMerkleRoot());
-
-    const mt = new MimcMerkleTree();
-
-    mt.addLeaf(bytesToNumberBE(secrets.computeCommitment()));
-
-    expect(mt.getRoot()).toEqual(contractRoot);
+    expect(contractRoot).toEqual(subscriber.merkleTree.getRoot());
 
     const {
       receiver: secondReceiver,

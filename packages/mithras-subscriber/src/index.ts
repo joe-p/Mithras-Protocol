@@ -185,8 +185,20 @@ export async function algodUtxoLookup(
   };
 }
 
-export class MithrasSubscriber {
-  public amount: bigint = 0n;
+export type BalanceSubscriberConfig = {
+  discoveryKeypair: DiscoveryKeypair;
+  spendKeypair: SpendKeypair;
+};
+
+export type MerkleTreeSubscriberConfig = {
+  merkleTree?: MimcMerkleTree;
+};
+
+export type BalanceAndTreeSubscriberConfig = BalanceSubscriberConfig &
+  MerkleTreeSubscriberConfig;
+
+type BalanceState = {
+  amount: bigint;
   /**
    * Maps nullifiers to the amount (BE uint64), round (BE uint64), and txid (raw 32 bytes) for the corresponding UTXO.
    *
@@ -198,20 +210,82 @@ export class MithrasSubscriber {
    * Each map value is 8 (amount) + 8 (round) + 32 (txid) = 48 bytes
    * so the memory usage of this map can be easily calculated based on the number of UTXOs stored.
    */
-  public utxos: Map<Uint8Array, UtxoInfo> = new Map();
+  utxos: Map<Uint8Array, UtxoInfo>;
+};
 
+type BaseSubscriberConfig = {
+  appId: bigint;
+  algod: algosdk.Algodv2;
+  startRound?: bigint;
+};
+
+type BaseSubscriberOptions = {
+  algod: algosdk.Algodv2;
+  appId: bigint;
+  startRound: bigint;
+  discoveryKeypair?: DiscoveryKeypair;
+  spendKeypair?: SpendKeypair;
+  merkleTree?: MimcMerkleTree;
+  balanceState?: BalanceState;
+};
+
+async function resolveStartRound(config: {
+  appId: bigint;
+  algod: algosdk.Algodv2;
+  startRound?: bigint;
+  merkleTree?: MimcMerkleTree;
+}): Promise<bigint> {
+  const { appId, algod } = config;
+
+  let creationRound: bigint | undefined = undefined;
+
+  if (config.startRound === undefined) {
+    if (config.merkleTree && config.merkleTree.getLeafCount() > 0) {
+      throw new Error(
+        "When starting the subscriber with a pre-constructed Merkle tree, the startRound must be provided",
+      );
+    }
+
+    for (const g of (await algod.getApplicationByID(appId).do()).params
+      .globalState ?? []) {
+      if (new TextDecoder().decode(g.key) === "cr") {
+        creationRound = BigInt(g.value.uint);
+        console.debug(
+          `Found creation round ${creationRound} in application global state`,
+        );
+        break;
+      }
+    }
+
+    if (creationRound === undefined) {
+      throw new Error(
+        "Failed to find creation round in application global state",
+      );
+    }
+  }
+
+  return config.startRound ?? creationRound!;
+}
+
+class BaseMithrasSubscriber {
   public subscriber: AlgorandSubscriber;
+  protected merkleTree?: MimcMerkleTree;
+  protected balanceState?: BalanceState;
 
-  private merkleTree = new MimcMerkleTree();
-
-  constructor(
-    algod: algosdk.Algodv2,
-    appId: bigint,
-    startRound: bigint,
-    discoveryKeypair: DiscoveryKeypair,
-    spendKeypair: SpendKeypair,
-  ) {
+  protected constructor(options: BaseSubscriberOptions) {
+    const {
+      algod,
+      appId,
+      startRound,
+      discoveryKeypair,
+      spendKeypair,
+      merkleTree,
+      balanceState,
+    } = options;
     let watermark = startRound;
+
+    this.merkleTree = merkleTree;
+    this.balanceState = balanceState;
 
     const filter: TransactionFilter = {
       appId,
@@ -244,10 +318,24 @@ export class MithrasSubscriber {
         `Processing transaction ${txn.id} in round ${txn.confirmedRound}`,
       );
 
-      for (const event of txn.arc28Events!) {
-        const { leaf } = event.argsByName;
-        this.merkleTree.addLeaf(leaf as bigint);
+      if (this.merkleTree) {
+        for (const event of txn.arc28Events!) {
+          const { leaf } = event.argsByName;
+          this.merkleTree.addLeaf(leaf as bigint);
+        }
       }
+
+      if (
+        balanceState === undefined ||
+        discoveryKeypair === undefined ||
+        spendKeypair === undefined
+      ) {
+        console.debug(
+          "No discovery or spend keypair provided, skipping transaction processing",
+        );
+        return;
+      }
+
       const appl = txn.applicationTransaction!;
 
       const method = MithrasMethod.fromArgs(appl.applicationArgs!);
@@ -258,11 +346,10 @@ export class MithrasSubscriber {
       }
 
       if (method.type === "spend") {
-        if (this.utxos.has(method.nullifier!)) {
-          const { amount } = this.utxos.get(method.nullifier!)!;
-          this.amount -= algosdk.decodeUint64(amount, "bigint");
-          this.utxos.delete(method.nullifier!);
-          return;
+        if (balanceState.utxos.has(method.nullifier!)) {
+          const { amount } = balanceState.utxos.get(method.nullifier!)!;
+          balanceState.amount -= algosdk.decodeUint64(amount, "bigint");
+          balanceState.utxos.delete(method.nullifier!);
         }
       }
 
@@ -307,10 +394,10 @@ export class MithrasSubscriber {
           continue;
         }
         const nullifier = utxo.computeNullifier();
-        if (this.utxos.has(nullifier)) {
+        if (balanceState.utxos.has(nullifier)) {
           continue;
         } else {
-          this.utxos.set(nullifier, {
+          balanceState.utxos.set(nullifier, {
             round: algosdk.encodeUint64(txn.confirmedRound ?? 0n),
             amount: algosdk.encodeUint64(utxo.amount),
             txid: new Uint8Array(base32.decode.asBytes(txn.id)),
@@ -329,21 +416,161 @@ export class MithrasSubscriber {
           continue;
         }
 
-        console.debug(`Adding ammount ${utxo.amount} from tx ${txn.id}`);
-        this.amount += utxo.amount;
+        console.debug(`Adding amount ${utxo.amount} from tx ${txn.id}`);
+        balanceState.amount += utxo.amount;
       }
     });
   }
+}
 
-  start() {
-    this.subscriber.start();
+export class BalanceSubscriber extends BaseMithrasSubscriber {
+  public static async fromAppId(
+    config: BaseSubscriberConfig & BalanceSubscriberConfig,
+  ) {
+    const startRound = await resolveStartRound({
+      appId: config.appId,
+      algod: config.algod,
+      startRound: config.startRound,
+    });
+
+    return new BalanceSubscriber(
+      config.algod,
+      config.appId,
+      startRound,
+      config.discoveryKeypair,
+      config.spendKeypair,
+    );
   }
 
-  getMerkleProof(leafIndex: number): MerkleProof {
-    return this.merkleTree.getMerkleProof(leafIndex);
+  public constructor(
+    algod: algosdk.Algodv2,
+    appId: bigint,
+    startRound: bigint,
+    discoveryKeypair: DiscoveryKeypair,
+    spendKeypair: SpendKeypair,
+  ) {
+    const balanceState: BalanceState = {
+      amount: 0n,
+      utxos: new Map(),
+    };
+    super({
+      algod,
+      appId,
+      startRound,
+      discoveryKeypair,
+      spendKeypair,
+      balanceState,
+    });
+    this.balanceState = balanceState;
   }
 
-  getMerkleRoot(): bigint {
-    return this.merkleTree.getRoot();
+  public get amount(): bigint {
+    return this.balanceState!.amount;
+  }
+
+  public set amount(value: bigint) {
+    this.balanceState!.amount = value;
+  }
+
+  public get utxos(): Map<Uint8Array, UtxoInfo> {
+    return this.balanceState!.utxos;
+  }
+}
+
+export class TreeSubscriber extends BaseMithrasSubscriber {
+  public merkleTree: MimcMerkleTree;
+
+  public static async fromAppId(
+    config: BaseSubscriberConfig & MerkleTreeSubscriberConfig,
+  ) {
+    const startRound = await resolveStartRound({
+      appId: config.appId,
+      algod: config.algod,
+      startRound: config.startRound,
+      merkleTree: config.merkleTree,
+    });
+
+    return new TreeSubscriber(
+      config.algod,
+      config.appId,
+      startRound,
+      config.merkleTree ?? new MimcMerkleTree(),
+    );
+  }
+
+  public constructor(
+    algod: algosdk.Algodv2,
+    appId: bigint,
+    startRound: bigint,
+    merkleTree: MimcMerkleTree,
+  ) {
+    super({
+      algod,
+      appId,
+      startRound,
+      merkleTree,
+    });
+    this.merkleTree = merkleTree;
+  }
+}
+
+export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
+  public merkleTree: MimcMerkleTree;
+
+  public static async fromAppId(
+    config: BaseSubscriberConfig & BalanceAndTreeSubscriberConfig,
+  ) {
+    const startRound = await resolveStartRound({
+      appId: config.appId,
+      algod: config.algod,
+      startRound: config.startRound,
+      merkleTree: config.merkleTree,
+    });
+
+    return new BalanceAndTreeSubscriber(
+      config.algod,
+      config.appId,
+      startRound,
+      config.discoveryKeypair,
+      config.spendKeypair,
+      config.merkleTree ?? new MimcMerkleTree(),
+    );
+  }
+
+  public constructor(
+    algod: algosdk.Algodv2,
+    appId: bigint,
+    startRound: bigint,
+    discoveryKeypair: DiscoveryKeypair,
+    spendKeypair: SpendKeypair,
+    merkleTree: MimcMerkleTree,
+  ) {
+    const balanceState: BalanceState = {
+      amount: 0n,
+      utxos: new Map(),
+    };
+    super({
+      algod,
+      appId,
+      startRound,
+      discoveryKeypair,
+      spendKeypair,
+      merkleTree,
+      balanceState,
+    });
+    this.balanceState = balanceState;
+    this.merkleTree = merkleTree;
+  }
+
+  public get amount(): bigint {
+    return this.balanceState!.amount;
+  }
+
+  public set amount(value: bigint) {
+    this.balanceState!.amount = value;
+  }
+
+  public get utxos(): Map<Uint8Array, UtxoInfo> {
+    return this.balanceState!.utxos;
   }
 }
