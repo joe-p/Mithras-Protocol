@@ -1,7 +1,4 @@
-import {
-  AlgorandClient,
-  populateAppCallResources,
-} from "@algorandfoundation/algokit-utils";
+import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { MithrasClient } from "../../mithras-contracts-and-circuits/contracts/clients/Mithras";
 
 import { beforeAll, describe, expect, it } from "vitest";
@@ -43,7 +40,7 @@ describe("Mithras App", () => {
       spender.address,
       spenderKeypair,
       secrets,
-      spenderSubscriber.getMerkleProof(treeIndex),
+      spenderSubscriber.merkleTree!.getMerkleProof(treeIndex),
       { receiver: receiver.address, amount },
     );
 
@@ -60,13 +57,14 @@ describe("Mithras App", () => {
 
     await composer.send();
 
-    const receiversSubscriber = new MithrasSubscriber(
-      algorand.client.algod,
-      appClient.appId,
+    const receiversSubscriber = await MithrasSubscriber.fromAppId({
+      algod: algorand.client.algod,
+      appId: appClient.appId,
       startRound,
-      receiver.discoveryKeypair,
-      receiver.spendKeypair,
-    );
+      discoveryKeypair: receiver.discoveryKeypair,
+      spendKeypair: receiver.spendKeypair,
+      merkleTree: new MimcMerkleTree(),
+    });
 
     await receiversSubscriber.subscriber.pollOnce();
 
@@ -104,13 +102,14 @@ describe("Mithras App", () => {
 
     await depositGroup.send();
 
-    const subscriber = new MithrasSubscriber(
-      algorand.client.algod,
-      appClient.appId,
+    const subscriber = await MithrasSubscriber.fromAppId({
+      algod: algorand.client.algod,
+      appId: appClient.appId,
+      discoveryKeypair: initialReceiver.discoveryKeypair,
+      spendKeypair: initialReceiver.spendKeypair,
       startRound,
-      initialReceiver.discoveryKeypair,
-      initialReceiver.spendKeypair,
-    );
+      merkleTree: new MimcMerkleTree(),
+    });
 
     expect(subscriber.amount).toBe(0n);
 
@@ -130,13 +129,7 @@ describe("Mithras App", () => {
 
     const contractRoot = await appClient.state.global.lastComputedRoot();
 
-    expect(contractRoot).toEqual(subscriber.getMerkleRoot());
-
-    const mt = new MimcMerkleTree();
-
-    mt.addLeaf(bytesToNumberBE(secrets.computeCommitment()));
-
-    expect(mt.getRoot()).toEqual(contractRoot);
+    expect(contractRoot).toEqual(subscriber.merkleTree!.getRoot());
 
     const {
       receiver: secondReceiver,

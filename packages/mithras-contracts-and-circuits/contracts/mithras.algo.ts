@@ -77,12 +77,14 @@ type NewLeaf = {
 export class Mithras extends MimcMerkle {
   depositVerifier = GlobalState<Address>({ key: "d" });
   spendVerifier = GlobalState<Address>({ key: "s" });
+  creationRound = GlobalState<uint64>({ key: "c" });
 
   nullifiers = BoxMap<Uint256, bytes<0>>({ keyPrefix: "n" });
 
   createApplication(depositVerifier: Address, spendVerifier: Address) {
     this.depositVerifier.value = depositVerifier;
     this.spendVerifier.value = spendVerifier;
+    this.creationRound.value = Global.round;
   }
 
   bootstrapMerkleTree() {

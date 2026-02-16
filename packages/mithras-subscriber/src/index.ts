@@ -185,6 +185,21 @@ export async function algodUtxoLookup(
   };
 }
 
+export type BalannceSubsriberConfig = {
+  discoveryKeypair: DiscoveryKeypair;
+  spendKeypair: SpendKeypair;
+};
+
+export type MerkleTreeSubscriberConfig = {
+  merkleTree: MimcMerkleTree;
+};
+
+export type SubscriberConfig = {
+  appId: bigint;
+  algod: algosdk.Algodv2;
+  startRound?: bigint;
+} & (BalannceSubsriberConfig | MerkleTreeSubscriberConfig);
+
 export class MithrasSubscriber {
   public amount: bigint = 0n;
   /**
@@ -202,16 +217,60 @@ export class MithrasSubscriber {
 
   public subscriber: AlgorandSubscriber;
 
-  private merkleTree = new MimcMerkleTree();
+  public merkleTree?: MimcMerkleTree;
 
-  constructor(
+  static async fromAppId(config: SubscriberConfig) {
+    const { appId, algod } = config;
+
+    if (config.startRound === undefined) {
+      if ("merkleTree" in config && config.merkleTree.getLeafCount() > 0) {
+        throw new Error(
+          "When starting the subscriber with a pre-constructed Merkle tree, the startRound must be provided",
+        );
+      }
+
+      let creationRound: bigint | undefined = undefined;
+      for (const g of (await algod.getApplicationByID(appId).do()).params
+        .globalState ?? []) {
+        console.debug(g);
+        if (new TextDecoder().decode(g.key) === "c") {
+          // TODO: For some reason on localnet this always seems to be 1
+          creationRound = BigInt(g.value.uint);
+          console.debug(
+            `Found creation round ${creationRound} in application global state`,
+          );
+          break;
+        }
+      }
+
+      if (creationRound === undefined) {
+        throw new Error(
+          "Failed to find creation round in application global state",
+        );
+      }
+    }
+
+    return new MithrasSubscriber(
+      algod,
+      appId,
+      config.startRound ?? 0n,
+      "discoveryKeypair" in config ? config.discoveryKeypair : undefined,
+      "spendKeypair" in config ? config.spendKeypair : undefined,
+      "merkleTree" in config ? config.merkleTree : undefined,
+    );
+  }
+
+  private constructor(
     algod: algosdk.Algodv2,
     appId: bigint,
     startRound: bigint,
-    discoveryKeypair: DiscoveryKeypair,
-    spendKeypair: SpendKeypair,
+    discoveryKeypair?: DiscoveryKeypair,
+    spendKeypair?: SpendKeypair,
+    merkleTree?: MimcMerkleTree,
   ) {
     let watermark = startRound;
+
+    this.merkleTree = merkleTree;
 
     const filter: TransactionFilter = {
       appId,
@@ -244,10 +303,20 @@ export class MithrasSubscriber {
         `Processing transaction ${txn.id} in round ${txn.confirmedRound}`,
       );
 
-      for (const event of txn.arc28Events!) {
-        const { leaf } = event.argsByName;
-        this.merkleTree.addLeaf(leaf as bigint);
+      if (this.merkleTree) {
+        for (const event of txn.arc28Events!) {
+          const { leaf } = event.argsByName;
+          this.merkleTree.addLeaf(leaf as bigint);
+        }
       }
+
+      if (discoveryKeypair === undefined || spendKeypair === undefined) {
+        console.debug(
+          "No discovery or spend keypair provided, skipping transaction processing",
+        );
+        return;
+      }
+
       const appl = txn.applicationTransaction!;
 
       const method = MithrasMethod.fromArgs(appl.applicationArgs!);
@@ -333,17 +402,5 @@ export class MithrasSubscriber {
         this.amount += utxo.amount;
       }
     });
-  }
-
-  start() {
-    this.subscriber.start();
-  }
-
-  getMerkleProof(leafIndex: number): MerkleProof {
-    return this.merkleTree.getMerkleProof(leafIndex);
-  }
-
-  getMerkleRoot(): bigint {
-    return this.merkleTree.getRoot();
   }
 }
