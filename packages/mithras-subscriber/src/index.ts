@@ -209,7 +209,7 @@ export class MithrasSubscriber {
     appId: bigint,
     startRound: bigint,
     discoveryKeypair: DiscoveryKeypair,
-    spendSeed: SpendKeypair,
+    spendKeypair: SpendKeypair,
   ) {
     let watermark = startRound;
 
@@ -319,7 +319,7 @@ export class MithrasSubscriber {
         }
 
         const derivedSigner = StealthKeypair.derive(
-          spendSeed,
+          spendKeypair,
           utxo.stealthScalar,
         );
 
