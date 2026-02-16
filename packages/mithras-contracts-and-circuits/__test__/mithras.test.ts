@@ -137,6 +137,7 @@ describe("Mithras App", () => {
       receiver: spender,
       amount: microAlgos(0),
       extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE + 1000n),
+      closeRemainderTo: appClient.appAddress,
     });
 
     const fee = NULLIFIER_MBR + feePayment.fee;
@@ -224,10 +225,9 @@ describe("Mithras App", () => {
           },
           staticFee: microAlgos(0),
         });
+        spendGroup.addTransaction(feePayment);
       },
     });
-
-    spendGroup.addTransaction(feePayment);
 
     const simRes = await spendGroup.simulate({
       allowUnnamedResources: true,

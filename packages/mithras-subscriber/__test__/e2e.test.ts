@@ -55,12 +55,10 @@ describe("Mithras App", () => {
       await client.spendVerifier.lsigAccount()
     ).signer;
 
-    const populated = await populateAppCallResources(
-      atc,
-      algorand.client.algod,
-    );
+    const composer = algorand.newGroup();
+    composer.addAtc(atc);
 
-    await populated.execute(algorand.client.algod, 3);
+    await composer.send();
 
     const receiversSubscriber = new MithrasSubscriber(
       algorand.client.algod,

@@ -332,10 +332,10 @@ export class MithrasProtocolClient {
           lastValidRound: txnMetadata.lastValid,
           lease: txnMetadata.lease,
         });
+
+        spendGroup.addTransaction(feePayment);
       },
     });
-
-    spendGroup.addTransaction(feePayment);
 
     return spendGroup;
   }

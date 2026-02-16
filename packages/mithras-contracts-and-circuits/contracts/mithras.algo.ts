@@ -28,6 +28,7 @@ import {
   Uint256,
 } from "@algorandfoundation/algorand-typescript/arc4";
 import { TREE_DEPTH } from "../src/constants";
+import { GTxn } from "@algorandfoundation/algorand-typescript/op";
 
 const BLS12_381_SCALAR_MODULUS = BigUint(
   Bytes.fromHex(
@@ -148,6 +149,13 @@ export class Mithras extends MimcMerkle {
     const nullifierMbr: uint64 = postMBR - preMBR;
 
     assert(fee >= nullifierMbr, "Fee does not cover nullifier storage cost");
+
+    const closeIndex: uint64 = Txn.groupIndex + 1;
+    assert(
+      GTxn.sender(closeIndex) === Txn.sender &&
+        GTxn.closeRemainderTo(closeIndex) === Global.currentApplicationAddress,
+      "The transaction after the spend call must be a close transaction from the sender to the app address",
+    );
 
     // Send the fee to the sender so they can cover it later in the group. The assumption is that the sender is a 0 ALGO account
     itxn
