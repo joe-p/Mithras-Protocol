@@ -197,8 +197,6 @@ export type MerkleTreeSubscriberConfig = {
 export type BalanceAndTreeSubscriberConfig = BalanceSubscriberConfig &
   MerkleTreeSubscriberConfig;
 
-export type BalannceSubsriberConfig = BalanceSubscriberConfig;
-
 type BalanceState = {
   amount: bigint;
   /**
