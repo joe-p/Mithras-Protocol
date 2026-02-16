@@ -393,20 +393,6 @@ class BaseMithrasSubscriber {
           );
           continue;
         }
-        const nullifier = utxo.computeNullifier();
-        if (balanceState.utxos.has(nullifier)) {
-          console.debug(
-            `Nullifier ${nullifier} from transaction ${txn.id} already exists in balance state, skipping...`,
-          );
-          continue;
-        } else {
-          balanceState.utxos.set(nullifier, {
-            round: algosdk.encodeUint64(txn.confirmedRound ?? 0n),
-            amount: algosdk.encodeUint64(utxo.amount),
-            txid: new Uint8Array(base32.decode.asBytes(txn.id)),
-            firstCommitment,
-          });
-        }
 
         if (spendKeypair !== undefined) {
           const derivedSigner = StealthKeypair.derive(
@@ -426,6 +412,21 @@ class BaseMithrasSubscriber {
           console.debug(
             `No spend keypair provided, skipping stealth key verification for transaction ${txn.id}...`,
           );
+        }
+
+        const nullifier = utxo.computeNullifier();
+        if (balanceState.utxos.has(nullifier)) {
+          console.debug(
+            `Nullifier ${nullifier} from transaction ${txn.id} already exists in balance state, skipping...`,
+          );
+          continue;
+        } else {
+          balanceState.utxos.set(nullifier, {
+            round: algosdk.encodeUint64(txn.confirmedRound ?? 0n),
+            amount: algosdk.encodeUint64(utxo.amount),
+            txid: new Uint8Array(base32.decode.asBytes(txn.id)),
+            firstCommitment,
+          });
         }
 
         console.debug(`Adding amount ${utxo.amount} from tx ${txn.id}`);
