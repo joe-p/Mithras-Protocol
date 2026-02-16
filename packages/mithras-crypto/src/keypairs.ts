@@ -34,7 +34,7 @@ function computePubkey(scalar: bigint): Uint8Array {
   return publicKey.toBytes();
 }
 
-export class SpendSeed {
+export class SpendKeypair {
   seed: Uint8Array;
   publicKey: Uint8Array;
 
@@ -46,12 +46,12 @@ export class SpendSeed {
     }
   }
 
-  static generate(): SpendSeed {
+  static generate(): SpendKeypair {
     const seed = new Uint8Array(32);
     crypto.getRandomValues(seed);
 
     const keypair = ed25519.keygen(seed);
-    return new SpendSeed(seed, keypair.publicKey);
+    return new SpendKeypair(seed, keypair.publicKey);
   }
 
   prefix(): Uint8Array {
@@ -79,7 +79,7 @@ const scalar = {
   },
 };
 
-export class TweakedSigner {
+export class StealthKeypair {
   aScalar: Uint8Array;
   prefix: Uint8Array;
   publicKey: Uint8Array;
@@ -93,17 +93,17 @@ export class TweakedSigner {
     }
   }
 
-  static derive(spendSeed: SpendSeed, tweakScalar: bigint): TweakedSigner {
-    const tweakedScalar = scalar.add(spendSeed.aScalar(), tweakScalar);
+  static derive(spendSeed: SpendKeypair, scalarToAdd: bigint): StealthKeypair {
+    const stealthScalar = scalar.add(spendSeed.aScalar(), scalarToAdd);
 
-    const tweakdPrefix = sha512(
-      concatBytes(numberToBytesLE(tweakScalar, 32), spendSeed.prefix()),
+    const stealthPrefix = sha512(
+      concatBytes(numberToBytesLE(stealthScalar, 32), spendSeed.prefix()),
     );
 
-    return new TweakedSigner(
-      numberToBytesLE(tweakedScalar, 32),
-      tweakdPrefix.slice(32, 64),
-      deriveTweakedPubkey(spendSeed.publicKey, tweakScalar),
+    return new StealthKeypair(
+      numberToBytesLE(stealthScalar, 32),
+      stealthPrefix.slice(32, 64),
+      deriveStealthPubkey(spendSeed.publicKey, scalarToAdd),
     );
   }
 
@@ -135,48 +135,48 @@ export class TweakedSigner {
   }
 }
 
-export function deriveTweakedPubkey(
-  basePublicKey: Uint8Array,
-  tweakScalar: bigint,
+export function deriveStealthPubkey(
+  spendPublicKey: Uint8Array,
+  stealthScalar: bigint,
 ): Uint8Array {
-  const basePoint = ed25519.Point.fromBytes(basePublicKey);
+  const spendPoint = ed25519.Point.fromBytes(spendPublicKey);
 
-  const tweakPoint = ed25519.Point.BASE.multiply(tweakScalar);
-  const stealthPoint = basePoint.add(tweakPoint);
+  let stealthPoint = ed25519.Point.BASE.multiply(stealthScalar);
+  stealthPoint = spendPoint.add(stealthPoint);
 
   return stealthPoint.toBytes();
 }
 
-export function deriveTweakScalar(discoverySecret: Uint8Array): bigint {
+export function deriveStealthScalar(discoverySecret: Uint8Array): bigint {
   const hash = sha512(
     concatBytes(
-      new TextEncoder().encode("mithras-tweak-scalar"),
+      new TextEncoder().encode("mithras-stealth-scalar"),
       discoverySecret,
     ),
   );
   return bytesToNumberLE(hash.slice(0, 32)) % ORDER;
 }
 
-export function deriveTweakedPrefix(
-  basePrefix: Uint8Array,
-  tweakedPublicKey: Uint8Array,
+export function deriveStealthPrefix(
+  spendPrefix: Uint8Array,
+  stealthPublicKey: Uint8Array,
 ): Uint8Array {
   const hash = sha512(
     concatBytes(
-      new TextEncoder().encode("mithras-tweaked-prefix"),
-      basePrefix,
-      tweakedPublicKey,
+      new TextEncoder().encode("mithras-stealth-prefix"),
+      spendPrefix,
+      stealthPublicKey,
     ),
   );
   return hash.slice(32, 64);
 }
 
 export class MithrasAccount {
-  spendSeed: SpendSeed;
+  spendSeed: SpendKeypair;
   discoveryKeypair: DiscoveryKeypair;
   address: MithrasAddr;
 
-  constructor(spendSeed: SpendSeed, discoveryKeypair: DiscoveryKeypair) {
+  constructor(spendSeed: SpendKeypair, discoveryKeypair: DiscoveryKeypair) {
     this.spendSeed = spendSeed;
     this.discoveryKeypair = discoveryKeypair;
     this.address = MithrasAddr.fromKeys(
@@ -190,7 +190,7 @@ export class MithrasAccount {
 
   static generate(): MithrasAccount {
     return new MithrasAccount(
-      SpendSeed.generate(),
+      SpendKeypair.generate(),
       DiscoveryKeypair.generate(),
     );
   }

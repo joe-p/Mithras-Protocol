@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   DiscoveryKeypair,
-  SpendSeed,
-  TweakedSigner,
-  deriveTweakedPubkey,
-  deriveTweakScalar,
+  SpendKeypair,
+  StealthKeypair,
+  deriveStealthPubkey,
+  deriveStealthScalar,
 } from "../src/keypairs";
 import { ed25519 } from "@noble/curves/ed25519.js";
 import {
@@ -25,7 +25,7 @@ import { mimcSum } from "../src/mimc";
 
 describe("mithras protocol", () => {
   it("keypair generation", () => {
-    const spend = SpendSeed.generate();
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
 
     expect(spend.seed).toHaveLength(32);
@@ -48,8 +48,8 @@ describe("mithras protocol", () => {
     expect(secretSender).toEqual(secretReceiver);
   });
 
-  it("tweaked keypair computation", () => {
-    const spend = SpendSeed.generate();
+  it("stealth keypair computation", () => {
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
     const ephemeral = DiscoveryKeypair.generate();
 
@@ -57,14 +57,17 @@ describe("mithras protocol", () => {
       ephemeral.privateKey,
       discovery.publicKey,
     );
-    const tweakScalar = deriveTweakScalar(discoverySecret);
+    const stealthScalar = deriveStealthScalar(discoverySecret);
 
-    const tweakedPubSender = deriveTweakedPubkey(spend.publicKey, tweakScalar);
+    const stealthPubSender = deriveStealthPubkey(
+      spend.publicKey,
+      stealthScalar,
+    );
 
-    // TweakedSigner.derive is an instance method; create a dummy to call it
-    const tweakedReceiver = TweakedSigner.derive(spend, tweakScalar);
+    // StealthKeypair.derive is an instance method; create a dummy to call it
+    const stealthReceiver = StealthKeypair.derive(spend, stealthScalar);
 
-    expect(tweakedPubSender).toEqual(tweakedReceiver.publicKey);
+    expect(stealthPubSender).toEqual(stealthReceiver.publicKey);
   });
 
   it("discovery tag", () => {
@@ -154,14 +157,14 @@ describe("mithras protocol", () => {
   });
 
   it("mithras address encoding decoding", () => {
-    const spend = SpendSeed.generate();
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
-    const tweakScalar = deriveTweakScalar(new Uint8Array(32).fill(42));
+    const stealthScalar = deriveStealthScalar(new Uint8Array(32).fill(42));
 
-    const tweakedReceiver = TweakedSigner.derive(spend, tweakScalar);
+    const stealthReceiver = StealthKeypair.derive(spend, stealthScalar);
 
     const addr = MithrasAddr.fromKeys(
-      tweakedReceiver.publicKey,
+      stealthReceiver.publicKey,
       discovery.publicKey,
       1,
       SupportedNetworks.Testnet,
@@ -179,7 +182,7 @@ describe("mithras protocol", () => {
   });
 
   it("complete mithras protocol flow with utxo generate", async () => {
-    const spend = SpendSeed.generate();
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
 
     const addr = MithrasAddr.fromKeys(
@@ -214,14 +217,16 @@ describe("mithras protocol", () => {
       utxoInputs.secrets.nullifierSecret,
     );
     expect(recoveredSecrets.amount).toBe(utxoInputs.secrets.amount);
-    expect(recoveredSecrets.tweakScalar).toBe(utxoInputs.secrets.tweakScalar);
-    expect(recoveredSecrets.tweakedPubkey).toEqual(
-      utxoInputs.secrets.tweakedPubkey,
+    expect(recoveredSecrets.stealthScalar).toBe(
+      utxoInputs.secrets.stealthScalar,
+    );
+    expect(recoveredSecrets.stealthPubkey).toEqual(
+      utxoInputs.secrets.stealthPubkey,
     );
   });
 
-  it("tweaked signer signing and verification", () => {
-    const spend = SpendSeed.generate();
+  it("stealth signer signing and verification", () => {
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
     const ephemeral = DiscoveryKeypair.generate();
 
@@ -229,17 +234,17 @@ describe("mithras protocol", () => {
       ephemeral.privateKey,
       discovery.publicKey,
     );
-    const tweakScalar = deriveTweakScalar(discoverySecret);
+    const stealthScalar = deriveStealthScalar(discoverySecret);
 
-    const tweakedSigner = TweakedSigner.derive(spend, tweakScalar);
+    const stealthSigner = StealthKeypair.derive(spend, stealthScalar);
 
     const message = new TextEncoder().encode("hello mithras");
-    const signature = tweakedSigner.rawSign(message);
+    const signature = stealthSigner.rawSign(message);
 
     expect(signature).toHaveLength(64);
 
-    // Verify the signature using ed25519.verify against the tweaked public key
-    const isValid = ed25519.verify(signature, message, tweakedSigner.publicKey);
+    // Verify the signature using ed25519.verify against the stealth public key
+    const isValid = ed25519.verify(signature, message, stealthSigner.publicKey);
     expect(isValid).toBe(true);
 
     // Verify that a different message fails verification
@@ -247,13 +252,13 @@ describe("mithras protocol", () => {
     const isInvalid = ed25519.verify(
       signature,
       wrongMessage,
-      tweakedSigner.publicKey,
+      stealthSigner.publicKey,
     );
     expect(isInvalid).toBe(false);
 
-    const derivedPubkey = deriveTweakedPubkey(spend.publicKey, tweakScalar);
+    const derivedPubkey = deriveStealthPubkey(spend.publicKey, stealthScalar);
 
-    expect(derivedPubkey).toEqual(tweakedSigner.publicKey);
+    expect(derivedPubkey).toEqual(stealthSigner.publicKey);
   });
 
   it("mimc matches avm", () => {

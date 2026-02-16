@@ -7,9 +7,9 @@ import {
   bytesToNumberBE,
   MerkleProof,
   MithrasAddr,
-  SpendSeed,
+  SpendKeypair,
   TransactionMetadata,
-  TweakedSigner,
+  StealthKeypair,
   UtxoInputs,
   UtxoSecrets,
 } from "../../mithras-crypto/src";
@@ -148,7 +148,7 @@ export class MithrasProtocolClient {
         spending_secret: bytesToNumberBE(inputs.secrets.spendingSecret),
         nullifier_secret: bytesToNumberBE(inputs.secrets.nullifierSecret),
         amount,
-        receiver: addressInScalarField(inputs.secrets.tweakedPubkey),
+        receiver: addressInScalarField(inputs.secrets.stealthPubkey),
       },
       paramsCallback: async (params) => {
         const { lsigParams, lsigsFee, args } = params;
@@ -185,7 +185,7 @@ export class MithrasProtocolClient {
 
   async composeSpendGroup(
     spender: MithrasAddr,
-    spendSeed: SpendSeed,
+    spendSeed: SpendKeypair,
     utxoSecrets: UtxoSecrets,
     merkleProof: MerkleProof,
     out0: Output,
@@ -201,15 +201,15 @@ export class MithrasProtocolClient {
 
     const spendGroup = this.appClient.newGroup();
 
-    const addr = new algosdk.Address(utxoSecrets.tweakedPubkey);
-    const tweakedSigner = TweakedSigner.derive(
+    const addr = new algosdk.Address(utxoSecrets.stealthPubkey);
+    const stealthSigner = StealthKeypair.derive(
       spendSeed,
-      utxoSecrets.tweakScalar,
+      utxoSecrets.stealthScalar,
     );
 
-    if (!equalBytes(tweakedSigner.publicKey, utxoSecrets.tweakedPubkey)) {
+    if (!equalBytes(stealthSigner.publicKey, utxoSecrets.stealthPubkey)) {
       throw new Error(
-        `Tweaked signer does not derive the expected tweaked public key. Got ${tweakedSigner.publicKey}, expected ${utxoSecrets.tweakedPubkey}`,
+        `Stealth keypair does not derive the expected public key. Got ${stealthSigner.publicKey}, expected ${utxoSecrets.stealthPubkey}`,
       );
     }
 
@@ -221,7 +221,7 @@ export class MithrasProtocolClient {
 
       for (const index of indexesToSign) {
         const txn = txns[index];
-        const sig = tweakedSigner.rawSign(txn.bytesToSign());
+        const sig = stealthSigner.rawSign(txn.bytesToSign());
         const stxn = new algosdk.SignedTransaction({ txn, sig });
         signedTxns.push(algosdk.encodeMsgpack(stxn));
       }
@@ -245,7 +245,7 @@ export class MithrasProtocolClient {
 
     const sp = await this.algorand.getSuggestedParams();
     const txnMetadata = new TransactionMetadata(
-      tweakedSigner.publicKey,
+      stealthSigner.publicKey,
       BigInt(sp.firstValid),
       BigInt(sp.lastValid),
       new Uint8Array(32),
@@ -290,18 +290,18 @@ export class MithrasProtocolClient {
 
     const inputSignals: Record<string, bigint | bigint[]> = {
       fee,
-      utxo_spender: addressInScalarField(utxoSecrets.tweakedPubkey),
+      utxo_spender: addressInScalarField(utxoSecrets.stealthPubkey),
       utxo_spending_secret: bytesToNumberBE(utxoSecrets.spendingSecret),
       utxo_nullifier_secret: bytesToNumberBE(utxoSecrets.nullifierSecret),
       utxo_amount: utxoSecrets.amount,
       path_selectors: merkleProof.pathSelectors.map((b) => BigInt(b)),
       utxo_path: merkleProof.pathElements,
       out0_amount: out0.amount,
-      out0_receiver: addressInScalarField(inputs0.secrets.tweakedPubkey),
+      out0_receiver: addressInScalarField(inputs0.secrets.stealthPubkey),
       out0_spending_secret: bytesToNumberBE(inputs0.secrets.spendingSecret),
       out0_nullifier_secret: bytesToNumberBE(inputs0.secrets.nullifierSecret),
       out1_amount: out1Amount,
-      out1_receiver: addressInScalarField(inputs1.secrets.tweakedPubkey),
+      out1_receiver: addressInScalarField(inputs1.secrets.stealthPubkey),
       out1_spending_secret: bytesToNumberBE(inputs1.secrets.spendingSecret),
       out1_nullifier_secret: bytesToNumberBE(inputs1.secrets.nullifierSecret),
     };

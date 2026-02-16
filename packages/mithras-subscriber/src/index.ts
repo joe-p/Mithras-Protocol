@@ -9,9 +9,9 @@ import {
   HpkeEnvelope,
   MerkleProof as MerkleProof,
   MimcMerkleTree,
-  SpendSeed,
+  SpendKeypair,
   TransactionMetadata,
-  TweakedSigner,
+  StealthKeypair,
   UtxoSecrets,
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
@@ -209,7 +209,7 @@ export class MithrasSubscriber {
     appId: bigint,
     startRound: bigint,
     discoveryKeypair: DiscoveryKeypair,
-    spendSeed: SpendSeed,
+    spendSeed: SpendKeypair,
   ) {
     let watermark = startRound;
 
@@ -318,10 +318,13 @@ export class MithrasSubscriber {
           });
         }
 
-        const derivedSigner = TweakedSigner.derive(spendSeed, utxo.tweakScalar);
+        const derivedSigner = StealthKeypair.derive(
+          spendSeed,
+          utxo.stealthScalar,
+        );
 
         if (
-          derivedSigner.publicKey.toString() != utxo.tweakedPubkey.toString()
+          derivedSigner.publicKey.toString() != utxo.stealthPubkey.toString()
         ) {
           continue;
         }

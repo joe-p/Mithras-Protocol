@@ -13,7 +13,7 @@ import { depositVerifier, MithrasProtocolClient, spendVerifier } from "../src";
 import {
   DiscoveryKeypair,
   MithrasAddr,
-  SpendSeed,
+  SpendKeypair,
   SupportedHpkeSuite,
 } from "../../mithras-crypto/src";
 import { TREE_DEPTH } from "../src/constants";
@@ -64,7 +64,7 @@ describe("Mithras App", () => {
       depositor,
       1n,
       MithrasAddr.fromKeys(
-        SpendSeed.generate().publicKey,
+        SpendKeypair.generate().publicKey,
         DiscoveryKeypair.generate().publicKey,
         1,
         0,
