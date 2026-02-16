@@ -1,3 +1,0 @@
-[alias]
-t = ["nextest", "run"]
-uniffi = ["run", "--package", "uniffi-bindgen", "--"]
