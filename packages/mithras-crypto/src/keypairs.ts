@@ -136,13 +136,13 @@ export class StealthKeypair {
 }
 
 export function deriveStealthPubkey(
-  basePublicKey: Uint8Array,
+  spendPublicKey: Uint8Array,
   stealthScalar: bigint,
 ): Uint8Array {
-  const basePoint = ed25519.Point.fromBytes(basePublicKey);
+  const spendPoint = ed25519.Point.fromBytes(spendPublicKey);
 
-  const tweakPoint = ed25519.Point.BASE.multiply(stealthScalar);
-  const stealthPoint = basePoint.add(tweakPoint);
+  let stealthPoint = ed25519.Point.BASE.multiply(stealthScalar);
+  stealthPoint = spendPoint.add(stealthPoint);
 
   return stealthPoint.toBytes();
 }
@@ -158,13 +158,13 @@ export function deriveStealthScalar(discoverySecret: Uint8Array): bigint {
 }
 
 export function deriveStealthPrefix(
-  basePrefix: Uint8Array,
+  spendPrefix: Uint8Array,
   stealthPublicKey: Uint8Array,
 ): Uint8Array {
   const hash = sha512(
     concatBytes(
       new TextEncoder().encode("mithras-stealth-prefix"),
-      basePrefix,
+      spendPrefix,
       stealthPublicKey,
     ),
   );
