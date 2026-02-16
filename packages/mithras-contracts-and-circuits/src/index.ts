@@ -7,7 +7,7 @@ import {
   bytesToNumberBE,
   MerkleProof,
   MithrasAddr,
-  SpendSeed,
+  SpendKeypair,
   TransactionMetadata,
   StealthKeypair,
   UtxoInputs,
@@ -185,7 +185,7 @@ export class MithrasProtocolClient {
 
   async composeSpendGroup(
     spender: MithrasAddr,
-    spendSeed: SpendSeed,
+    spendSeed: SpendKeypair,
     utxoSecrets: UtxoSecrets,
     merkleProof: MerkleProof,
     out0: Output,

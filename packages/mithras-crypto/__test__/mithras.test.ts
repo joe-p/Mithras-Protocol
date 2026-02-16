@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DiscoveryKeypair,
-  SpendSeed,
+  SpendKeypair,
   StealthKeypair,
   deriveStealthPubkey,
   deriveStealthScalar,
@@ -25,7 +25,7 @@ import { mimcSum } from "../src/mimc";
 
 describe("mithras protocol", () => {
   it("keypair generation", () => {
-    const spend = SpendSeed.generate();
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
 
     expect(spend.seed).toHaveLength(32);
@@ -49,7 +49,7 @@ describe("mithras protocol", () => {
   });
 
   it("stealth keypair computation", () => {
-    const spend = SpendSeed.generate();
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
     const ephemeral = DiscoveryKeypair.generate();
 
@@ -157,7 +157,7 @@ describe("mithras protocol", () => {
   });
 
   it("mithras address encoding decoding", () => {
-    const spend = SpendSeed.generate();
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
     const stealthScalar = deriveStealthScalar(new Uint8Array(32).fill(42));
 
@@ -182,7 +182,7 @@ describe("mithras protocol", () => {
   });
 
   it("complete mithras protocol flow with utxo generate", async () => {
-    const spend = SpendSeed.generate();
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
 
     const addr = MithrasAddr.fromKeys(
@@ -226,7 +226,7 @@ describe("mithras protocol", () => {
   });
 
   it("stealth signer signing and verification", () => {
-    const spend = SpendSeed.generate();
+    const spend = SpendKeypair.generate();
     const discovery = DiscoveryKeypair.generate();
     const ephemeral = DiscoveryKeypair.generate();
 

@@ -9,7 +9,7 @@ import {
   HpkeEnvelope,
   MerkleProof as MerkleProof,
   MimcMerkleTree,
-  SpendSeed,
+  SpendKeypair,
   TransactionMetadata,
   StealthKeypair,
   UtxoSecrets,
@@ -209,7 +209,7 @@ export class MithrasSubscriber {
     appId: bigint,
     startRound: bigint,
     discoveryKeypair: DiscoveryKeypair,
-    spendSeed: SpendSeed,
+    spendSeed: SpendKeypair,
   ) {
     let watermark = startRound;
 

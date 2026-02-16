@@ -34,7 +34,7 @@ function computePubkey(scalar: bigint): Uint8Array {
   return publicKey.toBytes();
 }
 
-export class SpendSeed {
+export class SpendKeypair {
   seed: Uint8Array;
   publicKey: Uint8Array;
 
@@ -46,12 +46,12 @@ export class SpendSeed {
     }
   }
 
-  static generate(): SpendSeed {
+  static generate(): SpendKeypair {
     const seed = new Uint8Array(32);
     crypto.getRandomValues(seed);
 
     const keypair = ed25519.keygen(seed);
-    return new SpendSeed(seed, keypair.publicKey);
+    return new SpendKeypair(seed, keypair.publicKey);
   }
 
   prefix(): Uint8Array {
@@ -93,7 +93,7 @@ export class StealthKeypair {
     }
   }
 
-  static derive(spendSeed: SpendSeed, scalarToAdd: bigint): StealthKeypair {
+  static derive(spendSeed: SpendKeypair, scalarToAdd: bigint): StealthKeypair {
     const stealthScalar = scalar.add(spendSeed.aScalar(), scalarToAdd);
 
     const stealthPrefix = sha512(
@@ -172,11 +172,11 @@ export function deriveStealthPrefix(
 }
 
 export class MithrasAccount {
-  spendSeed: SpendSeed;
+  spendSeed: SpendKeypair;
   discoveryKeypair: DiscoveryKeypair;
   address: MithrasAddr;
 
-  constructor(spendSeed: SpendSeed, discoveryKeypair: DiscoveryKeypair) {
+  constructor(spendSeed: SpendKeypair, discoveryKeypair: DiscoveryKeypair) {
     this.spendSeed = spendSeed;
     this.discoveryKeypair = discoveryKeypair;
     this.address = MithrasAddr.fromKeys(
@@ -190,7 +190,7 @@ export class MithrasAccount {
 
   static generate(): MithrasAccount {
     return new MithrasAccount(
-      SpendSeed.generate(),
+      SpendKeypair.generate(),
       DiscoveryKeypair.generate(),
     );
   }
