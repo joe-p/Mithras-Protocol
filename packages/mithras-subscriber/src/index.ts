@@ -350,7 +350,6 @@ class BaseMithrasSubscriber {
           const { amount } = balanceState.utxos.get(method.nullifier!)!;
           balanceState.amount -= algosdk.decodeUint64(amount, "bigint");
           balanceState.utxos.delete(method.nullifier!);
-          return;
         }
       }
 
