@@ -418,7 +418,7 @@ class BaseMithrasSubscriber {
           continue;
         }
 
-        console.debug(`Adding ammount ${utxo.amount} from tx ${txn.id}`);
+        console.debug(`Adding amount ${utxo.amount} from tx ${txn.id}`);
         balanceState.amount += utxo.amount;
       }
     });
