@@ -15,25 +15,14 @@ import {
   biguint,
   BoxMap,
   itxn,
-  FixedArray,
-  Application,
-  clone,
   emit,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "./mimc_merkle.algo";
-import {
-  Address,
-  compileArc4,
-  Contract,
-  Uint256,
-} from "@algorandfoundation/algorand-typescript/arc4";
-import { TREE_DEPTH } from "../src/constants";
+import { Address, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 import { GTxn } from "@algorandfoundation/algorand-typescript/op";
 
 const BLS12_381_SCALAR_MODULUS = BigUint(
-  Bytes.fromHex(
-    "73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
-  ),
+  "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
 );
 
 function getSignal(signals: Uint256[], idx: uint64): Uint256 {
@@ -170,7 +159,7 @@ export class Mithras extends MimcMerkle {
     const senderInScalarField: biguint =
       BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
 
-    assert(spender.native === senderInScalarField, "Invalid spender");
+    assert(BigUint(spender.bytes) === senderInScalarField, "Invalid spender");
 
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 
