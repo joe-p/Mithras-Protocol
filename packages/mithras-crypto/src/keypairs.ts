@@ -93,17 +93,20 @@ export class StealthKeypair {
     }
   }
 
-  static derive(spendSeed: SpendKeypair, scalarToAdd: bigint): StealthKeypair {
-    const stealthScalar = scalar.add(spendSeed.aScalar(), scalarToAdd);
+  static derive(
+    spendKeypair: SpendKeypair,
+    scalarToAdd: bigint,
+  ): StealthKeypair {
+    const stealthScalar = scalar.add(spendKeypair.aScalar(), scalarToAdd);
 
     const stealthPrefix = sha512(
-      concatBytes(numberToBytesLE(stealthScalar, 32), spendSeed.prefix()),
+      concatBytes(numberToBytesLE(stealthScalar, 32), spendKeypair.prefix()),
     );
 
     return new StealthKeypair(
       numberToBytesLE(stealthScalar, 32),
       stealthPrefix.slice(32, 64),
-      deriveStealthPubkey(spendSeed.publicKey, scalarToAdd),
+      deriveStealthPubkey(spendKeypair.publicKey, scalarToAdd),
     );
   }
 
@@ -172,15 +175,15 @@ export function deriveStealthPrefix(
 }
 
 export class MithrasAccount {
-  spendSeed: SpendKeypair;
+  spendKeypair: SpendKeypair;
   discoveryKeypair: DiscoveryKeypair;
   address: MithrasAddr;
 
-  constructor(spendSeed: SpendKeypair, discoveryKeypair: DiscoveryKeypair) {
-    this.spendSeed = spendSeed;
+  constructor(spendKeypair: SpendKeypair, discoveryKeypair: DiscoveryKeypair) {
+    this.spendKeypair = spendKeypair;
     this.discoveryKeypair = discoveryKeypair;
     this.address = MithrasAddr.fromKeys(
-      spendSeed.publicKey,
+      spendKeypair.publicKey,
       discoveryKeypair.publicKey,
       1,
       0,

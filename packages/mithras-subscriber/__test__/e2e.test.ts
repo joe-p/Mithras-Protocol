@@ -29,7 +29,7 @@ describe("Mithras App", () => {
   ) => {
     const utxo = spenderSubscriber.utxos.entries().next().value;
     const spenderDisc = spender.discoveryKeypair;
-    const spenderSeed = spender.spendSeed;
+    const spenderKeypair = spender.spendKeypair;
 
     const { secrets, treeIndex } = await algodUtxoLookup(
       algorand.client.algod,
@@ -41,7 +41,7 @@ describe("Mithras App", () => {
 
     const spendGroup = await client.composeSpendGroup(
       spender.address,
-      spenderSeed,
+      spenderKeypair,
       secrets,
       spenderSubscriber.getMerkleProof(treeIndex),
       { receiver: receiver.address, amount },
@@ -65,7 +65,7 @@ describe("Mithras App", () => {
       appClient.appId,
       startRound,
       receiver.discoveryKeypair,
-      receiver.spendSeed,
+      receiver.spendKeypair,
     );
 
     await receiversSubscriber.subscriber.pollOnce();
@@ -109,7 +109,7 @@ describe("Mithras App", () => {
       appClient.appId,
       startRound,
       initialReceiver.discoveryKeypair,
-      initialReceiver.spendSeed,
+      initialReceiver.spendKeypair,
     );
 
     expect(subscriber.amount).toBe(0n);

@@ -185,7 +185,7 @@ export class MithrasProtocolClient {
 
   async composeSpendGroup(
     spender: MithrasAddr,
-    spendSeed: SpendKeypair,
+    spendKeypair: SpendKeypair,
     utxoSecrets: UtxoSecrets,
     merkleProof: MerkleProof,
     out0: Output,
@@ -203,7 +203,7 @@ export class MithrasProtocolClient {
 
     const addr = new algosdk.Address(utxoSecrets.stealthPubkey);
     const stealthSigner = StealthKeypair.derive(
-      spendSeed,
+      spendKeypair,
       utxoSecrets.stealthScalar,
     );
 
