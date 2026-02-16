@@ -4,7 +4,7 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 32 2 17600
-    bytecblock "i" "c" "r" "e" "t" "lr" "z" 0x068101
+    bytecblock "i" "r" "e" "c" "t" "lr" "z" 0x068101
     // contracts/mithras.algo.ts:65-66
     // @contract({ avmVersion: 11 })
     // export class Mithras extends MimcMerkle {
@@ -228,8 +228,8 @@ createApplication:
     frame_dig -1
     app_global_put
     // contracts/mithras.algo.ts:69
-    // creationRound = GlobalState<uint64>({ key: "c" });
-    bytec_1 // "c"
+    // creationRound = GlobalState<uint64>({ key: "cr" });
+    pushbytes "cr"
     // contracts/mithras.algo.ts:76
     // this.creationRound.value = Global.round;
     global Round
@@ -315,7 +315,7 @@ bootstrapMerkleTree_while_top@2:
 bootstrapMerkleTree_after_while@4:
     // contracts/mimc_merkle.algo.ts:32
     // rootCounter = GlobalState<uint64>({ key: "c" });
-    bytec_1 // "c"
+    bytec_3 // "c"
     // contracts/mimc_merkle.algo.ts:65
     // this.rootCounter.value = 0;
     intc_0 // 0
@@ -329,7 +329,7 @@ bootstrapMerkleTree_after_while@4:
     app_global_put
     // contracts/mimc_merkle.algo.ts:30
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
-    bytec_2 // "r"
+    bytec_1 // "r"
     // contracts/mimc_merkle.algo.ts:67
     // this.rootCache.create();
     pushint 1600 // 1600
@@ -353,7 +353,7 @@ bootstrapMerkleTree_after_while@4:
     box_put
     // contracts/mimc_merkle.algo.ts:41
     // epochId = GlobalState<uint64>({ key: "e" });
-    bytec_3 // "e"
+    bytec_2 // "e"
     // contracts/mimc_merkle.algo.ts:70
     // this.epochId.value = 0;
     intc_0 // 0
@@ -424,7 +424,7 @@ addCommitment:
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:41
     // epochId = GlobalState<uint64>({ key: "e" });
-    bytec_3 // "e"
+    bytec_2 // "e"
     // contracts/mimc_merkle.algo.ts:127
     // const epoch = this.epochId.value;
     app_global_get_ex
@@ -447,7 +447,7 @@ addCommitment:
     // epochBoxes = BoxMap<uint64, FixedArray<Uint256, typeof EPOCHS_PER_BOX>>({
     //   keyPrefix: "e",
     // });
-    bytec_3 // "e"
+    bytec_2 // "e"
     swap
     concat
     // contracts/mimc_merkle.algo.ts:132
@@ -477,7 +477,7 @@ addCommitment:
     +
     // contracts/mimc_merkle.algo.ts:41
     // epochId = GlobalState<uint64>({ key: "e" });
-    bytec_3 // "e"
+    bytec_2 // "e"
     // contracts/mimc_merkle.algo.ts:137
     // this.epochId.value = epoch + 1;
     swap
@@ -505,21 +505,21 @@ addCommitment:
     box_put
     // contracts/mimc_merkle.algo.ts:32
     // rootCounter = GlobalState<uint64>({ key: "c" });
-    bytec_1 // "c"
+    bytec_3 // "c"
     // contracts/mimc_merkle.algo.ts:143
     // this.rootCounter.value = 0;
     intc_0 // 0
     app_global_put
     // contracts/mimc_merkle.algo.ts:30
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
-    bytec_2 // "r"
+    bytec_1 // "r"
     // contracts/mimc_merkle.algo.ts:146
     // this.rootCache.delete();
     box_del
     pop
     // contracts/mimc_merkle.algo.ts:30
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
-    bytec_2 // "r"
+    bytec_1 // "r"
     // contracts/mimc_merkle.algo.ts:147
     // this.rootCache.create();
     pushint 1600 // 1600
@@ -710,7 +710,7 @@ addCommitment_after_while@9:
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:41
     // epochId = GlobalState<uint64>({ key: "e" });
-    bytec_3 // "e"
+    bytec_2 // "e"
     // contracts/mithras.algo.ts:87
     // epochId: this.epochId.value,
     app_global_get_ex
@@ -985,7 +985,7 @@ spend_bool_merge@4:
     callsub ensure_budget
     // contracts/mimc_merkle.algo.ts:30
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
-    bytec_2 // "r"
+    bytec_1 // "r"
     // contracts/mimc_merkle.algo.ts:155
     // for (const validRoot of this.rootCache.value) {
     box_get
@@ -1075,7 +1075,7 @@ addRoot:
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:32
     // rootCounter = GlobalState<uint64>({ key: "c" });
-    bytec_1 // "c"
+    bytec_3 // "c"
     // contracts/mimc_merkle.algo.ts:172
     // const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
     app_global_get_ex
@@ -1089,7 +1089,7 @@ addRoot:
     *
     // contracts/mimc_merkle.algo.ts:30
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
-    bytec_2 // "r"
+    bytec_1 // "r"
     // contracts/mimc_merkle.algo.ts:173
     // this.rootCache.value[index] = rootHash;
     swap
@@ -1101,7 +1101,7 @@ addRoot:
     +
     // contracts/mimc_merkle.algo.ts:32
     // rootCounter = GlobalState<uint64>({ key: "c" });
-    bytec_1 // "c"
+    bytec_3 // "c"
     // contracts/mimc_merkle.algo.ts:175
     // this.rootCounter.value += 1;
     swap

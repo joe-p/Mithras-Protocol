@@ -12,8 +12,6 @@ describe("Mithras App", () => {
   let algorand: AlgorandClient;
   let depositor: Address;
 
-  let startRound: bigint;
-
   const testSpend = async (
     client: MithrasProtocolClient,
     spender: MithrasAccount,
@@ -56,7 +54,6 @@ describe("Mithras App", () => {
     const receiversSubscriber = await BalanceAndTreeSubscriber.fromAppId({
       algod: algorand.client.algod,
       appId: appClient.appId,
-      startRound,
       discoveryKeypair: receiver.discoveryKeypair,
       spendKeypair: receiver.spendKeypair,
     });
@@ -79,8 +76,6 @@ describe("Mithras App", () => {
       appId: deployment.appClient.appId,
       defaultSender: depositor,
     });
-
-    startRound = (await algorand.client.algod.status().do()).lastRound;
   });
 
   it("deposit and spend", async () => {
@@ -102,7 +97,6 @@ describe("Mithras App", () => {
       appId: appClient.appId,
       discoveryKeypair: initialReceiver.discoveryKeypair,
       spendKeypair: initialReceiver.spendKeypair,
-      startRound,
     });
 
     expect(subscriber.amount).toBe(0n);

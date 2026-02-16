@@ -66,7 +66,7 @@ type NewLeaf = {
 export class Mithras extends MimcMerkle {
   depositVerifier = GlobalState<Address>({ key: "d" });
   spendVerifier = GlobalState<Address>({ key: "s" });
-  creationRound = GlobalState<uint64>({ key: "c" });
+  creationRound = GlobalState<uint64>({ key: "cr" });
 
   nullifiers = BoxMap<Uint256, bytes<0>>({ keyPrefix: "n" });
 

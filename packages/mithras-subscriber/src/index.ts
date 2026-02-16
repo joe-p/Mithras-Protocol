@@ -237,6 +237,8 @@ async function resolveStartRound(config: {
 }): Promise<bigint> {
   const { appId, algod } = config;
 
+  let creationRound: bigint | undefined = undefined;
+
   if (config.startRound === undefined) {
     if (config.merkleTree && config.merkleTree.getLeafCount() > 0) {
       throw new Error(
@@ -244,12 +246,9 @@ async function resolveStartRound(config: {
       );
     }
 
-    let creationRound: bigint | undefined = undefined;
     for (const g of (await algod.getApplicationByID(appId).do()).params
       .globalState ?? []) {
-      console.debug(g);
-      if (new TextDecoder().decode(g.key) === "c") {
-        // TODO: For some reason on localnet this always seems to be 1
+      if (new TextDecoder().decode(g.key) === "cr") {
         creationRound = BigInt(g.value.uint);
         console.debug(
           `Found creation round ${creationRound} in application global state`,
@@ -265,7 +264,7 @@ async function resolveStartRound(config: {
     }
   }
 
-  return config.startRound ?? 0n;
+  return config.startRound ?? creationRound!;
 }
 
 class BaseMithrasSubscriber {
