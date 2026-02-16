@@ -7,12 +7,10 @@ import algosdk from "algosdk";
 import {
   DiscoveryKeypair,
   HpkeEnvelope,
-  MerkleProof as MerkleProof,
   MimcMerkleTree,
-  SpendKeypair,
   TransactionMetadata,
-  StealthKeypair,
   UtxoSecrets,
+  deriveStealthPubkey,
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
 
@@ -187,7 +185,7 @@ export async function algodUtxoLookup(
 
 export type BalanceSubscriberConfig = {
   discoveryKeypair: DiscoveryKeypair;
-  spendKeypair?: SpendKeypair;
+  spendPubkey: Uint8Array;
 };
 
 export type MerkleTreeSubscriberConfig = {
@@ -224,7 +222,7 @@ type BaseSubscriberOptions = {
   appId: bigint;
   startRound: bigint;
   discoveryKeypair?: DiscoveryKeypair;
-  spendKeypair?: SpendKeypair;
+  spendPubkey?: Uint8Array;
   merkleTree?: MimcMerkleTree;
   balanceState?: BalanceState;
 };
@@ -278,7 +276,7 @@ class BaseMithrasSubscriber {
       appId,
       startRound,
       discoveryKeypair,
-      spendKeypair,
+      spendPubkey,
       merkleTree,
       balanceState,
     } = options;
@@ -328,7 +326,7 @@ class BaseMithrasSubscriber {
       if (
         balanceState === undefined ||
         discoveryKeypair === undefined ||
-        spendKeypair === undefined
+        spendPubkey === undefined
       ) {
         console.debug(
           "No discovery or spend keypair provided, skipping transaction processing",
@@ -394,24 +392,16 @@ class BaseMithrasSubscriber {
           continue;
         }
 
-        if (spendKeypair !== undefined) {
-          const derivedSigner = StealthKeypair.derive(
-            spendKeypair,
-            utxo.stealthScalar,
-          );
+        const derivedStealthPublicKey = deriveStealthPubkey(
+          spendPubkey,
+          utxo.stealthScalar,
+        );
 
-          if (
-            derivedSigner.publicKey.toString() != utxo.stealthPubkey.toString()
-          ) {
-            console.debug(
-              `Derived stealth public key does not match expected stealth public key for transaction ${txn.id}, skipping...`,
-            );
-            continue;
-          }
-        } else {
+        if (!equalBytes(derivedStealthPublicKey, utxo.stealthPubkey)) {
           console.debug(
-            `No spend keypair provided, skipping stealth key verification for transaction ${txn.id}...`,
+            `Derived stealth public key does not match expected stealth public key for transaction ${txn.id}, skipping...`,
           );
+          continue;
         }
 
         const nullifier = utxo.computeNullifier();
@@ -451,7 +441,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
       config.appId,
       startRound,
       config.discoveryKeypair,
-      config.spendKeypair,
+      config.spendPubkey,
     );
   }
 
@@ -460,7 +450,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
     appId: bigint,
     startRound: bigint,
     discoveryKeypair: DiscoveryKeypair,
-    spendKeypair?: SpendKeypair,
+    spendPubkey: Uint8Array,
   ) {
     const balanceState: BalanceState = {
       amount: 0n,
@@ -471,7 +461,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
       appId,
       startRound,
       discoveryKeypair,
-      spendKeypair,
+      spendPubkey: spendPubkey,
       balanceState,
     });
     this.balanceState = balanceState;
@@ -546,7 +536,7 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       startRound,
       config.discoveryKeypair,
       config.merkleTree ?? new MimcMerkleTree(),
-      config.spendKeypair,
+      config.spendPubkey,
     );
   }
 
@@ -556,7 +546,7 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
     startRound: bigint,
     discoveryKeypair: DiscoveryKeypair,
     merkleTree: MimcMerkleTree,
-    spendKeypair?: SpendKeypair,
+    spendPubkey: Uint8Array,
   ) {
     const balanceState: BalanceState = {
       amount: 0n,
@@ -567,7 +557,7 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       appId,
       startRound,
       discoveryKeypair,
-      spendKeypair,
+      spendPubkey,
       merkleTree,
       balanceState,
     });

@@ -55,7 +55,7 @@ describe("Mithras App", () => {
       algod: algorand.client.algod,
       appId: appClient.appId,
       discoveryKeypair: receiver.discoveryKeypair,
-      spendKeypair: receiver.spendKeypair,
+      spendPubkey: receiver.spendKeypair.publicKey,
     });
 
     await receiversSubscriber.subscriber.pollOnce();
@@ -96,7 +96,7 @@ describe("Mithras App", () => {
       algod: algorand.client.algod,
       appId: appClient.appId,
       discoveryKeypair: initialReceiver.discoveryKeypair,
-      spendKeypair: initialReceiver.spendKeypair,
+      spendPubkey: initialReceiver.spendKeypair.publicKey,
     });
 
     expect(subscriber.amount).toBe(0n);
