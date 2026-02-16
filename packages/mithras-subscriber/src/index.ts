@@ -187,7 +187,7 @@ export async function algodUtxoLookup(
 
 export type BalanceSubscriberConfig = {
   discoveryKeypair: DiscoveryKeypair;
-  spendKeypair: SpendKeypair;
+  spendKeypair?: SpendKeypair;
 };
 
 export type MerkleTreeSubscriberConfig = {
@@ -395,6 +395,9 @@ class BaseMithrasSubscriber {
         }
         const nullifier = utxo.computeNullifier();
         if (balanceState.utxos.has(nullifier)) {
+          console.debug(
+            `Nullifier ${nullifier} from transaction ${txn.id} already exists in balance state, skipping...`,
+          );
           continue;
         } else {
           balanceState.utxos.set(nullifier, {
@@ -405,15 +408,24 @@ class BaseMithrasSubscriber {
           });
         }
 
-        const derivedSigner = StealthKeypair.derive(
-          spendKeypair,
-          utxo.stealthScalar,
-        );
+        if (spendKeypair !== undefined) {
+          const derivedSigner = StealthKeypair.derive(
+            spendKeypair,
+            utxo.stealthScalar,
+          );
 
-        if (
-          derivedSigner.publicKey.toString() != utxo.stealthPubkey.toString()
-        ) {
-          continue;
+          if (
+            derivedSigner.publicKey.toString() != utxo.stealthPubkey.toString()
+          ) {
+            console.debug(
+              `Derived stealth public key does not match expected stealth public key for transaction ${txn.id}, skipping...`,
+            );
+            continue;
+          }
+        } else {
+          console.debug(
+            `No spend keypair provided, skipping stealth key verification for transaction ${txn.id}...`,
+          );
         }
 
         console.debug(`Adding amount ${utxo.amount} from tx ${txn.id}`);
@@ -447,7 +459,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
     appId: bigint,
     startRound: bigint,
     discoveryKeypair: DiscoveryKeypair,
-    spendKeypair: SpendKeypair,
+    spendKeypair?: SpendKeypair,
   ) {
     const balanceState: BalanceState = {
       amount: 0n,
@@ -532,8 +544,8 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       config.appId,
       startRound,
       config.discoveryKeypair,
-      config.spendKeypair,
       config.merkleTree ?? new MimcMerkleTree(),
+      config.spendKeypair,
     );
   }
 
@@ -542,8 +554,8 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
     appId: bigint,
     startRound: bigint,
     discoveryKeypair: DiscoveryKeypair,
-    spendKeypair: SpendKeypair,
     merkleTree: MimcMerkleTree,
+    spendKeypair?: SpendKeypair,
   ) {
     const balanceState: BalanceState = {
       amount: 0n,
