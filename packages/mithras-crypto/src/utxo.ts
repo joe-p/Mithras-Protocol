@@ -1,8 +1,4 @@
-import {
-  bytesToNumberBE,
-  concatBytes,
-  numberToBytesBE,
-} from "@noble/curves/utils.js";
+import { bytesToNumberBE, numberToBytesBE } from "@noble/curves/utils.js";
 import {
   getHpkeSuite,
   HpkeEnvelope,
@@ -10,8 +6,8 @@ import {
   TransactionMetadata,
 } from "./hpke";
 import {
-  deriveTweakedPubkey,
-  deriveTweakScalar,
+  deriveStealthPubkey,
+  deriveStealthScalar,
   DiscoveryKeypair,
 } from "./keypairs";
 import { computeDiscoverySecretSender, computeDiscoveryTag } from "./discovery";
@@ -25,21 +21,21 @@ export class UtxoSecrets {
   spendingSecret: Uint8Array;
   nullifierSecret: Uint8Array;
   amount: bigint;
-  tweakScalar: bigint;
-  tweakedPubkey: Uint8Array;
+  stealthScalar: bigint;
+  stealthPubkey: Uint8Array;
 
   constructor(
     spendingSecret: Uint8Array,
     nullifierSecret: Uint8Array,
     amount: bigint,
-    tweakScalar: bigint,
-    tweakedPubkey: Uint8Array,
+    stealthScalar: bigint,
+    stealthPubkey: Uint8Array,
   ) {
     this.spendingSecret = spendingSecret;
     this.nullifierSecret = nullifierSecret;
     this.amount = amount;
-    this.tweakScalar = tweakScalar;
-    this.tweakedPubkey = tweakedPubkey;
+    this.stealthScalar = stealthScalar;
+    this.stealthPubkey = stealthPubkey;
   }
 
   static fromBytes(bytes: Uint8Array): UtxoSecrets {
@@ -52,15 +48,15 @@ export class UtxoSecrets {
     const spendingSecret = bytes.slice(0, 32);
     const nullifierSecret = bytes.slice(32, 64);
     const amount = bytesToNumberBE(bytes.slice(64, 72));
-    const tweakScalar = bytesToNumberBE(bytes.slice(72, 104));
-    const tweakedPubkey = bytes.slice(104, 136);
+    const stealthScalar = bytesToNumberBE(bytes.slice(72, 104));
+    const stealthPubkey = bytes.slice(104, 136);
 
     return new UtxoSecrets(
       spendingSecret,
       nullifierSecret,
       amount,
-      tweakScalar,
-      tweakedPubkey,
+      stealthScalar,
+      stealthPubkey,
     );
   }
 
@@ -69,8 +65,8 @@ export class UtxoSecrets {
     bytes.set(this.spendingSecret, 0);
     bytes.set(this.nullifierSecret, 32);
     bytes.set(numberToBytesBE(this.amount, 8), 64);
-    bytes.set(numberToBytesBE(this.tweakScalar, 32), 72);
-    bytes.set(this.tweakedPubkey, 104);
+    bytes.set(numberToBytesBE(this.stealthScalar, 32), 72);
+    bytes.set(this.stealthPubkey, 104);
     return bytes;
   }
 
@@ -102,7 +98,7 @@ export class UtxoSecrets {
       bytesToNumberBE(this.spendingSecret),
       bytesToNumberBE(this.nullifierSecret),
       this.amount,
-      addressInScalarField(this.tweakedPubkey),
+      addressInScalarField(this.stealthPubkey),
     ];
     return numberToBytesBE(mimcSum(input), 32);
   }
@@ -142,10 +138,10 @@ export class UtxoInputs {
       receiver.discX25519,
     );
 
-    const tweakScalar = deriveTweakScalar(discoverySecret);
-    const tweakedPubkey = deriveTweakedPubkey(
+    const stealthScalar = deriveStealthScalar(discoverySecret);
+    const stealthPubkey = deriveStealthPubkey(
       receiver.spendEd25519,
-      tweakScalar,
+      stealthScalar,
     );
 
     const discoveryTag = computeDiscoveryTag(
@@ -163,8 +159,8 @@ export class UtxoInputs {
       spendingSecret,
       nullifierSecret,
       amount,
-      tweakScalar,
-      tweakedPubkey,
+      stealthScalar,
+      stealthPubkey,
     );
 
     const senderCtx = await hpke.createSenderContext({

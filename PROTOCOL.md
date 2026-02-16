@@ -4,25 +4,20 @@
 
 ### Spend Keypair
 
-- **Type:** Ed25519 keypair
+- **Type:** Expanded Ed25519 keypair
 - **Purpose:** Long-term spend authority.
   - Public part $P = s·G$ can be shared so senders can derive one-time spend keys.
   - Private part $s$ is the clamped Ed25519 secret scalar derived from the 32-byte seed (not the raw seed itself). The seed also derives a `prefix` used for deterministic nonces when signing. Neither appear on-chain.
 
-### Tweaked One-Time Spend Keypair
+### Stealth Keypair
 
-- **Type:** Ed25519 keypair
+- **Type:** Expanded Ed25519 keypair
 - **Purpose:** Unique per UTXO; used for locking and spending that output.
   - Public: $P' = P + t·G$ (computed by sender)
   - Private: $s' = (s + t) \\bmod q$ (computed by receiver); reuse the base key's `prefix` for signing.
 - **Privacy:** Unlinkable to $P$ without knowing $t$.
 - **Sender:** Can compute $P'$ but not $s'$.
 - **Receiver:** Can compute $s'$ (and thus $P'$) from $s$ and $t$.
-
-### Stealth Address *(Friendly Term)*
-
-- **Meaning:** Wallet-friendly label for the public part of a Tweaked One-Time Spend Keypair.
-- **Notes:** One stealh address = one UTXO; not reused.
 
 ### Discovery Keypair
 
@@ -40,7 +35,7 @@
   - Sender: $T = r·D$
   - Receiver: $T = d·R$
 - **Purpose:** Input for:
-  - Tweak scalar $t$ for spend key derivation.
+  - Stealth scalar $t$ for spend key derivation.
   - Key for computing the discovery tag.
 
 ### Discovery Tag
@@ -73,7 +68,7 @@
 | **Ephemeral privkey** `r`       | Yes    | No       | No                              |
 | **Ephemeral pubkey** `R`        | Yes    | Yes      | Yes (in tx)                     |
 | **Discovery secret** `T`        | Yes    | Yes      | No                              |
-| **Tweak scalar** `t`            | Yes    | Yes      | No                              |
+| **Stealth scalar** `t`          | Yes    | Yes      | No                              |
 | **One-time spend privkey** `s'` | No     | Yes      | No                              |
 | **One-time spend pubkey** `P'`  | Yes    | Yes      | Yes (locks UTXO)                |
 | **Discovery tag** `tag`         | Yes    | Yes      | Yes (in tx)                     |
@@ -86,7 +81,7 @@
 #### Public Input Signals
 
 - `utxo_amount`: The amount being deposited into the protocol
-- `receiver`: The public key of the tweaked one-time spend keypair that can spend the deposited amount
+- `receiver`: The public key of the stealth one-time spend keypair that can spend the deposited amount
 
 #### Private Input Signals
 

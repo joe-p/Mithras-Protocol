@@ -11,7 +11,7 @@ import {
   MimcMerkleTree,
   SpendSeed,
   TransactionMetadata,
-  TweakedSigner,
+  StealthKeypair,
   UtxoSecrets,
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
@@ -318,10 +318,13 @@ export class MithrasSubscriber {
           });
         }
 
-        const derivedSigner = TweakedSigner.derive(spendSeed, utxo.tweakScalar);
+        const derivedSigner = StealthKeypair.derive(
+          spendSeed,
+          utxo.stealthScalar,
+        );
 
         if (
-          derivedSigner.publicKey.toString() != utxo.tweakedPubkey.toString()
+          derivedSigner.publicKey.toString() != utxo.stealthPubkey.toString()
         ) {
           continue;
         }
