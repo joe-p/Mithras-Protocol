@@ -11,7 +11,7 @@ import { sha512 } from "@noble/hashes/sha2.js";
 import { MithrasAddr } from "./address";
 import { SupportedHpkeSuite } from "./hpke";
 
-export class DiscoveryKeypair {
+export class ViewKeypair {
   privateKey: Uint8Array;
   publicKey: Uint8Array;
 
@@ -20,9 +20,9 @@ export class DiscoveryKeypair {
     this.publicKey = publicKey;
   }
 
-  static generate(): DiscoveryKeypair {
+  static generate(): ViewKeypair {
     const keypair = x25519.keygen();
-    return new DiscoveryKeypair(keypair.secretKey, keypair.publicKey);
+    return new ViewKeypair(keypair.secretKey, keypair.publicKey);
   }
 }
 
@@ -150,12 +150,9 @@ export function deriveStealthPubkey(
   return stealthPoint.toBytes();
 }
 
-export function deriveStealthScalar(discoverySecret: Uint8Array): bigint {
+export function deriveStealthScalar(viewSecret: Uint8Array): bigint {
   const hash = sha512(
-    concatBytes(
-      new TextEncoder().encode("mithras-stealth-scalar"),
-      discoverySecret,
-    ),
+    concatBytes(new TextEncoder().encode("mithras-stealth-scalar"), viewSecret),
   );
   return bytesToNumberLE(hash.slice(0, 32)) % ORDER;
 }
@@ -176,15 +173,15 @@ export function deriveStealthPrefix(
 
 export class MithrasAccount {
   spendKeypair: SpendKeypair;
-  discoveryKeypair: DiscoveryKeypair;
+  viewKeypair: ViewKeypair;
   address: MithrasAddr;
 
-  constructor(spendKeypair: SpendKeypair, discoveryKeypair: DiscoveryKeypair) {
+  constructor(spendKeypair: SpendKeypair, viewKeypair: ViewKeypair) {
     this.spendKeypair = spendKeypair;
-    this.discoveryKeypair = discoveryKeypair;
+    this.viewKeypair = viewKeypair;
     this.address = MithrasAddr.fromKeys(
       spendKeypair.publicKey,
-      discoveryKeypair.publicKey,
+      viewKeypair.publicKey,
       1,
       0,
       SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
@@ -192,9 +189,6 @@ export class MithrasAccount {
   }
 
   static generate(): MithrasAccount {
-    return new MithrasAccount(
-      SpendKeypair.generate(),
-      DiscoveryKeypair.generate(),
-    );
+    return new MithrasAccount(SpendKeypair.generate(), ViewKeypair.generate());
   }
 }

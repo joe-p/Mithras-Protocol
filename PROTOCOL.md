@@ -19,7 +19,7 @@
 - **Sender:** Can compute $P'$ but not $s'$.
 - **Receiver:** Can compute $s'$ (and thus $P'$) from $s$ and $t$.
 
-### Discovery Keypair
+### View Keypair
 
 - **Type:** X25519 keypair
 - **Purpose:** Enables scanning to detect relevant outputs.
@@ -29,26 +29,26 @@
 
 ## Secrets
 
-### Discovery Secret
+### View Secret
 
 - **Type:** 32-byte shared secret from ECDH:
   - Sender: $T = r·D$
   - Receiver: $T = d·R$
 - **Purpose:** Input for:
   - Stealth scalar $t$ for spend key derivation.
-  - Key for computing the discovery tag.
+  - Key for computing the view tag.
 
-### Discovery Tag
+### View Tag
 
 - **Formula:**
 
   ```text
-  tag = SHA512_256("discovery-tag" || T || sender || fv || lv || lease)
+  tag = SHA512_256("view-tag" || T || sender || fv || lv || lease)
   ```
 
 - **Purpose:** Small value in tx header that lets receiver quickly identify their outputs.
 
-- **Privacy:** Outsiders can’t link tags without `discovery_secret`.
+- **Privacy:** Outsiders can’t link tags without `view_secret`.
 
 ### Spend Secret
 
@@ -63,15 +63,15 @@
 | ------------------------------- | ------ | -------- | ------------------------------- |
 | **Spend privkey** `s`           | No     | Yes      | No                              |
 | **Spend pubkey** `P`            | Yes    | Yes      | Possibly (externally published) |
-| **Discovery privkey** `d`       | No     | Yes      | No                              |
-| **Discovery pubkey** `D`        | Yes    | Yes      | Possibly (externally published) |
+| **View privkey** `d`            | No     | Yes      | No                              |
+| **View pubkey** `D`             | Yes    | Yes      | Possibly (externally published) |
 | **Ephemeral privkey** `r`       | Yes    | No       | No                              |
 | **Ephemeral pubkey** `R`        | Yes    | Yes      | Yes (in tx)                     |
-| **Discovery secret** `T`        | Yes    | Yes      | No                              |
+| **View secret** `T`             | Yes    | Yes      | No                              |
 | **Stealth scalar** `t`          | Yes    | Yes      | No                              |
 | **One-time spend privkey** `s'` | No     | Yes      | No                              |
 | **One-time spend pubkey** `P'`  | Yes    | Yes      | Yes (locks UTXO)                |
-| **Discovery tag** `tag`         | Yes    | Yes      | Yes (in tx)                     |
+| **View tag** `tag`              | Yes    | Yes      | Yes (in tx)                     |
 | **Spend secret**                | Yes    | Yes      | No (encrypted in tx)            |
 
 ## Circuits
