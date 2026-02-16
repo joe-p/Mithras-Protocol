@@ -4,12 +4,8 @@ import { MithrasClient } from "../../mithras-contracts-and-circuits/contracts/cl
 import { beforeAll, describe, expect, it } from "vitest";
 import { Address } from "algosdk";
 import { MithrasProtocolClient } from "../../mithras-contracts-and-circuits/src";
-import {
-  bytesToNumberBE,
-  MimcMerkleTree,
-  MithrasAccount,
-} from "../../mithras-crypto/src";
-import { algodUtxoLookup, MithrasSubscriber } from "../src";
+import { MimcMerkleTree, MithrasAccount } from "../../mithras-crypto/src";
+import { algodUtxoLookup, BalanceAndTreeSubscriber } from "../src";
 
 describe("Mithras App", () => {
   let appClient: MithrasClient;
@@ -21,7 +17,7 @@ describe("Mithras App", () => {
   const testSpend = async (
     client: MithrasProtocolClient,
     spender: MithrasAccount,
-    spenderSubscriber: MithrasSubscriber,
+    spenderSubscriber: BalanceAndTreeSubscriber,
     amount: bigint,
   ) => {
     const utxo = spenderSubscriber.utxos.entries().next().value;
@@ -40,7 +36,7 @@ describe("Mithras App", () => {
       spender.address,
       spenderKeypair,
       secrets,
-      spenderSubscriber.merkleTree!.getMerkleProof(treeIndex),
+      spenderSubscriber.merkleTree.getMerkleProof(treeIndex),
       { receiver: receiver.address, amount },
     );
 
@@ -57,7 +53,7 @@ describe("Mithras App", () => {
 
     await composer.send();
 
-    const receiversSubscriber = await MithrasSubscriber.fromAppId({
+    const receiversSubscriber = await BalanceAndTreeSubscriber.fromAppId({
       algod: algorand.client.algod,
       appId: appClient.appId,
       startRound,
@@ -102,7 +98,7 @@ describe("Mithras App", () => {
 
     await depositGroup.send();
 
-    const subscriber = await MithrasSubscriber.fromAppId({
+    const subscriber = await BalanceAndTreeSubscriber.fromAppId({
       algod: algorand.client.algod,
       appId: appClient.appId,
       discoveryKeypair: initialReceiver.discoveryKeypair,
@@ -129,7 +125,7 @@ describe("Mithras App", () => {
 
     const contractRoot = await appClient.state.global.lastComputedRoot();
 
-    expect(contractRoot).toEqual(subscriber.merkleTree!.getRoot());
+    expect(contractRoot).toEqual(subscriber.merkleTree.getRoot());
 
     const {
       receiver: secondReceiver,
