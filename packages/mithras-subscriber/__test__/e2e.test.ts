@@ -4,7 +4,7 @@ import { MithrasClient } from "../../mithras-contracts-and-circuits/contracts/cl
 import { beforeAll, describe, expect, it } from "vitest";
 import { Address } from "algosdk";
 import { MithrasProtocolClient } from "../../mithras-contracts-and-circuits/src";
-import { MimcMerkleTree, MithrasAccount } from "../../mithras-crypto/src";
+import { MithrasAccount } from "../../mithras-crypto/src";
 import { algodUtxoLookup, BalanceAndTreeSubscriber } from "../src";
 
 describe("Mithras App", () => {
@@ -59,7 +59,6 @@ describe("Mithras App", () => {
       startRound,
       discoveryKeypair: receiver.discoveryKeypair,
       spendKeypair: receiver.spendKeypair,
-      merkleTree: new MimcMerkleTree(),
     });
 
     await receiversSubscriber.subscriber.pollOnce();
@@ -104,7 +103,6 @@ describe("Mithras App", () => {
       discoveryKeypair: initialReceiver.discoveryKeypair,
       spendKeypair: initialReceiver.spendKeypair,
       startRound,
-      merkleTree: new MimcMerkleTree(),
     });
 
     expect(subscriber.amount).toBe(0n);

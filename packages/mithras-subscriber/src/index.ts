@@ -191,7 +191,7 @@ export type BalanceSubscriberConfig = {
 };
 
 export type MerkleTreeSubscriberConfig = {
-  merkleTree: MimcMerkleTree;
+  merkleTree?: MimcMerkleTree;
 };
 
 export type BalanceAndTreeSubscriberConfig = BalanceSubscriberConfig &
@@ -498,7 +498,7 @@ export class TreeSubscriber extends BaseMithrasSubscriber {
       config.algod,
       config.appId,
       startRound,
-      config.merkleTree,
+      config.merkleTree ?? new MimcMerkleTree(),
     );
   }
 
@@ -537,7 +537,7 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       startRound,
       config.discoveryKeypair,
       config.spendKeypair,
-      config.merkleTree,
+      config.merkleTree ?? new MimcMerkleTree(),
     );
   }
 
