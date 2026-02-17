@@ -26,11 +26,11 @@ The address is derived from two key pairs: a view key pair and a spend key pair.
 
 It is also possible for a user to have multiple addresses with various view keys. This allows for selective disclosure of transaction history and balance.
 
-To spend funds, the user must generate a ZK proof that they have the right to spend the funds. This proof is then validated by a smart contract which also inserts the UTXO into a merkle tree. Spending authorization is enforced by the Algorand protocol via the ed25519 signature on the transaction that interacts with the smart contract.
+To spend funds, the user must generate a ZK proof that they have the right to spend the funds. This proof is then validated by a smart contract which also inserts the UTXO into a Merkle tree. Spending authorization is enforced by the Algorand protocol via the ed25519 signature on the transaction that interacts with the smart contract.
 
 ### Cost
 
-Due to the ZK verification and merkle tree management, spending a UTXO on Mithras is more expensive than a regular Algorand transaction. The cost of spending a single UTXO is 0.071 ALGO. It should be noted that transactions may involve multiple UTXO spends which would increase the cost.
+Due to the ZK verification and Merkle tree management, spending a UTXO on Mithras is more expensive than a regular Algorand transaction. The cost of spending a single UTXO is 0.071 ALGO. It should be noted that transactions may involve multiple UTXO spends which would increase the cost.
 
 ### Speed
 
@@ -38,7 +38,7 @@ On a M4 Pro the wasm-based ZK proof generation takes roughly 8 seconds for a UTX
 
 ### Infrastructure
 
-Interacting with the Mithras protocol requires access to full transaction history of the Algorand blockchain starting from the round the mithras app was created. This is required because transaction history is needed to reconstruct the full merkle tree of UTXOs. This means when a client-side application wants to get balance and available UTXOs for a given address, the full chain history must be processed to do so. Abstractions over the AlgoKit subscriber are provided to make this process as easy as possible with just a regular archival node. This, however, can also be done with a dedicated server that is constantly watching the chain. This server does not need access to the spending key and just needs the view key. This means if the server is compromised privacy is lost but funds are not at risk.
+Interacting with the Mithras protocol requires access to full transaction history of the Algorand blockchain starting from the round the mithras app was created. This is required because transaction history is needed to reconstruct the full Merkle tree of UTXOs. This means when a client-side application wants to get balance and available UTXOs for a given address, the full chain history must be processed to do so. Abstractions over the AlgoKit subscriber are provided to make this process as easy as possible with just a regular archival node. This, however, can also be done with a dedicated server that is constantly watching the chain. This server does not need access to the spending key and just needs the view key. This means if the server is compromised privacy is lost but funds are not at risk.
 
 ### Example: Aid Distribution Flow
 
