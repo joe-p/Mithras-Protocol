@@ -19,13 +19,13 @@ describe("Mithras App", () => {
     amount: bigint,
   ) => {
     const utxo = spenderSubscriber.utxos.entries().next().value;
-    const spenderDisc = spender.discoveryKeypair;
+    const spenderView = spender.viewKeypair;
     const spenderKeypair = spender.spendKeypair;
 
     const { secrets, treeIndex } = await algodUtxoLookup(
       algorand.client.algod,
       utxo[1],
-      spenderDisc,
+      spenderView,
     );
 
     const receiver = MithrasAccount.generate();
@@ -54,7 +54,7 @@ describe("Mithras App", () => {
     const receiversSubscriber = await BalanceAndTreeSubscriber.fromAppId({
       algod: algorand.client.algod,
       appId: appClient.appId,
-      discoveryKeypair: receiver.discoveryKeypair,
+      viewKeypair: receiver.viewKeypair,
       spendPubkey: receiver.spendKeypair.publicKey,
     });
 
@@ -95,7 +95,7 @@ describe("Mithras App", () => {
     const subscriber = await BalanceAndTreeSubscriber.fromAppId({
       algod: algorand.client.algod,
       appId: appClient.appId,
-      discoveryKeypair: initialReceiver.discoveryKeypair,
+      viewKeypair: initialReceiver.viewKeypair,
       spendPubkey: initialReceiver.spendKeypair.publicKey,
     });
 
@@ -110,7 +110,7 @@ describe("Mithras App", () => {
     const { secrets } = await algodUtxoLookup(
       algorand.client.algod,
       utxo[1],
-      initialReceiver.discoveryKeypair,
+      initialReceiver.viewKeypair,
     );
 
     expect(secrets.amount).toBe(initialAmount);

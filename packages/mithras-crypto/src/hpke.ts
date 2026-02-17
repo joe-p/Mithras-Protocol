@@ -1,7 +1,7 @@
 import { CipherSuite, DhkemX25519HkdfSha256, HkdfSha256 } from "@hpke/core";
 import { Chacha20Poly1305 } from "@hpke/chacha20poly1305";
 import { x25519 } from "@noble/curves/ed25519.js";
-import { computeDiscoveryTag } from "./discovery";
+import { computeViewTag } from "./view";
 
 export const CIPHER_TEXT_SIZE = 136 + 16; // SECRET_SIZE + AEAD tag
 export const HPKE_SIZE = 1 + 1 + 32 + CIPHER_TEXT_SIZE + 32 + 32;
@@ -74,23 +74,23 @@ export class HpkeEnvelope {
   suite: SupportedHpkeSuite;
   encapsulatedKey: Uint8Array;
   ciphertext: Uint8Array;
-  discoveryTag: Uint8Array;
-  discoveryEphemeral: Uint8Array;
+  viewTag: Uint8Array;
+  viewEphemeral: Uint8Array;
 
   constructor(
     version: number,
     suite: SupportedHpkeSuite,
     encapsulatedKey: Uint8Array,
     ciphertext: Uint8Array,
-    discoveryTag: Uint8Array,
-    discoveryEphemeral: Uint8Array,
+    viewTag: Uint8Array,
+    viewEphemeral: Uint8Array,
   ) {
     this.version = version;
     this.suite = suite;
     this.encapsulatedKey = encapsulatedKey;
     this.ciphertext = ciphertext;
-    this.discoveryTag = discoveryTag;
-    this.discoveryEphemeral = discoveryEphemeral;
+    this.viewTag = viewTag;
+    this.viewEphemeral = viewEphemeral;
   }
 
   static fromBytes(data: Uint8Array): HpkeEnvelope {
@@ -104,19 +104,19 @@ export class HpkeEnvelope {
     const suite = data[1] as SupportedHpkeSuite;
     const encapsulatedKey = data.slice(2, 34);
     const ciphertext = data.slice(34, 34 + CIPHER_TEXT_SIZE);
-    const discoveryTag = data.slice(
+    const viewTag = data.slice(
       34 + CIPHER_TEXT_SIZE,
       34 + CIPHER_TEXT_SIZE + 32,
     );
-    const discoveryEphemeral = data.slice(34 + CIPHER_TEXT_SIZE + 32);
+    const viewEphemeral = data.slice(34 + CIPHER_TEXT_SIZE + 32);
 
     return new HpkeEnvelope(
       version,
       suite,
       encapsulatedKey,
       ciphertext,
-      discoveryTag,
-      discoveryEphemeral,
+      viewTag,
+      viewEphemeral,
     );
   }
 
@@ -126,28 +126,25 @@ export class HpkeEnvelope {
     data[1] = this.suite;
     data.set(this.encapsulatedKey, 2);
     data.set(this.ciphertext, 34);
-    data.set(this.discoveryTag, 34 + CIPHER_TEXT_SIZE);
-    data.set(this.discoveryEphemeral, 34 + CIPHER_TEXT_SIZE + 32);
+    data.set(this.viewTag, 34 + CIPHER_TEXT_SIZE);
+    data.set(this.viewEphemeral, 34 + CIPHER_TEXT_SIZE + 32);
     return data;
   }
 
-  discoveryCheck(
-    discoveryPrivate: Uint8Array,
+  viewCheck(
+    viewPrivate: Uint8Array,
     txnMetadata: TransactionMetadata,
   ): boolean {
-    const discoverySecret = x25519.getSharedSecret(
-      discoveryPrivate,
-      this.discoveryEphemeral,
-    );
+    const viewSecret = x25519.getSharedSecret(viewPrivate, this.viewEphemeral);
 
-    const computedTag = computeDiscoveryTag(
-      discoverySecret,
+    const computedTag = computeViewTag(
+      viewSecret,
       txnMetadata.sender,
       txnMetadata.firstValid,
       txnMetadata.lastValid,
       txnMetadata.lease,
     );
 
-    return Buffer.from(computedTag).equals(Buffer.from(this.discoveryTag));
+    return Buffer.from(computedTag).equals(Buffer.from(this.viewTag));
   }
 }

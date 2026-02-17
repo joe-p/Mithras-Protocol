@@ -5,7 +5,7 @@ import {
 } from "@algorandfoundation/algokit-subscriber/types/subscription";
 import algosdk from "algosdk";
 import {
-  DiscoveryKeypair,
+  ViewKeypair,
   HpkeEnvelope,
   MimcMerkleTree,
   TransactionMetadata,
@@ -110,7 +110,7 @@ export type UtxoInfo = {
 export async function algodUtxoLookup(
   algod: algosdk.Algodv2,
   info: UtxoInfo,
-  discvoveryKeypair: DiscoveryKeypair,
+  viewKeypair: ViewKeypair,
 ): Promise<{ secrets: UtxoSecrets; treeIndex: number }> {
   const block = await algod.block(algosdk.decodeUint64(info.round)).do();
   const transaction = block.block.payset.find((t) => {
@@ -173,7 +173,7 @@ export async function algodUtxoLookup(
 
   const secrets = await UtxoSecrets.fromHpkeEnvelope(
     hpkeEnv,
-    discvoveryKeypair,
+    viewKeypair,
     txnMetadata,
   );
 
@@ -184,7 +184,7 @@ export async function algodUtxoLookup(
 }
 
 export type BalanceSubscriberConfig = {
-  discoveryKeypair: DiscoveryKeypair;
+  viewKeypair: ViewKeypair;
   spendPubkey: Uint8Array;
 };
 
@@ -221,7 +221,7 @@ type BaseSubscriberOptions = {
   algod: algosdk.Algodv2;
   appId: bigint;
   startRound: bigint;
-  discoveryKeypair?: DiscoveryKeypair;
+  viewKeypair?: ViewKeypair;
   spendPubkey?: Uint8Array;
   merkleTree?: MimcMerkleTree;
   balanceState?: BalanceState;
@@ -275,7 +275,7 @@ class BaseMithrasSubscriber {
       algod,
       appId,
       startRound,
-      discoveryKeypair,
+      viewKeypair,
       spendPubkey,
       merkleTree,
       balanceState,
@@ -325,11 +325,11 @@ class BaseMithrasSubscriber {
 
       if (
         balanceState === undefined ||
-        discoveryKeypair === undefined ||
+        viewKeypair === undefined ||
         spendPubkey === undefined
       ) {
         console.debug(
-          "No discovery or spend keypair provided, skipping transaction processing",
+          "View keypair or spend public key not provided, skipping balance update logic",
         );
         return;
       }
@@ -364,13 +364,11 @@ class BaseMithrasSubscriber {
         );
 
         console.debug(
-          `Performing discovery check for HPKE envelope in transaction ${txn.id}...`,
+          `Performing view check for HPKE envelope in transaction ${txn.id}...`,
         );
-        if (
-          !envelope.discoveryCheck(discoveryKeypair.privateKey, txnMetadata)
-        ) {
+        if (!envelope.viewCheck(viewKeypair.privateKey, txnMetadata)) {
           console.debug(
-            `HPKE envelope in transaction ${txn.id} failed discovery check, skipping...`,
+            `HPKE envelope in transaction ${txn.id} failed view check, skipping...`,
           );
           continue;
         }
@@ -378,7 +376,7 @@ class BaseMithrasSubscriber {
         console.debug(`Decrypting HPKE envelope for transaction ${txn.id}...`);
         const utxo = await UtxoSecrets.fromHpkeEnvelope(
           envelope,
-          discoveryKeypair,
+          viewKeypair,
           txnMetadata,
         );
 
@@ -440,7 +438,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
       config.algod,
       config.appId,
       startRound,
-      config.discoveryKeypair,
+      config.viewKeypair,
       config.spendPubkey,
     );
   }
@@ -449,7 +447,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
     algod: algosdk.Algodv2,
     appId: bigint,
     startRound: bigint,
-    discoveryKeypair: DiscoveryKeypair,
+    viewKeypair: ViewKeypair,
     spendPubkey: Uint8Array,
   ) {
     const balanceState: BalanceState = {
@@ -460,7 +458,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
       algod,
       appId,
       startRound,
-      discoveryKeypair,
+      viewKeypair,
       spendPubkey: spendPubkey,
       balanceState,
     });
@@ -534,7 +532,7 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       config.algod,
       config.appId,
       startRound,
-      config.discoveryKeypair,
+      config.viewKeypair,
       config.merkleTree ?? new MimcMerkleTree(),
       config.spendPubkey,
     );
@@ -544,7 +542,7 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
     algod: algosdk.Algodv2,
     appId: bigint,
     startRound: bigint,
-    discoveryKeypair: DiscoveryKeypair,
+    viewKeypair: ViewKeypair,
     merkleTree: MimcMerkleTree,
     spendPubkey: Uint8Array,
   ) {
@@ -556,7 +554,7 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       algod,
       appId,
       startRound,
-      discoveryKeypair,
+      viewKeypair,
       spendPubkey,
       merkleTree,
       balanceState,

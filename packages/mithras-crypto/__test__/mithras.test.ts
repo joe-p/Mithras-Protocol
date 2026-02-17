@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  DiscoveryKeypair,
+  ViewKeypair,
   SpendKeypair,
   StealthKeypair,
   deriveStealthPubkey,
@@ -8,10 +8,10 @@ import {
 } from "../src/keypairs";
 import { ed25519 } from "@noble/curves/ed25519.js";
 import {
-  computeDiscoverySecretSender,
-  computeDiscoverySecretReceiver,
-  computeDiscoveryTag,
-} from "../src/discovery";
+  computeViewSecretSender,
+  computeViewSecretReceiver,
+  computeViewTag,
+} from "../src/view";
 import {
   HpkeEnvelope,
   SupportedHpkeSuite,
@@ -26,22 +26,22 @@ import { mimcSum } from "../src/mimc";
 describe("mithras protocol", () => {
   it("keypair generation", () => {
     const spend = SpendKeypair.generate();
-    const discovery = DiscoveryKeypair.generate();
+    const view = ViewKeypair.generate();
 
     expect(spend.seed).toHaveLength(32);
-    expect(discovery.publicKey).toHaveLength(32);
+    expect(view.publicKey).toHaveLength(32);
   });
 
-  it("discovery secret computation", () => {
-    const discovery = DiscoveryKeypair.generate();
-    const ephemeral = DiscoveryKeypair.generate();
+  it("view secret computation", () => {
+    const view = ViewKeypair.generate();
+    const ephemeral = ViewKeypair.generate();
 
-    const secretSender = computeDiscoverySecretSender(
+    const secretSender = computeViewSecretSender(
       ephemeral.privateKey,
-      discovery.publicKey,
+      view.publicKey,
     );
-    const secretReceiver = computeDiscoverySecretReceiver(
-      discovery.privateKey,
+    const secretReceiver = computeViewSecretReceiver(
+      view.privateKey,
       ephemeral.publicKey,
     );
 
@@ -50,14 +50,14 @@ describe("mithras protocol", () => {
 
   it("stealth keypair computation", () => {
     const spend = SpendKeypair.generate();
-    const discovery = DiscoveryKeypair.generate();
-    const ephemeral = DiscoveryKeypair.generate();
+    const view = ViewKeypair.generate();
+    const ephemeral = ViewKeypair.generate();
 
-    const discoverySecret = computeDiscoverySecretSender(
+    const viewSecret = computeViewSecretSender(
       ephemeral.privateKey,
-      discovery.publicKey,
+      view.publicKey,
     );
-    const stealthScalar = deriveStealthScalar(discoverySecret);
+    const stealthScalar = deriveStealthScalar(viewSecret);
 
     const stealthPubSender = deriveStealthPubkey(
       spend.publicKey,
@@ -70,30 +70,24 @@ describe("mithras protocol", () => {
     expect(stealthPubSender).toEqual(stealthReceiver.publicKey);
   });
 
-  it("discovery tag", () => {
-    const discovery = DiscoveryKeypair.generate();
-    const ephemeral = DiscoveryKeypair.generate();
+  it("view tag", () => {
+    const view = ViewKeypair.generate();
+    const ephemeral = ViewKeypair.generate();
 
-    const secretSender = computeDiscoverySecretSender(
+    const secretSender = computeViewSecretSender(
       ephemeral.privateKey,
-      discovery.publicKey,
+      view.publicKey,
     );
-    const secretReceiver = computeDiscoverySecretReceiver(
-      discovery.privateKey,
+    const secretReceiver = computeViewSecretReceiver(
+      view.privateKey,
       ephemeral.publicKey,
     );
 
     const sender = new Uint8Array(32);
     const lease = new Uint8Array(32);
 
-    const tagSender = computeDiscoveryTag(
-      secretSender,
-      sender,
-      1000n,
-      2000n,
-      lease,
-    );
-    const tagReceiver = computeDiscoveryTag(
+    const tagSender = computeViewTag(secretSender, sender, 1000n, 2000n, lease);
+    const tagReceiver = computeViewTag(
       secretReceiver,
       sender,
       1000n,
@@ -106,7 +100,7 @@ describe("mithras protocol", () => {
 
   it("hpke encryption decryption", async () => {
     const hpke = getHpkeSuite(SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305);
-    const recipient = DiscoveryKeypair.generate();
+    const recipient = ViewKeypair.generate();
 
     const info = new TextEncoder().encode("mithras|network:0|app:1337|v:1");
     const aad = new TextEncoder().encode("txid:BLAH...BLAH");
@@ -158,14 +152,14 @@ describe("mithras protocol", () => {
 
   it("mithras address encoding decoding", () => {
     const spend = SpendKeypair.generate();
-    const discovery = DiscoveryKeypair.generate();
+    const view = ViewKeypair.generate();
     const stealthScalar = deriveStealthScalar(new Uint8Array(32).fill(42));
 
     const stealthReceiver = StealthKeypair.derive(spend, stealthScalar);
 
     const addr = MithrasAddr.fromKeys(
       stealthReceiver.publicKey,
-      discovery.publicKey,
+      view.publicKey,
       1,
       SupportedNetworks.Testnet,
       SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
@@ -178,16 +172,16 @@ describe("mithras protocol", () => {
     expect(decoded.network).toBe(addr.network);
     expect(decoded.suite).toBe(addr.suite);
     expect(decoded.spendEd25519).toEqual(addr.spendEd25519);
-    expect(decoded.discX25519).toEqual(addr.discX25519);
+    expect(decoded.viewX25519).toEqual(addr.viewX25519);
   });
 
   it("complete mithras protocol flow with utxo generate", async () => {
     const spend = SpendKeypair.generate();
-    const discovery = DiscoveryKeypair.generate();
+    const view = ViewKeypair.generate();
 
     const addr = MithrasAddr.fromKeys(
       spend.publicKey,
-      discovery.publicKey,
+      view.publicKey,
       1,
       SupportedNetworks.Testnet,
       SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
@@ -206,7 +200,7 @@ describe("mithras protocol", () => {
 
     const recoveredSecrets = await UtxoSecrets.fromHpkeEnvelope(
       utxoInputs.hpkeEnvelope,
-      discovery,
+      view,
       txnMetadata,
     );
 
@@ -227,14 +221,14 @@ describe("mithras protocol", () => {
 
   it("stealth signer signing and verification", () => {
     const spend = SpendKeypair.generate();
-    const discovery = DiscoveryKeypair.generate();
-    const ephemeral = DiscoveryKeypair.generate();
+    const view = ViewKeypair.generate();
+    const ephemeral = ViewKeypair.generate();
 
-    const discoverySecret = computeDiscoverySecretSender(
+    const viewSecret = computeViewSecretSender(
       ephemeral.privateKey,
-      discovery.publicKey,
+      view.publicKey,
     );
-    const stealthScalar = deriveStealthScalar(discoverySecret);
+    const stealthScalar = deriveStealthScalar(viewSecret);
 
     const stealthSigner = StealthKeypair.derive(spend, stealthScalar);
 

@@ -11,7 +11,7 @@ import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";
 import { Address } from "algosdk";
 import { depositVerifier, MithrasProtocolClient, spendVerifier } from "../src";
 import {
-  DiscoveryKeypair,
+  ViewKeypair,
   MithrasAddr,
   SpendKeypair,
   SupportedHpkeSuite,
@@ -65,7 +65,7 @@ describe("Mithras App", () => {
       1n,
       MithrasAddr.fromKeys(
         SpendKeypair.generate().publicKey,
-        DiscoveryKeypair.generate().publicKey,
+        ViewKeypair.generate().publicKey,
         1,
         0,
         SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,

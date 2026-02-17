@@ -8,9 +8,9 @@ import {
 import {
   deriveStealthPubkey,
   deriveStealthScalar,
-  DiscoveryKeypair,
+  ViewKeypair,
 } from "./keypairs";
-import { computeDiscoverySecretSender, computeDiscoveryTag } from "./discovery";
+import { computeViewSecretSender, computeViewTag } from "./view";
 import { MithrasAddr } from "./address";
 import { mimcSum } from "./mimc";
 import { addressInScalarField } from "../../mithras-contracts-and-circuits/src";
@@ -72,14 +72,14 @@ export class UtxoSecrets {
 
   static async fromHpkeEnvelope(
     hpkeEnvelope: HpkeEnvelope,
-    discoveryKeypair: DiscoveryKeypair,
+    viewKeypair: ViewKeypair,
     txnMetadata: TransactionMetadata,
   ): Promise<UtxoSecrets> {
     const hpke = getHpkeSuite(hpkeEnvelope.suite);
 
     const recvCtx = await hpke.createRecipientContext({
       recipientKey: await hpke.kem.deserializePrivateKey(
-        discoveryKeypair.privateKey,
+        viewKeypair.privateKey,
       ),
       enc: hpkeEnvelope.encapsulatedKey,
       info: txnMetadata.info(),
@@ -131,21 +131,21 @@ export class UtxoInputs {
   ): Promise<UtxoInputs> {
     const hpke = getHpkeSuite(SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305);
 
-    const ephemeralKeypair = DiscoveryKeypair.generate();
+    const ephemeralKeypair = ViewKeypair.generate();
 
-    const discoverySecret = computeDiscoverySecretSender(
+    const viewSecret = computeViewSecretSender(
       ephemeralKeypair.privateKey,
-      receiver.discX25519,
+      receiver.viewX25519,
     );
 
-    const stealthScalar = deriveStealthScalar(discoverySecret);
+    const stealthScalar = deriveStealthScalar(viewSecret);
     const stealthPubkey = deriveStealthPubkey(
       receiver.spendEd25519,
       stealthScalar,
     );
 
-    const discoveryTag = computeDiscoveryTag(
-      discoverySecret,
+    const viewTag = computeViewTag(
+      viewSecret,
       txnMetadata.sender,
       txnMetadata.firstValid,
       txnMetadata.lastValid,
@@ -165,7 +165,7 @@ export class UtxoInputs {
 
     const senderCtx = await hpke.createSenderContext({
       recipientPublicKey: await hpke.kem.deserializePublicKey(
-        receiver.discX25519,
+        receiver.viewX25519,
       ),
       info: txnMetadata.info(),
     });
@@ -177,7 +177,7 @@ export class UtxoInputs {
       SupportedHpkeSuite.x25519Sha256ChaCha20Poly1305,
       new Uint8Array(senderCtx.enc),
       new Uint8Array(ct),
-      discoveryTag,
+      viewTag,
       ephemeralKeypair.publicKey,
     );
 
