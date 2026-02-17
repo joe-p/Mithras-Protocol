@@ -67,4 +67,4 @@ For details about the protocol, please refer to [PROTOCOL.md](PROTOCOL.md).
 - Look into using zkVMs as a way to aggregate multiple UTXO spends into a single proof.
   - The main benefit here would be lower on-chain fees with atomicity
   - The main downside is that most zkVMs still use bn254 for on-chain proofs which has weaker security than BLS12-381
-- Create docker compose for running a subscriber in a TEE (i.e. on Phala or Nillion)
+- Create a Docker Compose file for running a subscriber in a TEE (i.e. on Phala or Nillion)
