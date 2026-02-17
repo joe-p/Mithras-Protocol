@@ -22,6 +22,7 @@ import {
 import { MithrasAddr } from "../src/address";
 import { UtxoInputs, UtxoSecrets } from "../src/utxo";
 import { mimcSum } from "../src/mimc";
+import { bytesToNumberBE } from "../src";
 
 describe("mithras protocol", () => {
   it("keypair generation", () => {
@@ -114,8 +115,8 @@ describe("mithras protocol", () => {
     });
 
     const mithrasSecret = new UtxoSecrets(
-      new Uint8Array(32).fill(42),
-      new Uint8Array(32).fill(43),
+      bytesToNumberBE(new Uint8Array(32).fill(42)),
+      bytesToNumberBE(new Uint8Array(32).fill(43)),
       1000n,
       7n,
       new Uint8Array(32),
