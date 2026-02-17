@@ -28,9 +28,17 @@ It is also possible for a user to have multiple addresses with various view keys
 
 To spend funds, the user must generate a ZK proof that they have the right to spend the funds. This proof is then validated by a smart contract which also inserts the UTXO into a merkle tree. Spending authorization is enforced by the Algorand protocol via the ed25519 signature on the transaction that interacts with the smart contract.
 
+### Cost
+
+Due to the ZK verification and merkle tree management, spending a UTXO on Mithras is more expensive than a regular Algorand transaction. The cost of spending a single UTXO is 0.071 ALGO. It should be noted that transactions may involve multiple UTXO spends which would increase the cost.
+
+### Speed
+
+On a M4 Pro the wasm-based ZK proof generation takes roughly 8 seconds for a UTXO spend. In many cases more than one UTXO will need to be spent at a time. Proof generation can, however, be done in parallel (note: not yet tested) so the time it takes to generate proofs for multiple UTXOs is not necessarily linear.
+
 ### Infrastructure
 
-Interacting with the Mithras protocol requires access to full transaction history of the Algorand blockchain. This is required because transaction history is needed to reconstruct the full merkle tree of UTXOs. This means when a client-side application wants to get balance and available UTXOs for a given address, the full chain history must be processed to do so. Abstractions over the AlgoKit subscriber are provided to make this process as easy as possible with just a regular archival node. This, however, can also be done with a dedicated server that is constantly watching the chain. This server does not need access to the spending key and just needs the view key. This means if the server is compromised privacy is lost but funds are not at risk.
+Interacting with the Mithras protocol requires access to full transaction history of the Algorand blockchain starting from the round the mithras app was created. This is required because transaction history is needed to reconstruct the full merkle tree of UTXOs. This means when a client-side application wants to get balance and available UTXOs for a given address, the full chain history must be processed to do so. Abstractions over the AlgoKit subscriber are provided to make this process as easy as possible with just a regular archival node. This, however, can also be done with a dedicated server that is constantly watching the chain. This server does not need access to the spending key and just needs the view key. This means if the server is compromised privacy is lost but funds are not at risk.
 
 ### Example: Aid Distribution Flow
 
@@ -48,3 +56,15 @@ A Mithras account has two components: a view key pair and a spend key pair. The 
 ### Technical Details
 
 For details about the protocol, please refer to [PROTOCOL.md](PROTOCOL.md).
+
+### Future Work
+
+- Support withdrawals
+- Support for ASAs
+- Switch from MiMC to Poseidon2 for more efficient hashing in circuit and on-chain (blocked by this [PR](https://github.com/algorand/go-algorand/pull/6560))
+  - This should result in slightly faster proving times
+  - This should also enable cheaper on-chain fees
+- Look into using zkVMs as a way to aggregate multiple UTXO spends into a single proof.
+  - The main benefit here would be lower on-chain fees with atomicity
+  - The main downside is that most zkVMs still use bn254 for on-chain proofs which has weaker security than BLS12-381
+- Create docker compose for running a subscriber in a TEE (i.e. on Phala or Nillion)
