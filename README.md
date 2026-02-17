@@ -10,8 +10,41 @@ This protocol, however, could also be used for any other use case that requires 
 
 ## Status
 
-Mithras is currently in development. The original proof-of-concept can be found [here](https://github.com/joe-p/Mithras-Protocol-POC). The proof of concept is a fork of [Hermes Vault](https://github.com/giuliop/HermesVault-smartcontracts) and uses [AlgoPlonk](https://github.com/giuliop/AlgoPlonk) for the circuits. The new implementation in this repo is being built from scratch and will use the [Algorand SnarkJS verifier](https://github.com/joe-p/snarkjs-algorand) for the ZKP circuits. The implementation for this new implementation will also differ significantly from the POC. In particular, the POC used in-circuit EDDSA signatures whereas the latest protocol is designed to only have assymetric cryptography outside of the circuit.
+Mithras is currently in development and none of it has been audited. It is not production-ready.
 
-## Technical Details
+A full end-to-end flow of depositing, spending, and tracking balance is available in [./packages/mithras-subscriber/__test__/e2e.test.ts](<>).
+
+## Protocol
+
+### Components
+
+Each user of the Mithras protocol has one or more addresses. The address is a bech32 string that looks something like the following:
+
+`mith1qyqsq4unvdxs3mueg3upw2pe97qccdknyz0xs3ztpufy8dchd99ve9kf625z8he8xsea2pjrwrud4mgncu7rcldxyw7qvuw5jmkj9t9jsu4qy08t0n`
+
+The address is derived from two key pairs: a view key pair and a spend key pair. The view key pair is used to view transactions on the blockchain. The spend key pair is used to actually spend the funds. This separation of keys allows someone to share their transaction history and balance with other parties without putting their funds at risk.
+
+It is also possible for a user to have multiple addresses with various view keys. This allows for selective disclosure of transaction history and balance.
+
+To spend funds, the user must generate a ZK proof that they have the right to spend the funds. This proof is then validated by a smart contract which also adds the UTXO to a merkle tree. Spending authorization is enforced by the Algorand protocol via the ed25519 signature on the transaction that interacts with the smart contract.
+
+### Infrastructure
+
+Interacting with the Mithras protocol requires access to full transaction history of the Algorand blockchain. This is required because transaction history is needed to reconstruct the full merkle tree of UTXOs. This means when a client-side application wants to get balance and available UTXOs for a given address, the full chain history must be processed to do so. Abstractions over the AlgoKit subscriber are provided to make this process as easy as possible with just a regular archival node. This, however, can also been done a dedicated server that is constantly watching the chain. This server does not need access to the spending key and just needs the view key. This means if the server is compromised privacy is lost but funds are not at risk.
+
+### Example: Aid Distribution Flow
+
+A Mithras account has two components: a view key pair and a spend key pair. The view key pair is used to view transactions on the blockchain. The spend key pair is used to actually spend the funds. This enables the following flow for aid distribution:
+
+1. An NGO creates a view key pair and shares the key pair with the recipient and any auditors
+1. The recipient creates a spend key pair and shares the public key with the NGO
+1. The NGO sends funds to the recipient using the view key from step 1 and the spend public key from step 2
+   - Any outside observer without the view key cannot see the recipient or the amount being sent
+   - The NGO, auditors, and recipient can see the amount being sent and prove it was sent to the intended recipient
+1. The recipient can now spend the funds privately using the spend key pair.
+   - NGO and auditors can no longer track the funds
+1. The recipient can generate a new view key pair (but keep their spend key pair) and use it to privately receive funds (i.e. P2P payments)
+
+### Technical Details
 
 For details about the protocol, please refer to [PROTOCOL.md](PROTOCOL.md).
