@@ -18,15 +18,15 @@ import { addressInScalarField } from "../../mithras-contracts-and-circuits/src";
 export const SECRET_SIZE: number = 136;
 
 export class UtxoSecrets {
-  spendingSecret: Uint8Array;
-  nullifierSecret: Uint8Array;
+  spendingSecret: bigint;
+  nullifierSecret: bigint;
   amount: bigint;
   stealthScalar: bigint;
   stealthPubkey: Uint8Array;
 
   constructor(
-    spendingSecret: Uint8Array,
-    nullifierSecret: Uint8Array,
+    spendingSecret: bigint,
+    nullifierSecret: bigint,
     amount: bigint,
     stealthScalar: bigint,
     stealthPubkey: Uint8Array,
@@ -45,8 +45,8 @@ export class UtxoSecrets {
       );
     }
 
-    const spendingSecret = bytes.slice(0, 32);
-    const nullifierSecret = bytes.slice(32, 64);
+    const spendingSecret = bytesToNumberBE(bytes.slice(0, 32));
+    const nullifierSecret = bytesToNumberBE(bytes.slice(32, 64));
     const amount = bytesToNumberBE(bytes.slice(64, 72));
     const stealthScalar = bytesToNumberBE(bytes.slice(72, 104));
     const stealthPubkey = bytes.slice(104, 136);
@@ -62,8 +62,8 @@ export class UtxoSecrets {
 
   toBytes(): Uint8Array {
     const bytes = new Uint8Array(SECRET_SIZE);
-    bytes.set(this.spendingSecret, 0);
-    bytes.set(this.nullifierSecret, 32);
+    bytes.set(numberToBytesBE(this.spendingSecret, 32), 0);
+    bytes.set(numberToBytesBE(this.nullifierSecret, 32), 32);
     bytes.set(numberToBytesBE(this.amount, 8), 64);
     bytes.set(numberToBytesBE(this.stealthScalar, 32), 72);
     bytes.set(this.stealthPubkey, 104);
@@ -93,25 +93,19 @@ export class UtxoSecrets {
     return UtxoSecrets.fromBytes(new Uint8Array(plaintext));
   }
 
-  computeCommitment(): Uint8Array {
+  computeCommitment(): bigint {
     const input = [
-      bytesToNumberBE(this.spendingSecret),
-      bytesToNumberBE(this.nullifierSecret),
+      this.spendingSecret,
+      this.nullifierSecret,
       this.amount,
       addressInScalarField(this.stealthPubkey),
     ];
-    return numberToBytesBE(mimcSum(input), 32);
+    return mimcSum(input);
   }
 
-  computeNullifier(): Uint8Array {
+  computeNullifier(): bigint {
     const commitment = this.computeCommitment();
-    return numberToBytesBE(
-      mimcSum([
-        bytesToNumberBE(commitment),
-        bytesToNumberBE(this.nullifierSecret),
-      ]),
-      32,
-    );
+    return mimcSum([commitment, this.nullifierSecret]);
   }
 }
 
@@ -152,8 +146,12 @@ export class UtxoInputs {
       txnMetadata.lease,
     );
 
-    const spendingSecret = crypto.getRandomValues(new Uint8Array(32));
-    const nullifierSecret = crypto.getRandomValues(new Uint8Array(32));
+    const spendingSecret = bytesToNumberBE(
+      crypto.getRandomValues(new Uint8Array(32)),
+    );
+    const nullifierSecret = bytesToNumberBE(
+      crypto.getRandomValues(new Uint8Array(32)),
+    );
 
     const mithrasSecret = new UtxoSecrets(
       spendingSecret,

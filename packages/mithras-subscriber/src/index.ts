@@ -11,6 +11,7 @@ import {
   TransactionMetadata,
   UtxoSecrets,
   deriveStealthPubkey,
+  bytesToNumberBE,
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
 
@@ -37,11 +38,11 @@ export function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 export class MithrasMethod {
-  constructor(
+  private constructor(
     public type: "deposit" | "spend",
     public hpke_envelopes: HpkeEnvelope[],
-    public commitments: Uint8Array[],
-    public nullifier?: Uint8Array,
+    public commitments: bigint[],
+    public nullifier?: bigint,
   ) {}
 
   static fromArgs(args: readonly Uint8Array[]): MithrasMethod | null {
@@ -63,7 +64,11 @@ export class MithrasMethod {
       const hpkeBytes = args[3];
       const hpkeEnvelope = HpkeEnvelope.fromBytes(hpkeBytes);
 
-      return new MithrasMethod("deposit", [hpkeEnvelope], [commitment]);
+      return new MithrasMethod(
+        "deposit",
+        [hpkeEnvelope],
+        [commitment].map((b) => bytesToNumberBE(b)),
+      );
     } else if (equalBytes(selector, SPEND_SELECTOR)) {
       console.debug("Parsing spend method from application call arguments");
       if (args.length !== 5) {
@@ -83,8 +88,8 @@ export class MithrasMethod {
       return new MithrasMethod(
         "spend",
         [hpkeEnvelope0, hpkeEnvelope1],
-        [commitment0, commitment1],
-        nullifier,
+        [commitment0, commitment1].map((b) => bytesToNumberBE(b)),
+        bytesToNumberBE(nullifier),
       );
     } else {
       console.debug(
@@ -96,7 +101,7 @@ export class MithrasMethod {
 
   verifyCommitment(utxo: UtxoSecrets): boolean {
     const commitment = utxo.computeCommitment();
-    return this.commitments.some((c) => equalBytes(c, commitment));
+    return this.commitments.some((c) => c === commitment);
   }
 }
 
@@ -208,7 +213,7 @@ type BalanceState = {
    * Each map value is 8 (amount) + 8 (round) + 32 (txid) = 48 bytes
    * so the memory usage of this map can be easily calculated based on the number of UTXOs stored.
    */
-  utxos: Map<Uint8Array, UtxoInfo>;
+  utxos: Map<bigint, UtxoInfo>;
 };
 
 type BaseSubscriberConfig = {
@@ -473,7 +478,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
     this.balanceState!.amount = value;
   }
 
-  public get utxos(): Map<Uint8Array, UtxoInfo> {
+  public get utxos(): Map<bigint, UtxoInfo> {
     return this.balanceState!.utxos;
   }
 }
@@ -571,7 +576,7 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
     this.balanceState!.amount = value;
   }
 
-  public get utxos(): Map<Uint8Array, UtxoInfo> {
+  public get utxos(): Map<bigint, UtxoInfo> {
     return this.balanceState!.utxos;
   }
 }
