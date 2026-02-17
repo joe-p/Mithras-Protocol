@@ -1,7 +1,6 @@
 import {
   assert,
   Box,
-  bytes,
   clone,
   Contract,
   FixedArray,
@@ -10,10 +9,8 @@ import {
   uint64,
   contract,
   ensureBudget,
-  Global,
   BoxMap,
   BigUint,
-  emit,
 } from "@algorandfoundation/algorand-typescript";
 import { TREE_DEPTH } from "../src/constants";
 import { Uint, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
@@ -74,7 +71,7 @@ export class MimcMerkle extends Contract {
 
   protected addLeaf(leafHash: Uint256): void {
     // Some extra budget needed for the loop logic opcodes
-    ensureBudget(MIMC_OPCODE_COST + Global.minTxnFee * 2);
+    ensureBudget(MIMC_OPCODE_COST + 700 * 2);
 
     let index = this.treeIndex.value;
 
