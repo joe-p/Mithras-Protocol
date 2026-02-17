@@ -329,7 +329,7 @@ class BaseMithrasSubscriber {
         spendPubkey === undefined
       ) {
         console.debug(
-          "No view or spend keypair provided, skipping transaction processing",
+          "View keypair or spend public key not provided, skipping balance update logic",
         );
         return;
       }
