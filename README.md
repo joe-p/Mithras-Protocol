@@ -38,7 +38,7 @@ On a M4 Pro the wasm-based ZK proof generation takes roughly 8 seconds for a UTX
 
 ### Infrastructure
 
-Interacting with the Mithras protocol requires access to full transaction history of the Algorand blockchain starting from the round the mithras app was created. This is required because transaction history is needed to reconstruct the full Merkle tree of UTXOs. This means when a client-side application wants to get balance and available UTXOs for a given address, the full chain history must be processed to do so. Abstractions over the AlgoKit subscriber are provided to make this process as easy as possible with just a regular archival node. This, however, can also be done with a dedicated server that is constantly watching the chain. This server does not need access to the spending key and just needs the view key. This means if the server is compromised privacy is lost but funds are not at risk.
+Interacting with the Mithras protocol requires access to full transaction history of the Algorand blockchain starting from the round the Mithras app was created. This is required because transaction history is needed to reconstruct the full Merkle tree of UTXOs. This means when a client-side application wants to get balance and available UTXOs for a given address, the full chain history must be processed to do so. Abstractions over the AlgoKit subscriber are provided to make this process as easy as possible with just a regular archival node. This, however, can also be done with a dedicated server that is constantly watching the chain. This server does not need access to the spending key and just needs the view key. This means if the server is compromised privacy is lost but funds are not at risk.
 
 ### Example: Aid Distribution Flow
 
