@@ -7,12 +7,10 @@ import algosdk from "algosdk";
 import {
   DiscoveryKeypair,
   HpkeEnvelope,
-  MerkleProof as MerkleProof,
   MimcMerkleTree,
-  SpendKeypair,
   TransactionMetadata,
-  StealthKeypair,
   UtxoSecrets,
+  deriveStealthPubkey,
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
 
@@ -187,7 +185,7 @@ export async function algodUtxoLookup(
 
 export type BalanceSubscriberConfig = {
   discoveryKeypair: DiscoveryKeypair;
-  spendKeypair: SpendKeypair;
+  spendPubkey: Uint8Array;
 };
 
 export type MerkleTreeSubscriberConfig = {
@@ -224,7 +222,7 @@ type BaseSubscriberOptions = {
   appId: bigint;
   startRound: bigint;
   discoveryKeypair?: DiscoveryKeypair;
-  spendKeypair?: SpendKeypair;
+  spendPubkey?: Uint8Array;
   merkleTree?: MimcMerkleTree;
   balanceState?: BalanceState;
 };
@@ -278,7 +276,7 @@ class BaseMithrasSubscriber {
       appId,
       startRound,
       discoveryKeypair,
-      spendKeypair,
+      spendPubkey,
       merkleTree,
       balanceState,
     } = options;
@@ -328,7 +326,7 @@ class BaseMithrasSubscriber {
       if (
         balanceState === undefined ||
         discoveryKeypair === undefined ||
-        spendKeypair === undefined
+        spendPubkey === undefined
       ) {
         console.debug(
           "No discovery or spend keypair provided, skipping transaction processing",
@@ -393,8 +391,24 @@ class BaseMithrasSubscriber {
           );
           continue;
         }
+
+        const derivedStealthPublicKey = deriveStealthPubkey(
+          spendPubkey,
+          utxo.stealthScalar,
+        );
+
+        if (!equalBytes(derivedStealthPublicKey, utxo.stealthPubkey)) {
+          console.debug(
+            `Derived stealth public key does not match expected stealth public key for transaction ${txn.id}, skipping...`,
+          );
+          continue;
+        }
+
         const nullifier = utxo.computeNullifier();
         if (balanceState.utxos.has(nullifier)) {
+          console.debug(
+            `Nullifier ${nullifier} from transaction ${txn.id} already exists in balance state, skipping...`,
+          );
           continue;
         } else {
           balanceState.utxos.set(nullifier, {
@@ -403,17 +417,6 @@ class BaseMithrasSubscriber {
             txid: new Uint8Array(base32.decode.asBytes(txn.id)),
             firstCommitment,
           });
-        }
-
-        const derivedSigner = StealthKeypair.derive(
-          spendKeypair,
-          utxo.stealthScalar,
-        );
-
-        if (
-          derivedSigner.publicKey.toString() != utxo.stealthPubkey.toString()
-        ) {
-          continue;
         }
 
         console.debug(`Adding amount ${utxo.amount} from tx ${txn.id}`);
@@ -438,7 +441,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
       config.appId,
       startRound,
       config.discoveryKeypair,
-      config.spendKeypair,
+      config.spendPubkey,
     );
   }
 
@@ -447,7 +450,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
     appId: bigint,
     startRound: bigint,
     discoveryKeypair: DiscoveryKeypair,
-    spendKeypair: SpendKeypair,
+    spendPubkey: Uint8Array,
   ) {
     const balanceState: BalanceState = {
       amount: 0n,
@@ -458,7 +461,7 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
       appId,
       startRound,
       discoveryKeypair,
-      spendKeypair,
+      spendPubkey: spendPubkey,
       balanceState,
     });
     this.balanceState = balanceState;
@@ -532,8 +535,8 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       config.appId,
       startRound,
       config.discoveryKeypair,
-      config.spendKeypair,
       config.merkleTree ?? new MimcMerkleTree(),
+      config.spendPubkey,
     );
   }
 
@@ -542,8 +545,8 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
     appId: bigint,
     startRound: bigint,
     discoveryKeypair: DiscoveryKeypair,
-    spendKeypair: SpendKeypair,
     merkleTree: MimcMerkleTree,
+    spendPubkey: Uint8Array,
   ) {
     const balanceState: BalanceState = {
       amount: 0n,
@@ -554,7 +557,7 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       appId,
       startRound,
       discoveryKeypair,
-      spendKeypair,
+      spendPubkey,
       merkleTree,
       balanceState,
     });
