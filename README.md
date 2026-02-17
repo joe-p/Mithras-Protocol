@@ -12,7 +12,7 @@ This protocol, however, could also be used for any other use case that requires 
 
 Mithras is currently in development and none of it has been audited. It is not production-ready.
 
-A full end-to-end flow of depositing, spending, and tracking balance is available in [./packages/mithras-subscriber/__test__/e2e.test.ts](<>).
+A full end-to-end flow of depositing, spending, and tracking balance is available in [this e2e test](./packages/mithras-subscriber/__test__/e2e.test.ts).
 
 ## Protocol
 
@@ -26,11 +26,11 @@ The address is derived from two key pairs: a view key pair and a spend key pair.
 
 It is also possible for a user to have multiple addresses with various view keys. This allows for selective disclosure of transaction history and balance.
 
-To spend funds, the user must generate a ZK proof that they have the right to spend the funds. This proof is then validated by a smart contract which also adds the UTXO to a merkle tree. Spending authorization is enforced by the Algorand protocol via the ed25519 signature on the transaction that interacts with the smart contract.
+To spend funds, the user must generate a ZK proof that they have the right to spend the funds. This proof is then validated by a smart contract which also inserts the UTXO into a merkle tree. Spending authorization is enforced by the Algorand protocol via the ed25519 signature on the transaction that interacts with the smart contract.
 
 ### Infrastructure
 
-Interacting with the Mithras protocol requires access to full transaction history of the Algorand blockchain. This is required because transaction history is needed to reconstruct the full merkle tree of UTXOs. This means when a client-side application wants to get balance and available UTXOs for a given address, the full chain history must be processed to do so. Abstractions over the AlgoKit subscriber are provided to make this process as easy as possible with just a regular archival node. This, however, can also been done a dedicated server that is constantly watching the chain. This server does not need access to the spending key and just needs the view key. This means if the server is compromised privacy is lost but funds are not at risk.
+Interacting with the Mithras protocol requires access to full transaction history of the Algorand blockchain. This is required because transaction history is needed to reconstruct the full merkle tree of UTXOs. This means when a client-side application wants to get balance and available UTXOs for a given address, the full chain history must be processed to do so. Abstractions over the AlgoKit subscriber are provided to make this process as easy as possible with just a regular archival node. This, however, can also be done with a dedicated server that is constantly watching the chain. This server does not need access to the spending key and just needs the view key. This means if the server is compromised privacy is lost but funds are not at risk.
 
 ### Example: Aid Distribution Flow
 
