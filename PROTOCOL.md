@@ -14,7 +14,7 @@
 - **Type:** Expanded Ed25519 keypair
 - **Purpose:** Unique per UTXO; used for locking and spending that output.
   - Public: $P' = P + t·G$ (computed by sender)
-  - Private: $s' = (s + t) \\bmod q$ (computed by receiver); reuse the base key's `prefix` for signing.
+  - Private: $s' = (s + t)$ (computed by receiver); Prefix derived from the secret key's scalar.
 - **Privacy:** Unlinkable to $P$ without knowing $t$.
 - **Sender:** Can compute $P'$ but not $s'$.
 - **Receiver:** Can compute $s'$ (and thus $P'$) from $s$ and $t$.
@@ -35,7 +35,7 @@
   - Sender: $T = r·D$
   - Receiver: $T = d·R$
 - **Purpose:** Input for:
-  - Stealth scalar $t$ for spend key derivation.
+  - Shared scalar $t$ for spend key derivation.
   - Key for computing the view tag.
 
 ### View Tag
@@ -68,7 +68,7 @@
 | **Ephemeral privkey** `r`       | Yes    | No       | No                              |
 | **Ephemeral pubkey** `R`        | Yes    | Yes      | Yes (in tx)                     |
 | **View secret** `T`             | Yes    | Yes      | No                              |
-| **Stealth scalar** `t`          | Yes    | Yes      | No                              |
+| **Shared scalar** `t`           | Yes    | Yes      | No                              |
 | **One-time spend privkey** `s'` | No     | Yes      | No                              |
 | **One-time spend pubkey** `P'`  | Yes    | Yes      | Yes (locks UTXO)                |
 | **View tag** `tag`              | Yes    | Yes      | Yes (in tx)                     |

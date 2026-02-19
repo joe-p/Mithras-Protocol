@@ -127,7 +127,7 @@ export class Mithras extends MimcMerkle {
     const out1Commitment = getSignal(signals, 1);
     const utxoRoot = getSignal(signals, 2);
     const nullifier = getSignal(signals, 3);
-    const fee = op.extractUint64(getSignal(signals, 4).bytes, 24);
+    const utxoFee = op.extractUint64(getSignal(signals, 4).bytes, 24);
     const spender = getSignal(signals, 5);
 
     assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
@@ -138,7 +138,10 @@ export class Mithras extends MimcMerkle {
 
     const nullifierMbr: uint64 = postMBR - preMBR;
 
-    assert(fee >= nullifierMbr, "Fee does not cover nullifier storage cost");
+    assert(
+      utxoFee >= nullifierMbr,
+      "Fee does not cover nullifier storage cost",
+    );
 
     const feePayment = gtxn.PaymentTxn(Txn.groupIndex + 1);
 
@@ -147,8 +150,14 @@ export class Mithras extends MimcMerkle {
       {
         sender: Txn.sender,
         receiver: Global.currentApplicationAddress,
+        // Ensure the amount is zero so we can be sure the account is spending Mithras ALGO on anything else
         amount: 0,
+        // Always close to the app to ensure it gets back any excess from the sender
+        // This is especially important since we always send Global.minBalance
+        // This is also important for the future when fees may be refundable
         closeRemainderTo: Global.currentApplicationAddress,
+        // NOTE: We don't do any fee amount checks here since the fees may be partially covered by
+        // some other txn in the group
       },
       "The fee payment transaction must be a 0 ALGO pay that closes to the app address",
     );
@@ -157,7 +166,9 @@ export class Mithras extends MimcMerkle {
     itxn
       .payment({
         receiver: Txn.sender,
-        amount: Global.minBalance + fee - nullifierMbr,
+        // NOTE: It is up to the sender to ensure the UTXO fee is large enough to cover the nullifier MBR
+        // AND the transaction fee
+        amount: Global.minBalance + utxoFee - nullifierMbr,
       })
       .submit();
 
