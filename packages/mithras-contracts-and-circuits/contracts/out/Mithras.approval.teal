@@ -18,7 +18,7 @@ main_after_if_else@12:
     err
 
 main_ensureBudget_route@8:
-    // contracts/mithras.algo.ts:170
+    // contracts/mithras.algo.ts:176
     // ensureBudget(budget: uint64) {
     txn OnCompletion
     !
@@ -30,7 +30,7 @@ main_ensureBudget_route@8:
     // export class Mithras extends MimcMerkle {
     txna ApplicationArgs 1
     btoi
-    // contracts/mithras.algo.ts:170
+    // contracts/mithras.algo.ts:176
     // ensureBudget(budget: uint64) {
     callsub ensureBudget
     intc_1 // 1
@@ -809,8 +809,6 @@ spend:
     //   verifierTxn: gtxn.Transaction,
     // ) {
     proto 5 0
-    intc_0 // 0
-    pushbytes ""
     // contracts/mithras.algo.ts:123
     // verifierTxn.sender === this.spendVerifier.value.native,
     frame_dig -1
@@ -846,17 +844,14 @@ spend:
     // const fee = op.extractUint64(getSignal(signals, 4).bytes, 24);
     pushint 24 // 24
     extract_uint64
-    dup
-    uncover 2
     // contracts/mithras.algo.ts:29
     // return signals[idx];
     frame_dig -5
     extract 162 32
-    cover 2
     // contracts/mithras.algo.ts:71
     // nullifiers = BoxMap<Uint256, bytes<0>>({ keyPrefix: "n" });
     pushbytes "n"
-    swap
+    uncover 3
     concat
     // contracts/mithras.algo.ts:134
     // assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
@@ -885,48 +880,92 @@ spend:
     // const nullifierMbr: uint64 = postMBR - preMBR;
     swap
     -
-    dup
-    cover 2
     // contracts/mithras.algo.ts:142
     // assert(fee >= nullifierMbr, "Fee does not cover nullifier storage cost");
+    dig 2
+    dig 1
     >=
     assert // Fee does not cover nullifier storage cost
     // contracts/mithras.algo.ts:144
-    // const closeIndex: uint64 = Txn.groupIndex + 1;
+    // const feePayment = gtxn.PaymentTxn(Txn.groupIndex + 1);
     txn GroupIndex
     intc_1 // 1
     +
     dup
-    // contracts/mithras.algo.ts:146
-    // GTxn.sender(closeIndex) === Txn.sender &&
-    gtxns Sender
-    txn Sender
+    gtxns TypeEnum
+    intc_1 // pay
     ==
-    // contracts/mithras.algo.ts:146-147
-    // GTxn.sender(closeIndex) === Txn.sender &&
-    //   GTxn.closeRemainderTo(closeIndex) === Global.currentApplicationAddress,
-    bz spend_bool_false@3
-    // contracts/mithras.algo.ts:147
-    // GTxn.closeRemainderTo(closeIndex) === Global.currentApplicationAddress,
-    frame_dig 8
-    gtxns CloseRemainderTo
-    global CurrentApplicationAddress
-    ==
-    // contracts/mithras.algo.ts:146-147
-    // GTxn.sender(closeIndex) === Txn.sender &&
-    //   GTxn.closeRemainderTo(closeIndex) === Global.currentApplicationAddress,
-    bz spend_bool_false@3
-    intc_1 // 1
-
-spend_bool_merge@4:
-    // contracts/mithras.algo.ts:145-149
-    // assert(
-    //   GTxn.sender(closeIndex) === Txn.sender &&
-    //     GTxn.closeRemainderTo(closeIndex) === Global.currentApplicationAddress,
-    //   "The transaction after the spend call must be a close transaction from the sender to the app address",
+    assert // transaction type is pay
+    // contracts/mithras.algo.ts:146-155
+    // assertMatch(
+    //   feePayment,
+    //   {
+    //     sender: Txn.sender,
+    //     receiver: Global.currentApplicationAddress,
+    //     amount: 0,
+    //     closeRemainderTo: Global.currentApplicationAddress,
+    //   },
+    //   "The fee payment transaction must be a 0 ALGO pay that closes to the app address",
     // );
-    assert // The transaction after the spend call must be a close transaction from the sender to the app address
-    // contracts/mithras.algo.ts:152-157
+    dup
+    gtxns Sender
+    // contracts/mithras.algo.ts:149
+    // sender: Txn.sender,
+    txn Sender
+    // contracts/mithras.algo.ts:146-155
+    // assertMatch(
+    //   feePayment,
+    //   {
+    //     sender: Txn.sender,
+    //     receiver: Global.currentApplicationAddress,
+    //     amount: 0,
+    //     closeRemainderTo: Global.currentApplicationAddress,
+    //   },
+    //   "The fee payment transaction must be a 0 ALGO pay that closes to the app address",
+    // );
+    ==
+    dig 1
+    gtxns Receiver
+    // contracts/mithras.algo.ts:150
+    // receiver: Global.currentApplicationAddress,
+    global CurrentApplicationAddress
+    // contracts/mithras.algo.ts:146-155
+    // assertMatch(
+    //   feePayment,
+    //   {
+    //     sender: Txn.sender,
+    //     receiver: Global.currentApplicationAddress,
+    //     amount: 0,
+    //     closeRemainderTo: Global.currentApplicationAddress,
+    //   },
+    //   "The fee payment transaction must be a 0 ALGO pay that closes to the app address",
+    // );
+    ==
+    &&
+    dig 1
+    gtxns Amount
+    !
+    &&
+    swap
+    gtxns CloseRemainderTo
+    // contracts/mithras.algo.ts:152
+    // closeRemainderTo: Global.currentApplicationAddress,
+    global CurrentApplicationAddress
+    // contracts/mithras.algo.ts:146-155
+    // assertMatch(
+    //   feePayment,
+    //   {
+    //     sender: Txn.sender,
+    //     receiver: Global.currentApplicationAddress,
+    //     amount: 0,
+    //     closeRemainderTo: Global.currentApplicationAddress,
+    //   },
+    //   "The fee payment transaction must be a 0 ALGO pay that closes to the app address",
+    // );
+    ==
+    &&
+    assert // The fee payment transaction must be a 0 ALGO pay that closes to the app address
+    // contracts/mithras.algo.ts:158-163
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -934,19 +973,19 @@ spend_bool_merge@4:
     //   })
     //   .submit();
     itxn_begin
-    // contracts/mithras.algo.ts:154
+    // contracts/mithras.algo.ts:160
     // receiver: Txn.sender,
     txn Sender
-    // contracts/mithras.algo.ts:155
+    // contracts/mithras.algo.ts:161
     // amount: Global.minBalance + fee - nullifierMbr,
     global MinBalance
-    frame_dig 5
+    uncover 4
     +
-    frame_dig 7
+    uncover 2
     -
     itxn_field Amount
     itxn_field Receiver
-    // contracts/mithras.algo.ts:152-156
+    // contracts/mithras.algo.ts:158-162
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -956,7 +995,7 @@ spend_bool_merge@4:
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // contracts/mithras.algo.ts:152-157
+    // contracts/mithras.algo.ts:158-163
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -964,14 +1003,13 @@ spend_bool_merge@4:
     //   })
     //   .submit();
     itxn_submit
-    // contracts/mithras.algo.ts:160
+    // contracts/mithras.algo.ts:166
     // BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
     txn Sender
     pushbytes 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
     b%
-    // contracts/mithras.algo.ts:162
+    // contracts/mithras.algo.ts:168
     // assert(BigUint(spender.bytes) === senderInScalarField, "Invalid spender");
-    frame_dig 6
     b==
     assert // Invalid spender
     // contracts/mimc_merkle.algo.ts:151
@@ -985,75 +1023,68 @@ spend_bool_merge@4:
     // contracts/mimc_merkle.algo.ts:152
     // for (const validRoot of this.rootCache.value) {
     box_get
-    swap
-    frame_bury 0
     assert // Box must have value
     intc_0 // 0
-    frame_bury 1
 
-spend_for_header@7:
+spend_for_header@3:
     // contracts/mimc_merkle.algo.ts:152
     // for (const validRoot of this.rootCache.value) {
-    frame_dig 1
+    frame_dig 4
     pushint 50 // 50
     <
-    bz spend_after_for@12
-    frame_dig 1
+    bz spend_after_for@8
+    frame_dig 4
     intc_2 // 32
     *
-    frame_dig 0
+    frame_dig 3
     swap
     intc_2 // 32
     extract3 // on error: index access is out of bounds
     // contracts/mimc_merkle.algo.ts:153
     // if (root === validRoot) {
-    frame_dig 4
+    frame_dig 2
     ==
-    bz spend_after_if_else@10
+    bz spend_after_if_else@6
     // contracts/mimc_merkle.algo.ts:154
     // return true;
     intc_1 // 1
 
-spend_after_inlined_contracts/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@13:
-    // contracts/mithras.algo.ts:164
+spend_after_inlined_contracts/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@9:
+    // contracts/mithras.algo.ts:170
     // assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
     assert // Invalid UTXO root
-    // contracts/mithras.algo.ts:166
+    // contracts/mithras.algo.ts:172
     // this.addCommitment(out0Commitment);
-    frame_dig 2
+    frame_dig 0
     callsub addCommitment
-    // contracts/mithras.algo.ts:167
+    // contracts/mithras.algo.ts:173
     // this.addCommitment(out1Commitment);
-    frame_dig 3
+    frame_dig 1
     callsub addCommitment
     retsub
 
-spend_after_if_else@10:
-    frame_dig 1
+spend_after_if_else@6:
+    frame_dig 4
     intc_1 // 1
     +
-    frame_bury 1
-    b spend_for_header@7
+    frame_bury 4
+    b spend_for_header@3
 
-spend_after_for@12:
+spend_after_for@8:
     // contracts/mimc_merkle.algo.ts:158
     // return false;
     intc_0 // 0
-    // contracts/mithras.algo.ts:164
+    // contracts/mithras.algo.ts:170
     // assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
-    b spend_after_inlined_contracts/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@13
-
-spend_bool_false@3:
-    intc_0 // 0
-    b spend_bool_merge@4
+    b spend_after_inlined_contracts/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@9
 
 
 // contracts/mithras.algo.ts::Mithras.ensureBudget(budget: uint64) -> void:
 ensureBudget:
-    // contracts/mithras.algo.ts:170
+    // contracts/mithras.algo.ts:176
     // ensureBudget(budget: uint64) {
     proto 1 0
-    // contracts/mithras.algo.ts:171
+    // contracts/mithras.algo.ts:177
     // ensureBudget(budget);
     frame_dig -1
     intc_0 // 0
