@@ -55,6 +55,18 @@ export type PlonkProof = {
 };
 
 /**
+ * Groth16 BLS12-381 proof structure
+ * Contains three commitments that prove knowledge of a satisfying assignment
+ */
+export type Groth16Bls12381Proof = {
+  /** Prover's first commitment (G1 point) */
+  pi_a: bytes<96>;
+  /** Prover's second commitment (G2 point) */
+  pi_b: bytes<192>;
+  /** Prover's third commitment (G1 point) */
+  pi_c: bytes<96>;
+};
+/**
  * Event emitted when a new leaf is added to the tree. Global state deltas will contain the new index and root
  */
 type NewLeaf = {
@@ -90,7 +102,8 @@ export class Mithras extends MimcMerkle {
 
   deposit(
     signals: Uint256[],
-    _proof: PlonkProof,
+    // _proof: PlonkProof,
+    _proof: Groth16Bls12381Proof,
     _outHpke: bytes<typeof HPKE_SIZE>,
     deposit: gtxn.PaymentTxn,
     verifierTxn: gtxn.Transaction,
@@ -114,7 +127,8 @@ export class Mithras extends MimcMerkle {
 
   spend(
     signals: Uint256[],
-    _proof: PlonkProof,
+    // _proof: PlonkProof,
+    _proof: Groth16Bls12381Proof,
     _out0Hpke: bytes<typeof HPKE_SIZE>,
     _out1Hpke: bytes<typeof HPKE_SIZE>,
     verifierTxn: gtxn.Transaction,
@@ -144,7 +158,7 @@ export class Mithras extends MimcMerkle {
     const closeIndex: uint64 = Txn.groupIndex + 1;
     assert(
       GTxn.sender(closeIndex) === Txn.sender &&
-        GTxn.closeRemainderTo(closeIndex) === Global.currentApplicationAddress,
+      GTxn.closeRemainderTo(closeIndex) === Global.currentApplicationAddress,
       "The transaction after the spend call must be a close transaction from the sender to the app address",
     );
 

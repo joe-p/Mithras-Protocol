@@ -1,5 +1,6 @@
 import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
-import { PlonkLsigVerifier } from "snarkjs-algorand";
+// import { PlonkLsigVerifier } from "snarkjs-algorand";
+import { Groth16Bls12381LsigVerifier } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import path from "path";
 
@@ -33,7 +34,8 @@ export function addressInScalarField(addr: Uint8Array): bigint {
   return asBigint % BLS12_381_SCALAR_MODULUS;
 }
 
-export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+// export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+export function depositVerifier(algorand: AlgorandClient): Groth16Bls12381LsigVerifier {
   const thisFileDir = new URL(".", import.meta.url);
 
   const zKey = path.join(thisFileDir.pathname, "../circuits/deposit_test.zkey");
@@ -41,7 +43,8 @@ export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
     thisFileDir.pathname,
     "../circuits/deposit_js/deposit.wasm",
   );
-  return new PlonkLsigVerifier({
+  // return new PlonkLsigVerifier({
+  return new Groth16Bls12381LsigVerifier({
     algorand,
     zKey,
     wasmProver,
@@ -50,7 +53,8 @@ export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
   });
 }
 
-export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+// export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+export function spendVerifier(algorand: AlgorandClient): Groth16Bls12381LsigVerifier {
   const thisFileDir = new URL(".", import.meta.url);
   const zKey = path.join(thisFileDir.pathname, "../circuits/spend_test.zkey");
   const wasmProver = path.join(
@@ -58,7 +62,8 @@ export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
     "../circuits/spend_js/spend.wasm",
   );
 
-  return new PlonkLsigVerifier({
+  // return new PlonkLsigVerifier({
+  return new Groth16Bls12381LsigVerifier({
     algorand,
     zKey,
     wasmProver,
@@ -73,8 +78,10 @@ type Output = {
 };
 
 export class MithrasProtocolClient {
-  depositVerifier: PlonkLsigVerifier;
-  spendVerifier: PlonkLsigVerifier;
+  // depositVerifier: PlonkLsigVerifier;
+  // spendVerifier: PlonkLsigVerifier;
+  depositVerifier: Groth16Bls12381LsigVerifier;
+  spendVerifier: Groth16Bls12381LsigVerifier;
   appClient: MithrasClient;
   private _zeroHashes?: bigint[];
 

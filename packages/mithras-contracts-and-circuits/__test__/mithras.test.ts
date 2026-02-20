@@ -1,8 +1,13 @@
 import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
+// import {
+//   PlonkLsigVerifier,
+//   PlonkSignalsAndProofClient,
+//   PlonkSignalsAndProofFactory,
+// } from "snarkjs-algorand";
 import {
-  PlonkLsigVerifier,
-  PlonkSignalsAndProofClient,
-  PlonkSignalsAndProofFactory,
+  Groth16Bls12381LsigVerifier,
+  Groth16Bls12381SignalsAndProofClient,
+  Groth16Bls12381SignalsAndProofFactory
 } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 
