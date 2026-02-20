@@ -134,7 +134,7 @@ describe("Mithras App", () => {
 
     const feePayment = await algorand.createTransaction.payment({
       sender: spender,
-      receiver: spender,
+      receiver: appClient.appAddress,
       amount: microAlgos(0),
       extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE + 1000n),
       closeRemainderTo: appClient.appAddress,

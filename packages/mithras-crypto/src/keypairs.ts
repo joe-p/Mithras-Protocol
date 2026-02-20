@@ -95,18 +95,18 @@ export class StealthKeypair {
 
   static derive(
     spendKeypair: SpendKeypair,
-    scalarToAdd: bigint,
+    sharedScalar: bigint,
   ): StealthKeypair {
-    const stealthScalar = scalar.add(spendKeypair.aScalar(), scalarToAdd);
+    const stealthScalar = scalar.add(spendKeypair.aScalar(), sharedScalar);
 
     const stealthPrefix = sha512(
-      concatBytes(numberToBytesLE(stealthScalar, 32), spendKeypair.prefix()),
+      concatBytes(numberToBytesLE(stealthScalar, 32)),
     );
 
     return new StealthKeypair(
       numberToBytesLE(stealthScalar, 32),
       stealthPrefix.slice(32, 64),
-      deriveStealthPubkey(spendKeypair.publicKey, scalarToAdd),
+      deriveStealthPubkey(spendKeypair.publicKey, sharedScalar),
     );
   }
 

@@ -16,10 +16,10 @@ import {
   BoxMap,
   itxn,
   emit,
+  TransactionType,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "./mimc_merkle.algo";
 import { Address, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
-import { GTxn } from "@algorandfoundation/algorand-typescript/op";
 
 const BLS12_381_SCALAR_MODULUS = BigUint(
   "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
@@ -128,7 +128,7 @@ export class Mithras extends MimcMerkle {
     const out1Commitment = getSignal(signals, 1);
     const utxoRoot = getSignal(signals, 2);
     const nullifier = getSignal(signals, 3);
-    const fee = op.extractUint64(getSignal(signals, 4).bytes, 24);
+    const utxoFee = op.extractUint64(getSignal(signals, 4).bytes, 24);
     const spender = getSignal(signals, 5);
 
     assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
@@ -139,22 +139,10 @@ export class Mithras extends MimcMerkle {
 
     const nullifierMbr: uint64 = postMBR - preMBR;
 
-    assert(fee >= nullifierMbr, "Fee does not cover nullifier storage cost");
-
-    const closeIndex: uint64 = Txn.groupIndex + 1;
     assert(
-      GTxn.sender(closeIndex) === Txn.sender &&
-        GTxn.closeRemainderTo(closeIndex) === Global.currentApplicationAddress,
-      "The transaction after the spend call must be a close transaction from the sender to the app address",
+      utxoFee >= nullifierMbr,
+      "Fee does not cover nullifier storage cost",
     );
-
-    // Send the fee to the sender so they can cover it later in the group. The assumption is that the sender is a 0 ALGO account
-    itxn
-      .payment({
-        receiver: Txn.sender,
-        amount: Global.minBalance + fee - nullifierMbr,
-      })
-      .submit();
 
     const senderInScalarField: biguint =
       BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
@@ -165,6 +153,47 @@ export class Mithras extends MimcMerkle {
 
     this.addCommitment(out0Commitment);
     this.addCommitment(out1Commitment);
+
+    this.maybeCoverFee(utxoFee - nullifierMbr);
+  }
+
+  private maybeCoverFee(coverageAmount: uint64) {
+    // Don't do anything if...
+    if (
+      coverageAmount === 0 ||
+      // There are no more txns in the group
+      Global.groupSize <= Txn.groupIndex + 1 ||
+      // The next txn isn't a payment
+      gtxn.Transaction(Txn.groupIndex + 1).type !== TransactionType.Payment
+    ) {
+      return;
+    }
+
+    const feePayment = gtxn.PaymentTxn(Txn.groupIndex + 1);
+
+    // Only cover the fee if the next txn is 0 ALGO pay that closes back to the app
+    if (
+      // We probably don't care who the sender is, but check here just to be safe
+      feePayment.sender === Txn.sender &&
+      // Checking the receiver is probably superfluous since we later check close, but might as well be safe
+      feePayment.receiver === Global.currentApplicationAddress &&
+      // Ensure the amount is zero so we can be sure the account is spending Mithras ALGO on anything else
+      feePayment.amount === 0 &&
+      // Always close to the app to ensure it gets back any excess from the sender
+      // This is especially important since we always send Global.minBalance
+      // This is also important for the future when fees may be refundable
+      feePayment.closeRemainderTo === Global.currentApplicationAddress
+      // NOTE: We don't do any fee amount checks here since the fees may be partially covered by
+      // some other txn in the group
+    ) {
+      itxn
+        .payment({
+          receiver: Txn.sender,
+          // We always add Global.minBalance assuming the account has 0 ALGO
+          amount: Global.minBalance + coverageAmount,
+        })
+        .submit();
+    }
   }
 
   ensureBudget(budget: uint64) {
