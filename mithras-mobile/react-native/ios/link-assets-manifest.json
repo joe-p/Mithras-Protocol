@@ -1,0 +1,73 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/keys/noir_multiplier2.json",
+      "sha1": "3e030053091b300a3fb17b967329271fc7786136"
+    },
+    {
+      "path": "assets/keys/noir_multiplier2.srs",
+      "sha1": "b328db23de94269e32e0659f1c9cca40432ae450"
+    },
+    {
+      "path": "assets/keys/plonk_fibonacci_srs.bin",
+      "sha1": "86e56f2d743117dab7dd20b926e2c760dde17de3"
+    },
+    {
+      "path": "assets/keys/multiplier2_wc.cpp",
+      "sha1": "83dff817b5555f48cf9a0635008410e2b87efaeb"
+    },
+    {
+      "path": "assets/keys/hyperplonk_fibonacci_srs.bin",
+      "sha1": "8f488ceea4ee1c4618e7d6ea54d2efbd21ada0d3"
+    },
+    {
+      "path": "assets/keys/plonk_fibonacci_pk.bin",
+      "sha1": "b74f6731c4a037637cc76f0134c059a5a412d2cc"
+    },
+    {
+      "path": "assets/keys/multiplier2_wc.dat",
+      "sha1": "86ce8d7252ab7c056d626053d7c607a008f9289d"
+    },
+    {
+      "path": "assets/keys/noir_multiplier2.vk",
+      "sha1": "8fd1078b262591c065a187778967277fdc01069d"
+    },
+    {
+      "path": "assets/keys/multiplier2_bls_final.zkey",
+      "sha1": "58321ff334dae705bdd1d148331bfd3c9022434b"
+    },
+    {
+      "path": "assets/keys/gemini_fibonacci_srs.bin",
+      "sha1": "a97673a1665c718d3fcb30a45ea8b83a4dbaa543"
+    },
+    {
+      "path": "assets/keys/gemini_fibonacci_pk.bin",
+      "sha1": "47a6a4169115b00ab84b2ce7ef31da434d70f47c"
+    },
+    {
+      "path": "assets/keys/hyperplonk_fibonacci_pk.bin",
+      "sha1": "669536bb2d89904ceb2a4e3d5e42bf74bf9b0de5"
+    },
+    {
+      "path": "assets/keys/multiplier2_final.zkey",
+      "sha1": "63bdbf3c24b9f108a09ceef52dd2fca0069d01b2"
+    },
+    {
+      "path": "assets/keys/plonk_fibonacci_vk.bin",
+      "sha1": "6979d2547f039bf73c0cc0545b9230b57c084172"
+    },
+    {
+      "path": "assets/keys/hyperplonk_fibonacci_vk.bin",
+      "sha1": "393728ec473825f96394541269a67023063df4ff"
+    },
+    {
+      "path": "assets/keys/multiplier2_wc_final.zkey",
+      "sha1": "63bdbf3c24b9f108a09ceef52dd2fca0069d01b2"
+    },
+    {
+      "path": "assets/keys/gemini_fibonacci_vk.bin",
+      "sha1": "f868056ef2d3aa600e828d68452391411fa0bdea"
+    }
+  ]
+}

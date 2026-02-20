@@ -1,0 +1,7 @@
+rust:
+  directory: /Users/yared/dev/hashmapsdata2value/mithras-protocol/mithras-mobile
+  manifestPath: Cargo.toml
+
+android:
+    apiLevel: 28
+    useSharedLibrary: true

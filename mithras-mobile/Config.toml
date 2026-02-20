@@ -1,0 +1,12 @@
+build_mode = "release"
+target_adapters = ["circom"]
+target_platforms = ["react-native"]
+react_native = [
+    "aarch64-apple-ios-sim",
+    "aarch64-apple-ios",
+    "aarch64-linux-android",
+    "x86_64-linux-android",
+]
+auto_update = false
+
+[update]

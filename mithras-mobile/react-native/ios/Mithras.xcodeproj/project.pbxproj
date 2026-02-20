@@ -1,0 +1,556 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		377E8AD071AA49378BC285F0 /* gemini_fibonacci_vk.bin in Resources */ = {isa = PBXBuildFile; fileRef = DF71512B62FD432FAFA83E9F /* gemini_fibonacci_vk.bin */; };
+		429ABBC750D24139A5DFCB28 /* plonk_fibonacci_vk.bin in Resources */ = {isa = PBXBuildFile; fileRef = C2F46347CB0E49819813C0B9 /* plonk_fibonacci_vk.bin */; };
+		51182CC2B6944F58B414EDCB /* multiplier2_wc.cpp in Resources */ = {isa = PBXBuildFile; fileRef = B2CA0693DE6B446AB9AE2F3A /* multiplier2_wc.cpp */; };
+		610A0DB190C74158ACBF4B36 /* gemini_fibonacci_srs.bin in Resources */ = {isa = PBXBuildFile; fileRef = 0C8F3CFE593C47D7B299C99D /* gemini_fibonacci_srs.bin */; };
+		6BCA2595705946CB81590550 /* multiplier2_wc_final.zkey in Resources */ = {isa = PBXBuildFile; fileRef = 4A835AADBB724A08935CFAFA /* multiplier2_wc_final.zkey */; };
+		6D02A5C77C144D95933C3FFD /* plonk_fibonacci_srs.bin in Resources */ = {isa = PBXBuildFile; fileRef = A75EBD7E6671443284BEEF36 /* plonk_fibonacci_srs.bin */; };
+		7044A97D08B041458BF17828 /* hyperplonk_fibonacci_pk.bin in Resources */ = {isa = PBXBuildFile; fileRef = 9441318610D24FD794539030 /* hyperplonk_fibonacci_pk.bin */; };
+		7370968AFA634A0DAC215249 /* hyperplonk_fibonacci_vk.bin in Resources */ = {isa = PBXBuildFile; fileRef = 901017FEA28740CC9ED8C493 /* hyperplonk_fibonacci_vk.bin */; };
+		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
+		7A7604F8CB7C42619544AD9A /* multiplier2_wc.dat in Resources */ = {isa = PBXBuildFile; fileRef = 405E28D0564E459592B0B6A0 /* multiplier2_wc.dat */; };
+		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		824F58E859864D6083795149 /* plonk_fibonacci_pk.bin in Resources */ = {isa = PBXBuildFile; fileRef = 9C8FAA0995EA45B3BCC3C0BA /* plonk_fibonacci_pk.bin */; };
+		8AB39964B3BB4FE298BE4E2D /* noir_multiplier2.json in Resources */ = {isa = PBXBuildFile; fileRef = 9A9D536A44BC429AB440A07B /* noir_multiplier2.json */; };
+		9367FAC5B8C84B97A2DE4E23 /* hyperplonk_fibonacci_srs.bin in Resources */ = {isa = PBXBuildFile; fileRef = 9DF11A9C7909457C89939099 /* hyperplonk_fibonacci_srs.bin */; };
+		9F3F52EE09C593B070C354DB /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		C80BF65EBB2D4E368A62AD88 /* noir_multiplier2.vk in Resources */ = {isa = PBXBuildFile; fileRef = EDB7D0CFC11C421DB77EC6BF /* noir_multiplier2.vk */; };
+		CCE1AE0DADD944CD8CFA5B6F /* noir_multiplier2.srs in Resources */ = {isa = PBXBuildFile; fileRef = EC4CFBD2166544D0A3869F20 /* noir_multiplier2.srs */; };
+		D7011D28E17D45C2BE257368 /* multiplier2_final.zkey in Resources */ = {isa = PBXBuildFile; fileRef = 206F42B759ED439DA8FFF749 /* multiplier2_final.zkey */; };
+		DDA6561B29BF439E89815F3B /* multiplier2_bls_final.zkey in Resources */ = {isa = PBXBuildFile; fileRef = D89BF60F3B284EB584CE9C50 /* multiplier2_bls_final.zkey */; };
+		E469355E307CEBC094847D7D /* libPods-Mithras.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 224D975E20E30C40546F2BB6 /* libPods-Mithras.a */; };
+		F3CC2FE9CFC34FC29222C40E /* gemini_fibonacci_pk.bin in Resources */ = {isa = PBXBuildFile; fileRef = AC2926D3A5C947E5B1CAB348 /* gemini_fibonacci_pk.bin */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0B7971F55FDDAD44E92055C4 /* Pods-Mithras.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mithras.debug.xcconfig"; path = "Target Support Files/Pods-Mithras/Pods-Mithras.debug.xcconfig"; sourceTree = "<group>"; };
+		0C8F3CFE593C47D7B299C99D /* gemini_fibonacci_srs.bin */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = gemini_fibonacci_srs.bin; path = ../assets/keys/gemini_fibonacci_srs.bin; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* Mithras.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mithras.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Mithras/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Mithras/Info.plist; sourceTree = "<group>"; };
+		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = Mithras/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		206F42B759ED439DA8FFF749 /* multiplier2_final.zkey */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = multiplier2_final.zkey; path = ../assets/keys/multiplier2_final.zkey; sourceTree = "<group>"; };
+		224D975E20E30C40546F2BB6 /* libPods-Mithras.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Mithras.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3B4392A12AC88292D35C810B /* Pods-MyTestLibraryExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MyTestLibraryExample.debug.xcconfig"; path = "Target Support Files/Pods-MyTestLibraryExample/Pods-MyTestLibraryExample.debug.xcconfig"; sourceTree = "<group>"; };
+		405E28D0564E459592B0B6A0 /* multiplier2_wc.dat */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = multiplier2_wc.dat; path = ../assets/keys/multiplier2_wc.dat; sourceTree = "<group>"; };
+		4A835AADBB724A08935CFAFA /* multiplier2_wc_final.zkey */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = multiplier2_wc_final.zkey; path = ../assets/keys/multiplier2_wc_final.zkey; sourceTree = "<group>"; };
+		5709B34CF0A7D63546082F79 /* Pods-MyTestLibraryExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MyTestLibraryExample.release.xcconfig"; path = "Target Support Files/Pods-MyTestLibraryExample/Pods-MyTestLibraryExample.release.xcconfig"; sourceTree = "<group>"; };
+		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Mithras/AppDelegate.swift; sourceTree = "<group>"; };
+		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Mithras/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		901017FEA28740CC9ED8C493 /* hyperplonk_fibonacci_vk.bin */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = hyperplonk_fibonacci_vk.bin; path = ../assets/keys/hyperplonk_fibonacci_vk.bin; sourceTree = "<group>"; };
+		9441318610D24FD794539030 /* hyperplonk_fibonacci_pk.bin */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = hyperplonk_fibonacci_pk.bin; path = ../assets/keys/hyperplonk_fibonacci_pk.bin; sourceTree = "<group>"; };
+		9A9D536A44BC429AB440A07B /* noir_multiplier2.json */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = noir_multiplier2.json; path = ../assets/keys/noir_multiplier2.json; sourceTree = "<group>"; };
+		9C8FAA0995EA45B3BCC3C0BA /* plonk_fibonacci_pk.bin */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = plonk_fibonacci_pk.bin; path = ../assets/keys/plonk_fibonacci_pk.bin; sourceTree = "<group>"; };
+		9DF11A9C7909457C89939099 /* hyperplonk_fibonacci_srs.bin */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = hyperplonk_fibonacci_srs.bin; path = ../assets/keys/hyperplonk_fibonacci_srs.bin; sourceTree = "<group>"; };
+		A75EBD7E6671443284BEEF36 /* plonk_fibonacci_srs.bin */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = plonk_fibonacci_srs.bin; path = ../assets/keys/plonk_fibonacci_srs.bin; sourceTree = "<group>"; };
+		AC2926D3A5C947E5B1CAB348 /* gemini_fibonacci_pk.bin */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = gemini_fibonacci_pk.bin; path = ../assets/keys/gemini_fibonacci_pk.bin; sourceTree = "<group>"; };
+		B2CA0693DE6B446AB9AE2F3A /* multiplier2_wc.cpp */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = multiplier2_wc.cpp; path = ../assets/keys/multiplier2_wc.cpp; sourceTree = "<group>"; };
+		C2F46347CB0E49819813C0B9 /* plonk_fibonacci_vk.bin */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = plonk_fibonacci_vk.bin; path = ../assets/keys/plonk_fibonacci_vk.bin; sourceTree = "<group>"; };
+		D89BF60F3B284EB584CE9C50 /* multiplier2_bls_final.zkey */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = multiplier2_bls_final.zkey; path = ../assets/keys/multiplier2_bls_final.zkey; sourceTree = "<group>"; };
+		DF71512B62FD432FAFA83E9F /* gemini_fibonacci_vk.bin */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = gemini_fibonacci_vk.bin; path = ../assets/keys/gemini_fibonacci_vk.bin; sourceTree = "<group>"; };
+		EC4CFBD2166544D0A3869F20 /* noir_multiplier2.srs */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = noir_multiplier2.srs; path = ../assets/keys/noir_multiplier2.srs; sourceTree = "<group>"; };
+		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		EDB7D0CFC11C421DB77EC6BF /* noir_multiplier2.vk */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = noir_multiplier2.vk; path = ../assets/keys/noir_multiplier2.vk; sourceTree = "<group>"; };
+		F1E274D29F52F451CE810DA9 /* Pods-Mithras.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mithras.release.xcconfig"; path = "Target Support Files/Pods-Mithras/Pods-Mithras.release.xcconfig"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E469355E307CEBC094847D7D /* libPods-Mithras.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		13B07FAE1A68108700A75B9A /* Mithras */ = {
+			isa = PBXGroup;
+			children = (
+				13B07FB51A68108700A75B9A /* Images.xcassets */,
+				761780EC2CA45674006654EE /* AppDelegate.swift */,
+				13B07FB61A68108700A75B9A /* Info.plist */,
+				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
+				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
+			);
+			name = Mithras;
+			sourceTree = "<group>";
+		};
+		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
+				224D975E20E30C40546F2BB6 /* libPods-Mithras.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		3C7AC1147D4C4DAD9257A67B /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				206F42B759ED439DA8FFF749 /* multiplier2_final.zkey */,
+				9C8FAA0995EA45B3BCC3C0BA /* plonk_fibonacci_pk.bin */,
+				A75EBD7E6671443284BEEF36 /* plonk_fibonacci_srs.bin */,
+				C2F46347CB0E49819813C0B9 /* plonk_fibonacci_vk.bin */,
+				9A9D536A44BC429AB440A07B /* noir_multiplier2.json */,
+				EC4CFBD2166544D0A3869F20 /* noir_multiplier2.srs */,
+				B2CA0693DE6B446AB9AE2F3A /* multiplier2_wc.cpp */,
+				9DF11A9C7909457C89939099 /* hyperplonk_fibonacci_srs.bin */,
+				405E28D0564E459592B0B6A0 /* multiplier2_wc.dat */,
+				EDB7D0CFC11C421DB77EC6BF /* noir_multiplier2.vk */,
+				D89BF60F3B284EB584CE9C50 /* multiplier2_bls_final.zkey */,
+				0C8F3CFE593C47D7B299C99D /* gemini_fibonacci_srs.bin */,
+				AC2926D3A5C947E5B1CAB348 /* gemini_fibonacci_pk.bin */,
+				9441318610D24FD794539030 /* hyperplonk_fibonacci_pk.bin */,
+				901017FEA28740CC9ED8C493 /* hyperplonk_fibonacci_vk.bin */,
+				4A835AADBB724A08935CFAFA /* multiplier2_wc_final.zkey */,
+				DF71512B62FD432FAFA83E9F /* gemini_fibonacci_vk.bin */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Libraries;
+			sourceTree = "<group>";
+		};
+		83CBB9F61A601CBA00E9B192 = {
+			isa = PBXGroup;
+			children = (
+				13B07FAE1A68108700A75B9A /* Mithras */,
+				832341AE1AAA6A7D00B99B32 /* Libraries */,
+				83CBBA001A601CBA00E9B192 /* Products */,
+				2D16E6871FA4F8E400B85C8A /* Frameworks */,
+				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				3C7AC1147D4C4DAD9257A67B /* Resources */,
+			);
+			indentWidth = 2;
+			sourceTree = "<group>";
+			tabWidth = 2;
+			usesTabs = 0;
+		};
+		83CBBA001A601CBA00E9B192 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				13B07F961A680F5B00A75B9A /* Mithras.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				3B4392A12AC88292D35C810B /* Pods-MyTestLibraryExample.debug.xcconfig */,
+				5709B34CF0A7D63546082F79 /* Pods-MyTestLibraryExample.release.xcconfig */,
+				0B7971F55FDDAD44E92055C4 /* Pods-Mithras.debug.xcconfig */,
+				F1E274D29F52F451CE810DA9 /* Pods-Mithras.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		13B07F861A680F5B00A75B9A /* Mithras */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Mithras" */;
+			buildPhases = (
+				C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */,
+				13B07F871A680F5B00A75B9A /* Sources */,
+				13B07F8C1A680F5B00A75B9A /* Frameworks */,
+				13B07F8E1A680F5B00A75B9A /* Resources */,
+				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
+				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
+				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Mithras;
+			productName = Mithras;
+			productReference = 13B07F961A680F5B00A75B9A /* Mithras.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		83CBB9F71A601CBA00E9B192 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1210;
+				TargetAttributes = {
+					13B07F861A680F5B00A75B9A = {
+						LastSwiftMigration = 1120;
+					};
+				};
+			};
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Mithras" */;
+			compatibilityVersion = "Xcode 12.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 83CBB9F61A601CBA00E9B192;
+			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				13B07F861A680F5B00A75B9A /* Mithras */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		13B07F8E1A680F5B00A75B9A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
+				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				9F3F52EE09C593B070C354DB /* PrivacyInfo.xcprivacy in Resources */,
+				D7011D28E17D45C2BE257368 /* multiplier2_final.zkey in Resources */,
+				824F58E859864D6083795149 /* plonk_fibonacci_pk.bin in Resources */,
+				6D02A5C77C144D95933C3FFD /* plonk_fibonacci_srs.bin in Resources */,
+				429ABBC750D24139A5DFCB28 /* plonk_fibonacci_vk.bin in Resources */,
+				8AB39964B3BB4FE298BE4E2D /* noir_multiplier2.json in Resources */,
+				CCE1AE0DADD944CD8CFA5B6F /* noir_multiplier2.srs in Resources */,
+				51182CC2B6944F58B414EDCB /* multiplier2_wc.cpp in Resources */,
+				9367FAC5B8C84B97A2DE4E23 /* hyperplonk_fibonacci_srs.bin in Resources */,
+				7A7604F8CB7C42619544AD9A /* multiplier2_wc.dat in Resources */,
+				C80BF65EBB2D4E368A62AD88 /* noir_multiplier2.vk in Resources */,
+				DDA6561B29BF439E89815F3B /* multiplier2_bls_final.zkey in Resources */,
+				610A0DB190C74158ACBF4B36 /* gemini_fibonacci_srs.bin in Resources */,
+				F3CC2FE9CFC34FC29222C40E /* gemini_fibonacci_pk.bin in Resources */,
+				7044A97D08B041458BF17828 /* hyperplonk_fibonacci_pk.bin in Resources */,
+				7370968AFA634A0DAC215249 /* hyperplonk_fibonacci_vk.bin in Resources */,
+				6BCA2595705946CB81590550 /* multiplier2_wc_final.zkey in Resources */,
+				377E8AD071AA49378BC285F0 /* gemini_fibonacci_vk.bin in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/.xcode.env",
+			);
+			name = "Bundle React Native code and images";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
+		};
+		00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Mithras/Pods-Mithras-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Mithras/Pods-Mithras-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mithras/Pods-Mithras-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Mithras-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		E235C05ADACE081382539298 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Mithras/Pods-Mithras-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Mithras/Pods-Mithras-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mithras/Pods-Mithras-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		13B07F871A680F5B00A75B9A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		13B07F941A680F5B00A75B9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0B7971F55FDDAD44E92055C4 /* Pods-Mithras.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Mithras/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mithras.mobile;
+				PRODUCT_NAME = Mithras;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
+		13B07F951A680F5B00A75B9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F1E274D29F52F451CE810DA9 /* Pods-Mithras.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = Mithras/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mithras.mobile;
+				PRODUCT_NAME = Mithras;
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		83CBBA201A601CBA00E9B192 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					/usr/lib/swift,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"\"$(SDKROOT)/usr/lib/swift\"",
+					"\"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)\"",
+					"\"$(inherited)\"",
+				);
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-DFOLLY_NO_CONFIG",
+					"-DFOLLY_MOBILE=1",
+					"-DFOLLY_USE_LIBCPP=1",
+					"-DFOLLY_CFG_NO_COROUTINES=1",
+					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
+				);
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				USE_HERMES = true;
+			};
+			name = Debug;
+		};
+		83CBBA211A601CBA00E9B192 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					/usr/lib/swift,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"\"$(SDKROOT)/usr/lib/swift\"",
+					"\"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)\"",
+					"\"$(inherited)\"",
+				);
+				MTL_ENABLE_DEBUG_INFO = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-DFOLLY_NO_CONFIG",
+					"-DFOLLY_MOBILE=1",
+					"-DFOLLY_USE_LIBCPP=1",
+					"-DFOLLY_CFG_NO_COROUTINES=1",
+					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
+				);
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				SDKROOT = iphoneos;
+				USE_HERMES = true;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Mithras" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				13B07F941A680F5B00A75B9A /* Debug */,
+				13B07F951A680F5B00A75B9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Mithras" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				83CBBA201A601CBA00E9B192 /* Debug */,
+				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
+}
