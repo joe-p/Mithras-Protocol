@@ -25,10 +25,11 @@ export function HomeMenuScreen({ onDeposit, onSpend, onMultiplier }: Props) {
         <Text style={styles.title}>Mithras</Text>
       </View>
       <View style={styles.card}>
-        <MenuButton label="Deposit funds into Mithras" onPress={onDeposit} />
-        <MenuButton label="Send funds" onPress={onSpend} />
-        <MenuButton label="Multiplier" onPress={onMultiplier} />
-        <MenuButton label="Withdraw out of Mithras" />
+        <MenuButton label="Make My Algos Private (Deposit)" onPress={onDeposit} />
+        <MenuButton label="Transfer Private Algos (Spend)" onPress={onSpend} />
+        {/* Multiplier is kept around for debug purposes */}
+        {/* <MenuButton label="Multiplier" onPress={onMultiplier} /> */}
+        <MenuButton label="Make My Algos Public (Withdraw)" />
       </View>
     </View>
   );
