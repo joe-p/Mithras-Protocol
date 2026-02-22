@@ -4,10 +4,15 @@ import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
 //   PlonkSignalsAndProofClient,
 //   PlonkSignalsAndProofFactory,
 // } from "snarkjs-algorand";
+// import {
+//   Groth16Bls12381LsigVerifier,
+//   Groth16Bls12381SignalsAndProofClient,
+//   Groth16Bls12381SignalsAndProofFactory
+// } from "snarkjs-algorand";
 import {
-  Groth16Bls12381LsigVerifier,
-  Groth16Bls12381SignalsAndProofClient,
-  Groth16Bls12381SignalsAndProofFactory
+  Groth16Bn254LsigVerifier,
+  Groth16Bn254SignalsAndProofClient,
+  Groth16Bn254SignalsAndProofFactory
 } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 
@@ -31,13 +36,17 @@ const APP_MBR = 1567900n;
 const BOOTSTRAP_FEE = 51n * 1000n;
 const NULLIFIER_MBR = 15_700n;
 
-const BLS12_381_SCALAR_MODULUS = BigInt(
-  "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+// const BLS12_381_SCALAR_MODULUS = BigInt(
+//   "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+// );
+const BN254_SCALAR_MODULUS = BigInt(
+  "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001",
 );
 
 function addressInScalarField(addr: Address): bigint {
   const asBigint = BigInt("0x" + Buffer.from(addr.publicKey).toString("hex"));
-  return asBigint % BLS12_381_SCALAR_MODULUS;
+  // return asBigint % BLS12_381_SCALAR_MODULUS;
+  return asBigint % BN254_SCALAR_MODULUS;
 }
 
 describe("Mithras App", () => {

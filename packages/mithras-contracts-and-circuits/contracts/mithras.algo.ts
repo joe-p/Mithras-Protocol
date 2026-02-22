@@ -21,9 +21,12 @@ import { MimcMerkle } from "./mimc_merkle.algo";
 import { Address, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 import { GTxn } from "@algorandfoundation/algorand-typescript/op";
 
-const BLS12_381_SCALAR_MODULUS = BigUint(
-  "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
-);
+// const BLS12_381_SCALAR_MODULUS = BigUint(
+//   "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+// );
+const BN254_SCALAR_MODULUS = BigUint(
+  "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001",
+)
 
 function getSignal(signals: Uint256[], idx: uint64): Uint256 {
   return signals[idx];
@@ -34,38 +37,48 @@ const HPKE_SIZE = 250;
 /**
  * PLONK proof structure: G1 points (96B BE) and field evals (32B BE)
  */
-export type PlonkProof = {
-  // Uncompressed G1 points
-  A: bytes<96>;
-  B: bytes<96>;
-  C: bytes<96>;
-  Z: bytes<96>;
-  T1: bytes<96>;
-  T2: bytes<96>;
-  T3: bytes<96>;
-  Wxi: bytes<96>;
-  Wxiw: bytes<96>;
-  // Field evaluations are 32 bytes (SNARKJS internal representation, BE)
-  eval_a: Uint256;
-  eval_b: Uint256;
-  eval_c: Uint256;
-  eval_s1: Uint256;
-  eval_s2: Uint256;
-  eval_zw: Uint256;
-};
+// export type PlonkProof = {
+//   // Uncompressed G1 points
+//   A: bytes<96>;
+//   B: bytes<96>;
+//   C: bytes<96>;
+//   Z: bytes<96>;
+//   T1: bytes<96>;
+//   T2: bytes<96>;
+//   T3: bytes<96>;
+//   Wxi: bytes<96>;
+//   Wxiw: bytes<96>;
+//   // Field evaluations are 32 bytes (SNARKJS internal representation, BE)
+//   eval_a: Uint256;
+//   eval_b: Uint256;
+//   eval_c: Uint256;
+//   eval_s1: Uint256;
+//   eval_s2: Uint256;
+//   eval_zw: Uint256;
+// };
 
 /**
  * Groth16 BLS12-381 proof structure
  * Contains three commitments that prove knowledge of a satisfying assignment
  */
-export type Groth16Bls12381Proof = {
+// export type Groth16Bls12381Proof = {
+//   /** Prover's first commitment (G1 point) */
+//   pi_a: bytes<96>;
+//   /** Prover's second commitment (G2 point) */
+//   pi_b: bytes<192>;
+//   /** Prover's third commitment (G1 point) */
+//   pi_c: bytes<96>;
+// };
+
+export type Groth16Bn254Proof = {
   /** Prover's first commitment (G1 point) */
-  pi_a: bytes<96>;
+  pi_a: bytes<64>;
   /** Prover's second commitment (G2 point) */
-  pi_b: bytes<192>;
+  pi_b: bytes<128>;
   /** Prover's third commitment (G1 point) */
-  pi_c: bytes<96>;
+  pi_c: bytes<64>;
 };
+
 /**
  * Event emitted when a new leaf is added to the tree. Global state deltas will contain the new index and root
  */
@@ -103,7 +116,8 @@ export class Mithras extends MimcMerkle {
   deposit(
     signals: Uint256[],
     // _proof: PlonkProof,
-    _proof: Groth16Bls12381Proof,
+    // _proof: Groth16Bls12381Proof,
+    _proof: Groth16Bn254Proof,
     _outHpke: bytes<typeof HPKE_SIZE>,
     deposit: gtxn.PaymentTxn,
     verifierTxn: gtxn.Transaction,
@@ -128,7 +142,8 @@ export class Mithras extends MimcMerkle {
   spend(
     signals: Uint256[],
     // _proof: PlonkProof,
-    _proof: Groth16Bls12381Proof,
+    // _proof: Groth16Bls12381Proof,
+    _proof: Groth16Bn254Proof,
     _out0Hpke: bytes<typeof HPKE_SIZE>,
     _out1Hpke: bytes<typeof HPKE_SIZE>,
     verifierTxn: gtxn.Transaction,
@@ -171,7 +186,8 @@ export class Mithras extends MimcMerkle {
       .submit();
 
     const senderInScalarField: biguint =
-      BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
+      // BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
+      BigUint(Txn.sender.bytes) % BN254_SCALAR_MODULUS;
 
     assert(BigUint(spender.bytes) === senderInScalarField, "Invalid spender");
 

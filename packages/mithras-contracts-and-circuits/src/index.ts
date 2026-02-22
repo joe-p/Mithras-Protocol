@@ -1,6 +1,7 @@
 import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
 // import { PlonkLsigVerifier } from "snarkjs-algorand";
-import { Groth16Bls12381LsigVerifier } from "snarkjs-algorand";
+// import { Groth16Bls12381LsigVerifier } from "snarkjs-algorand";
+import { Groth16Bls12381LsigVerifier, Groth16Bn254LsigVerifier } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import path from "path";
 
@@ -25,17 +26,22 @@ const DEPOSIT_APP_FEE = 27n * 1000n;
 const APP_MBR = 1567900n;
 const BOOTSTRAP_FEE = 51n * 1000n;
 const NULLIFIER_MBR = 15_700n;
-const BLS12_381_SCALAR_MODULUS = BigInt(
-  "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+// const BLS12_381_SCALAR_MODULUS = BigInt(
+//   "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+// );
+const BN254_SCALAR_MODULUS = BigInt(
+  "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001",
 );
 
 export function addressInScalarField(addr: Uint8Array): bigint {
   const asBigint = BigInt("0x" + Buffer.from(addr).toString("hex"));
-  return asBigint % BLS12_381_SCALAR_MODULUS;
+  // return asBigint % BLS12_381_SCALAR_MODULUS;
+  return asBigint % BN254_SCALAR_MODULUS;
 }
 
 // export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
-export function depositVerifier(algorand: AlgorandClient): Groth16Bls12381LsigVerifier {
+// export function depositVerifier(algorand: AlgorandClient): Groth16Bls12381LsigVerifier {
+export function depositVerifier(algorand: AlgorandClient): Groth16Bn254LsigVerifier {
   const thisFileDir = new URL(".", import.meta.url);
 
   const zKey = path.join(thisFileDir.pathname, "../circuits/deposit_test.zkey");
@@ -44,7 +50,8 @@ export function depositVerifier(algorand: AlgorandClient): Groth16Bls12381LsigVe
     "../circuits/deposit_js/deposit.wasm",
   );
   // return new PlonkLsigVerifier({
-  return new Groth16Bls12381LsigVerifier({
+  // return new Groth16Bls12381LsigVerifier({
+  return new Groth16Bn254LsigVerifier({
     algorand,
     zKey,
     wasmProver,
@@ -54,7 +61,8 @@ export function depositVerifier(algorand: AlgorandClient): Groth16Bls12381LsigVe
 }
 
 // export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
-export function spendVerifier(algorand: AlgorandClient): Groth16Bls12381LsigVerifier {
+// export function spendVerifier(algorand: AlgorandClient): Groth16Bls12381LsigVerifier {
+export function spendVerifier(algorand: AlgorandClient): Groth16Bn254LsigVerifier {
   const thisFileDir = new URL(".", import.meta.url);
   const zKey = path.join(thisFileDir.pathname, "../circuits/spend_test.zkey");
   const wasmProver = path.join(
@@ -63,7 +71,8 @@ export function spendVerifier(algorand: AlgorandClient): Groth16Bls12381LsigVeri
   );
 
   // return new PlonkLsigVerifier({
-  return new Groth16Bls12381LsigVerifier({
+  // return new Groth16Bls12381LsigVerifier({
+  return new Groth16Bn254LsigVerifier({
     algorand,
     zKey,
     wasmProver,
@@ -80,8 +89,10 @@ type Output = {
 export class MithrasProtocolClient {
   // depositVerifier: PlonkLsigVerifier;
   // spendVerifier: PlonkLsigVerifier;
-  depositVerifier: Groth16Bls12381LsigVerifier;
-  spendVerifier: Groth16Bls12381LsigVerifier;
+  // depositVerifier: Groth16Bls12381LsigVerifier;
+  // spendVerifier: Groth16Bls12381LsigVerifier;
+  depositVerifier: Groth16Bn254LsigVerifier;
+  spendVerifier: Groth16Bn254LsigVerifier;
   appClient: MithrasClient;
   private _zeroHashes?: bigint[];
 

@@ -17,7 +17,8 @@ export class MimcTest extends Contract {
   mimcTest(msgs: FixedArray<Uint256, 2>): Output {
     ensureBudget(1400);
     const hash = op.mimc(
-      op.MimcConfigurations.BLS12_381Mp111,
+      // op.MimcConfigurations.BLS12_381Mp111,
+      op.MimcConfigurations.BN254Mp110,
       msgs[0].bytes.concat(msgs[1].bytes),
     );
     return {

@@ -77,25 +77,26 @@ mimcTest_while_top@2:
     b mimcTest_while_top@2
 
 mimcTest_after_while@7:
-    // __test__/contracts/mimc.algo.ts:21
+    // __test__/contracts/mimc.algo.ts:22
     // msgs[0].bytes.concat(msgs[1].bytes),
     frame_dig -1
     extract 0 32 // on error: index access is out of bounds
     frame_dig -1
     extract 32 32 // on error: index access is out of bounds
     concat
-    // __test__/contracts/mimc.algo.ts:19-22
+    // __test__/contracts/mimc.algo.ts:19-23
     // const hash = op.mimc(
-    //   op.MimcConfigurations.BLS12_381Mp111,
+    //   // op.MimcConfigurations.BLS12_381Mp111,
+    //   op.MimcConfigurations.BN254Mp110,
     //   msgs[0].bytes.concat(msgs[1].bytes),
     // );
-    mimc BLS12_381Mp111
-    // __test__/contracts/mimc.algo.ts:24
+    mimc BN254Mp110
+    // __test__/contracts/mimc.algo.ts:25
     // out: new Uint256(BigUint(hash)),
     pushint 32 // 32
     bzero
     b|
-    // __test__/contracts/mimc.algo.ts:23-25
+    // __test__/contracts/mimc.algo.ts:24-26
     // return {
     //   out: new Uint256(BigUint(hash)),
     // };

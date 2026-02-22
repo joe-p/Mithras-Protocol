@@ -30,7 +30,8 @@ snarkjs() {
 }
 
 if [ ! -f "$CEREMONY_DIR/pot16_final.ptau" ]; then
-    snarkjs powersoftau new bls12381 16 "$CEREMONY_DIR/pot16_0000.ptau" -v
+    # snarkjs powersoftau new bls12381 16 "$CEREMONY_DIR/pot16_0000.ptau" -v
+    snarkjs powersoftau new bn254 16 "$CEREMONY_DIR/pot16_0000.ptau" -v
     echo "blah" | snarkjs powersoftau contribute "$CEREMONY_DIR/pot16_0000.ptau" "$CEREMONY_DIR/pot16_0001.ptau" --name="First contribution" -v
     snarkjs powersoftau prepare phase2 "$CEREMONY_DIR/pot16_0001.ptau" "$CEREMONY_DIR/pot16_final.ptau" -v
     snarkjs powersoftau verify "$CEREMONY_DIR/pot16_final.ptau"

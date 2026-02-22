@@ -52,7 +52,8 @@ export class MimcMerkle extends Contract {
       tree[i] = new Uint256(
         BigUint(
           op.mimc(
-            op.MimcConfigurations.BLS12_381Mp111,
+            // op.MimcConfigurations.BLS12_381Mp111,
+            op.MimcConfigurations.BN254Mp110,
             tree[i - 1].bytes.concat(tree[i - 1].bytes),
           ),
         ),
@@ -102,7 +103,8 @@ export class MimcMerkle extends Contract {
       currentHash = new Uint256(
         BigUint(
           op.mimc(
-            op.MimcConfigurations.BLS12_381Mp111,
+            // op.MimcConfigurations.BLS12_381Mp111,
+            op.MimcConfigurations.BN254Mp110,
             left.bytes.concat(right.bytes),
           ),
         ),

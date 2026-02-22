@@ -6,11 +6,11 @@ import { TREE_DEPTH } from "../../src/constants";
 
 Config.configure({
   logger: {
-    error: () => {},
-    warn: () => {},
-    info: () => {},
-    verbose: () => {},
-    debug: () => {},
+    error: () => { },
+    warn: () => { },
+    info: () => { },
+    verbose: () => { },
+    debug: () => { },
   },
 });
 
@@ -35,7 +35,8 @@ export interface MerklePathInput {
 export class CircuitTester {
   static async create(config: CircuitTestConfig) {
     return await wasm_tester(config.circuitPath, {
-      prime: config.prime || "bls12381",
+      // prime: config.prime || "bls12381",
+      prime: config.prime || "bn128",
       recompile: config.recompile ?? true,
     });
   }

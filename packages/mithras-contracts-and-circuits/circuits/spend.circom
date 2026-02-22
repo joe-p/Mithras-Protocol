@@ -1,4 +1,4 @@
-pragma circom 2.1.5;
+pragma circom 2.1.8;
 
 include "./mimc.circom";
 include "./merkle_path_verify.circom";

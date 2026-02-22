@@ -215,7 +215,7 @@ bootstrapTest_while_top@2:
     intc_3 // 16
     <
     bz bootstrapTest_after_while@4
-    // contracts/mimc_merkle.algo.ts:56
+    // contracts/mimc_merkle.algo.ts:57
     // tree[i - 1].bytes.concat(tree[i - 1].bytes),
     frame_dig 1
     dup
@@ -230,17 +230,19 @@ bootstrapTest_while_top@2:
     extract3 // on error: index access is out of bounds
     dup
     concat
-    // contracts/mimc_merkle.algo.ts:54-57
+    // contracts/mimc_merkle.algo.ts:54-58
     // op.mimc(
-    //   op.MimcConfigurations.BLS12_381Mp111,
+    //   // op.MimcConfigurations.BLS12_381Mp111,
+    //   op.MimcConfigurations.BN254Mp110,
     //   tree[i - 1].bytes.concat(tree[i - 1].bytes),
     // ),
-    mimc BLS12_381Mp111
-    // contracts/mimc_merkle.algo.ts:52-59
+    mimc BN254Mp110
+    // contracts/mimc_merkle.algo.ts:52-60
     // tree[i] = new Uint256(
     //   BigUint(
     //     op.mimc(
-    //       op.MimcConfigurations.BLS12_381Mp111,
+    //       // op.MimcConfigurations.BLS12_381Mp111,
+    //       op.MimcConfigurations.BN254Mp110,
     //       tree[i - 1].bytes.concat(tree[i - 1].bytes),
     //     ),
     //   ),
@@ -265,21 +267,21 @@ bootstrapTest_after_while@4:
     // contracts/mimc_merkle.algo.ts:29
     // rootCounter = GlobalState<uint64>({ key: "c" });
     bytec_3 // "c"
-    // contracts/mimc_merkle.algo.ts:62
+    // contracts/mimc_merkle.algo.ts:63
     // this.rootCounter.value = 0;
     intc_0 // 0
     app_global_put
     // contracts/mimc_merkle.algo.ts:33
     // treeIndex = GlobalState<uint64>({ key: "i" });
     bytec_0 // "i"
-    // contracts/mimc_merkle.algo.ts:63
+    // contracts/mimc_merkle.algo.ts:64
     // this.treeIndex.value = 0;
     intc_0 // 0
     app_global_put
     // contracts/mimc_merkle.algo.ts:27
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
     bytec_1 // "r"
-    // contracts/mimc_merkle.algo.ts:64
+    // contracts/mimc_merkle.algo.ts:65
     // this.rootCache.create();
     pushint 1600 // 1600
     box_create
@@ -287,7 +289,7 @@ bootstrapTest_after_while@4:
     // contracts/mimc_merkle.algo.ts:35
     // zeroHashes = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "z" });
     bytec 6 // "z"
-    // contracts/mimc_merkle.algo.ts:65
+    // contracts/mimc_merkle.algo.ts:66
     // this.zeroHashes.value = clone(tree);
     frame_dig 0
     dup
@@ -296,18 +298,18 @@ bootstrapTest_after_while@4:
     // contracts/mimc_merkle.algo.ts:31
     // subtree = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "t" });
     bytec 4 // "t"
-    // contracts/mimc_merkle.algo.ts:66
+    // contracts/mimc_merkle.algo.ts:67
     // this.subtree.value = clone(tree);
     dig 1
     box_put
     // contracts/mimc_merkle.algo.ts:38
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_2 // "e"
-    // contracts/mimc_merkle.algo.ts:67
+    // contracts/mimc_merkle.algo.ts:68
     // this.epochId.value = 0;
     intc_0 // 0
     app_global_put
-    // contracts/mimc_merkle.algo.ts:69
+    // contracts/mimc_merkle.algo.ts:70
     // this.lastComputedRoot.value = tree[TREE_DEPTH - 1];
     pushint 480 // 480
     intc_1 // 32
@@ -315,7 +317,7 @@ bootstrapTest_after_while@4:
     // contracts/mimc_merkle.algo.ts:39
     // lastComputedRoot = GlobalState<Uint256>({ key: "lr" });
     bytec 5 // "lr"
-    // contracts/mimc_merkle.algo.ts:69
+    // contracts/mimc_merkle.algo.ts:70
     // this.lastComputedRoot.value = tree[TREE_DEPTH - 1];
     swap
     app_global_put
@@ -330,39 +332,39 @@ addLeafTest:
     intc_0 // 0
     dupn 3
     pushbytes ""
-    // contracts/mimc_merkle.algo.ts:74
+    // contracts/mimc_merkle.algo.ts:75
     // ensureBudget(MIMC_OPCODE_COST + 700 * 2);
     pushint 19000 // 19000
     intc_0 // 0
     callsub ensure_budget
-    // contracts/mimc_merkle.algo.ts:76
+    // contracts/mimc_merkle.algo.ts:77
     // let index = this.treeIndex.value;
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:33
     // treeIndex = GlobalState<uint64>({ key: "i" });
     bytec_0 // "i"
-    // contracts/mimc_merkle.algo.ts:76
+    // contracts/mimc_merkle.algo.ts:77
     // let index = this.treeIndex.value;
     app_global_get_ex
     swap
     dup
     uncover 2
     assert // check GlobalState exists
-    // contracts/mimc_merkle.algo.ts:78
+    // contracts/mimc_merkle.algo.ts:79
     // if (!(index < 2 ** TREE_DEPTH)) {
     pushint 65536 // 65536
     <
     bnz addLeafTest_after_if_else@3
-    // contracts/mimc_merkle.algo.ts:80
+    // contracts/mimc_merkle.algo.ts:81
     // this.sealAndRotate();
     callsub sealAndRotate
-    // contracts/mimc_merkle.algo.ts:82
+    // contracts/mimc_merkle.algo.ts:83
     // index = this.treeIndex.value;
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:33
     // treeIndex = GlobalState<uint64>({ key: "i" });
     bytec_0 // "i"
-    // contracts/mimc_merkle.algo.ts:82
+    // contracts/mimc_merkle.algo.ts:83
     // index = this.treeIndex.value;
     app_global_get_ex
     swap
@@ -370,13 +372,13 @@ addLeafTest:
     assert // check GlobalState exists
 
 addLeafTest_after_if_else@3:
-    // contracts/mimc_merkle.algo.ts:85
+    // contracts/mimc_merkle.algo.ts:86
     // this.treeIndex.value += 1;
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:33
     // treeIndex = GlobalState<uint64>({ key: "i" });
     bytec_0 // "i"
-    // contracts/mimc_merkle.algo.ts:85
+    // contracts/mimc_merkle.algo.ts:86
     // this.treeIndex.value += 1;
     app_global_get_ex
     assert // check GlobalState exists
@@ -385,14 +387,14 @@ addLeafTest_after_if_else@3:
     // contracts/mimc_merkle.algo.ts:33
     // treeIndex = GlobalState<uint64>({ key: "i" });
     bytec_0 // "i"
-    // contracts/mimc_merkle.algo.ts:85
+    // contracts/mimc_merkle.algo.ts:86
     // this.treeIndex.value += 1;
     swap
     app_global_put
     // contracts/mimc_merkle.algo.ts:31
     // subtree = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "t" });
     bytec 4 // "t"
-    // contracts/mimc_merkle.algo.ts:89
+    // contracts/mimc_merkle.algo.ts:90
     // let subtree = clone(this.subtree.value);
     box_get
     swap
@@ -401,13 +403,13 @@ addLeafTest_after_if_else@3:
     // contracts/mimc_merkle.algo.ts:35
     // zeroHashes = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "z" });
     bytec 6 // "z"
-    // contracts/mimc_merkle.algo.ts:90
+    // contracts/mimc_merkle.algo.ts:91
     // const zeroHashes = clone(this.zeroHashes.value);
     box_get
     swap
     frame_bury 3
     assert // Box must have value
-    // contracts/mimc_merkle.algo.ts:92
+    // contracts/mimc_merkle.algo.ts:93
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     intc_0 // 0
     frame_bury 4
@@ -415,19 +417,19 @@ addLeafTest_after_if_else@3:
     frame_bury 0
 
 addLeafTest_while_top@4:
-    // contracts/mimc_merkle.algo.ts:92
+    // contracts/mimc_merkle.algo.ts:93
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     frame_dig 4
     intc_3 // 16
     <
     bz addLeafTest_after_while@9
-    // contracts/mimc_merkle.algo.ts:93
+    // contracts/mimc_merkle.algo.ts:94
     // if ((index & 1) === 0) {
     frame_dig 5
     intc_2 // 1
     &
     bnz addLeafTest_else_body@7
-    // contracts/mimc_merkle.algo.ts:94
+    // contracts/mimc_merkle.algo.ts:95
     // subtree[i] = currentHash;
     frame_dig 4
     intc_1 // 32
@@ -439,7 +441,7 @@ addLeafTest_while_top@4:
     cover 4
     replace3 // on error: index access is out of bounds
     frame_bury 2
-    // contracts/mimc_merkle.algo.ts:96
+    // contracts/mimc_merkle.algo.ts:97
     // right = zeroHashes[i];
     frame_dig 3
     swap
@@ -449,22 +451,24 @@ addLeafTest_while_top@4:
     frame_bury 1
 
 addLeafTest_after_if_else@8:
-    // contracts/mimc_merkle.algo.ts:106
+    // contracts/mimc_merkle.algo.ts:108
     // left.bytes.concat(right.bytes),
     frame_dig 1
     swap
     concat
-    // contracts/mimc_merkle.algo.ts:104-107
+    // contracts/mimc_merkle.algo.ts:105-109
     // op.mimc(
-    //   op.MimcConfigurations.BLS12_381Mp111,
+    //   // op.MimcConfigurations.BLS12_381Mp111,
+    //   op.MimcConfigurations.BN254Mp110,
     //   left.bytes.concat(right.bytes),
     // ),
-    mimc BLS12_381Mp111
-    // contracts/mimc_merkle.algo.ts:102-109
+    mimc BN254Mp110
+    // contracts/mimc_merkle.algo.ts:103-111
     // currentHash = new Uint256(
     //   BigUint(
     //     op.mimc(
-    //       op.MimcConfigurations.BLS12_381Mp111,
+    //       // op.MimcConfigurations.BLS12_381Mp111,
+    //       op.MimcConfigurations.BN254Mp110,
     //       left.bytes.concat(right.bytes),
     //     ),
     //   ),
@@ -473,13 +477,13 @@ addLeafTest_after_if_else@8:
     bzero
     b|
     frame_bury 0
-    // contracts/mimc_merkle.algo.ts:111
+    // contracts/mimc_merkle.algo.ts:113
     // index >>= 1;
     frame_dig 5
     intc_2 // 1
     shr
     frame_bury 5
-    // contracts/mimc_merkle.algo.ts:92
+    // contracts/mimc_merkle.algo.ts:93
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     frame_dig 4
     intc_2 // 1
@@ -488,7 +492,7 @@ addLeafTest_after_if_else@8:
     b addLeafTest_while_top@4
 
 addLeafTest_else_body@7:
-    // contracts/mimc_merkle.algo.ts:98
+    // contracts/mimc_merkle.algo.ts:99
     // left = subtree[i];
     frame_dig 4
     intc_1 // 32
@@ -505,20 +509,20 @@ addLeafTest_after_while@9:
     // contracts/mimc_merkle.algo.ts:31
     // subtree = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "t" });
     bytec 4 // "t"
-    // contracts/mimc_merkle.algo.ts:114
+    // contracts/mimc_merkle.algo.ts:116
     // this.subtree.value = clone(subtree);
     frame_dig 2
     box_put
     // contracts/mimc_merkle.algo.ts:39
     // lastComputedRoot = GlobalState<Uint256>({ key: "lr" });
     bytec 5 // "lr"
-    // contracts/mimc_merkle.algo.ts:115
+    // contracts/mimc_merkle.algo.ts:117
     // this.lastComputedRoot.value = currentHash;
     frame_dig 0
     dup
     cover 2
     app_global_put
-    // contracts/mimc_merkle.algo.ts:116
+    // contracts/mimc_merkle.algo.ts:118
     // this.addRoot(currentHash);
     callsub addRoot
     retsub
@@ -537,7 +541,7 @@ isValidRootTest:
     // __test__/contracts/MimcMerkleTest.algo.ts:24
     // isValidRootTest(root: Uint256) {
     proto 1 1
-    // contracts/mimc_merkle.algo.ts:151
+    // contracts/mimc_merkle.algo.ts:153
     // ensureBudget(700); // TODO: Determine budget needed here
     pushint 700 // 700
     intc_0 // 0
@@ -545,14 +549,14 @@ isValidRootTest:
     // contracts/mimc_merkle.algo.ts:27
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
     bytec_1 // "r"
-    // contracts/mimc_merkle.algo.ts:152
+    // contracts/mimc_merkle.algo.ts:154
     // for (const validRoot of this.rootCache.value) {
     box_get
     assert // Box must have value
     intc_0 // 0
 
 isValidRootTest_for_header@2:
-    // contracts/mimc_merkle.algo.ts:152
+    // contracts/mimc_merkle.algo.ts:154
     // for (const validRoot of this.rootCache.value) {
     frame_dig 1
     pushint 50 // 50
@@ -565,12 +569,12 @@ isValidRootTest_for_header@2:
     swap
     intc_1 // 32
     extract3 // on error: index access is out of bounds
-    // contracts/mimc_merkle.algo.ts:153
+    // contracts/mimc_merkle.algo.ts:155
     // if (root === validRoot) {
     frame_dig -1
     ==
     bz isValidRootTest_after_if_else@5
-    // contracts/mimc_merkle.algo.ts:154
+    // contracts/mimc_merkle.algo.ts:156
     // return true;
     intc_2 // 1
 
@@ -588,7 +592,7 @@ isValidRootTest_after_if_else@5:
     b isValidRootTest_for_header@2
 
 isValidRootTest_after_for@7:
-    // contracts/mimc_merkle.algo.ts:158
+    // contracts/mimc_merkle.algo.ts:160
     // return false;
     intc_0 // 0
     // __test__/contracts/MimcMerkleTest.algo.ts:25
@@ -601,17 +605,17 @@ isValidSealedRootTest:
     // __test__/contracts/MimcMerkleTest.algo.ts:28
     // isValidSealedRootTest(epochId: uint64, root: Uint256) {
     proto 2 1
-    // contracts/mimc_merkle.algo.ts:163
+    // contracts/mimc_merkle.algo.ts:165
     // const epochBoxId: uint64 = epochId / EPOCHS_PER_BOX;
     frame_dig -2
     intc_1 // 32
     /
-    // contracts/mimc_merkle.algo.ts:164
+    // contracts/mimc_merkle.algo.ts:166
     // const index: uint64 = epochId % EPOCHS_PER_BOX;
     frame_dig -2
     intc_1 // 32
     %
-    // contracts/mimc_merkle.algo.ts:165
+    // contracts/mimc_merkle.algo.ts:167
     // return this.epochBoxes(epochBoxId).value[index] === root;
     swap
     itob
@@ -622,7 +626,7 @@ isValidSealedRootTest:
     bytec_2 // "e"
     swap
     concat
-    // contracts/mimc_merkle.algo.ts:165
+    // contracts/mimc_merkle.algo.ts:167
     // return this.epochBoxes(epochBoxId).value[index] === root;
     box_get
     assert // Box must have value
@@ -652,38 +656,38 @@ addRootTest:
 
 // contracts/mimc_merkle.algo.ts::MimcMerkle.sealAndRotate() -> void:
 sealAndRotate:
-    // contracts/mimc_merkle.algo.ts:122
+    // contracts/mimc_merkle.algo.ts:124
     // assert(this.treeIndex.value > 0, "nothing to seal");
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:33
     // treeIndex = GlobalState<uint64>({ key: "i" });
     bytec_0 // "i"
-    // contracts/mimc_merkle.algo.ts:122
+    // contracts/mimc_merkle.algo.ts:124
     // assert(this.treeIndex.value > 0, "nothing to seal");
     app_global_get_ex
     assert // check GlobalState exists
     assert // nothing to seal
-    // contracts/mimc_merkle.algo.ts:124
+    // contracts/mimc_merkle.algo.ts:126
     // const epoch = this.epochId.value;
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:38
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_2 // "e"
-    // contracts/mimc_merkle.algo.ts:124
+    // contracts/mimc_merkle.algo.ts:126
     // const epoch = this.epochId.value;
     app_global_get_ex
     assert // check GlobalState exists
-    // contracts/mimc_merkle.algo.ts:125
+    // contracts/mimc_merkle.algo.ts:127
     // const epochBoxKey: uint64 = epoch / EPOCHS_PER_BOX;
     dup
     intc_1 // 32
     /
-    // contracts/mimc_merkle.algo.ts:126
+    // contracts/mimc_merkle.algo.ts:128
     // const index: uint64 = epoch % EPOCHS_PER_BOX;
     dig 1
     intc_1 // 32
     %
-    // contracts/mimc_merkle.algo.ts:128
+    // contracts/mimc_merkle.algo.ts:130
     // const epochBox = this.epochBoxes(epochBoxKey);
     swap
     itob
@@ -694,19 +698,19 @@ sealAndRotate:
     bytec_2 // "e"
     swap
     concat
-    // contracts/mimc_merkle.algo.ts:129
+    // contracts/mimc_merkle.algo.ts:131
     // epochBox.create();
     dup
     pushint 1024 // 1024
     box_create
     pop
-    // contracts/mimc_merkle.algo.ts:131
+    // contracts/mimc_merkle.algo.ts:133
     // epochBox.value[index] = this.lastComputedRoot.value;
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:39
     // lastComputedRoot = GlobalState<Uint256>({ key: "lr" });
     bytec 5 // "lr"
-    // contracts/mimc_merkle.algo.ts:131
+    // contracts/mimc_merkle.algo.ts:133
     // epochBox.value[index] = this.lastComputedRoot.value;
     app_global_get_ex
     assert // check GlobalState exists
@@ -715,61 +719,61 @@ sealAndRotate:
     *
     swap
     box_replace
-    // contracts/mimc_merkle.algo.ts:134
+    // contracts/mimc_merkle.algo.ts:136
     // this.epochId.value = epoch + 1;
     intc_2 // 1
     +
     // contracts/mimc_merkle.algo.ts:38
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_2 // "e"
-    // contracts/mimc_merkle.algo.ts:134
+    // contracts/mimc_merkle.algo.ts:136
     // this.epochId.value = epoch + 1;
     swap
     app_global_put
     // contracts/mimc_merkle.algo.ts:33
     // treeIndex = GlobalState<uint64>({ key: "i" });
     bytec_0 // "i"
-    // contracts/mimc_merkle.algo.ts:135
+    // contracts/mimc_merkle.algo.ts:137
     // this.treeIndex.value = 0;
     intc_0 // 0
     app_global_put
     // contracts/mimc_merkle.algo.ts:35
     // zeroHashes = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "z" });
     bytec 6 // "z"
-    // contracts/mimc_merkle.algo.ts:136
+    // contracts/mimc_merkle.algo.ts:138
     // const zeros = clone(this.zeroHashes.value);
     box_get
     assert // Box must have value
     // contracts/mimc_merkle.algo.ts:31
     // subtree = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "t" });
     bytec 4 // "t"
-    // contracts/mimc_merkle.algo.ts:137
+    // contracts/mimc_merkle.algo.ts:139
     // this.subtree.value = clone(zeros);
     dig 1
     box_put
     // contracts/mimc_merkle.algo.ts:29
     // rootCounter = GlobalState<uint64>({ key: "c" });
     bytec_3 // "c"
-    // contracts/mimc_merkle.algo.ts:140
+    // contracts/mimc_merkle.algo.ts:142
     // this.rootCounter.value = 0;
     intc_0 // 0
     app_global_put
     // contracts/mimc_merkle.algo.ts:27
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
     bytec_1 // "r"
-    // contracts/mimc_merkle.algo.ts:143
+    // contracts/mimc_merkle.algo.ts:145
     // this.rootCache.delete();
     box_del
     pop
     // contracts/mimc_merkle.algo.ts:27
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
     bytec_1 // "r"
-    // contracts/mimc_merkle.algo.ts:144
+    // contracts/mimc_merkle.algo.ts:146
     // this.rootCache.create();
     pushint 1600 // 1600
     box_create
     pop
-    // contracts/mimc_merkle.algo.ts:145
+    // contracts/mimc_merkle.algo.ts:147
     // const emptyRoot = zeros[TREE_DEPTH - 1];
     pushint 480 // 480
     intc_1 // 32
@@ -777,11 +781,11 @@ sealAndRotate:
     // contracts/mimc_merkle.algo.ts:39
     // lastComputedRoot = GlobalState<Uint256>({ key: "lr" });
     bytec 5 // "lr"
-    // contracts/mimc_merkle.algo.ts:146
+    // contracts/mimc_merkle.algo.ts:148
     // this.lastComputedRoot.value = emptyRoot;
     dig 1
     app_global_put
-    // contracts/mimc_merkle.algo.ts:147
+    // contracts/mimc_merkle.algo.ts:149
     // this.addRoot(emptyRoot);
     callsub addRoot
     retsub
@@ -789,42 +793,42 @@ sealAndRotate:
 
 // contracts/mimc_merkle.algo.ts::MimcMerkle.addRoot(rootHash: bytes) -> void:
 addRoot:
-    // contracts/mimc_merkle.algo.ts:168
+    // contracts/mimc_merkle.algo.ts:170
     // protected addRoot(rootHash: Uint256): void {
     proto 1 0
-    // contracts/mimc_merkle.algo.ts:169
+    // contracts/mimc_merkle.algo.ts:171
     // const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
     intc_0 // 0
     // contracts/mimc_merkle.algo.ts:29
     // rootCounter = GlobalState<uint64>({ key: "c" });
     bytec_3 // "c"
-    // contracts/mimc_merkle.algo.ts:169
+    // contracts/mimc_merkle.algo.ts:171
     // const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
     app_global_get_ex
     assert // check GlobalState exists
     dup
     pushint 50 // 50
     %
-    // contracts/mimc_merkle.algo.ts:170
+    // contracts/mimc_merkle.algo.ts:172
     // this.rootCache.value[index] = rootHash;
     intc_1 // 32
     *
     // contracts/mimc_merkle.algo.ts:27
     // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
     bytec_1 // "r"
-    // contracts/mimc_merkle.algo.ts:170
+    // contracts/mimc_merkle.algo.ts:172
     // this.rootCache.value[index] = rootHash;
     swap
     frame_dig -1
     box_replace
-    // contracts/mimc_merkle.algo.ts:172
+    // contracts/mimc_merkle.algo.ts:174
     // this.rootCounter.value += 1;
     intc_2 // 1
     +
     // contracts/mimc_merkle.algo.ts:29
     // rootCounter = GlobalState<uint64>({ key: "c" });
     bytec_3 // "c"
-    // contracts/mimc_merkle.algo.ts:172
+    // contracts/mimc_merkle.algo.ts:174
     // this.rootCounter.value += 1;
     swap
     app_global_put

@@ -34,6 +34,13 @@ resolve_snarkjs_cmd() {
 		return 0
 	fi
 
+	# Fallback: use npx to run snarkjs without installing node_modules in this repo.
+	# This is especially helpful in environments where pnpm/corepack isn't set up.
+	if command -v npx >/dev/null 2>&1; then
+		echo "npx"
+		return 0
+	fi
+
 	echo ""
 }
 
@@ -51,6 +58,8 @@ snarkjs() {
 	if [[ "$SNARKJS_CMD_SPEC" == node\|* ]]; then
 		local cli_path="${SNARKJS_CMD_SPEC#node|}"
 		node "$cli_path" "$@"
+	elif [[ "$SNARKJS_CMD_SPEC" == "npx" ]]; then
+		npx --yes snarkjs "$@"
 	else
 		"$SNARKJS_CMD_SPEC" "$@"
 	fi
@@ -165,12 +174,14 @@ bash ../ceremonies/test/setup.sh
 
 PTAU_PATH="$CIRCUITS_DIR/../ceremonies/test/pot16_final.ptau"
 
-circom --r1cs --wasm --c --sym --inspect $CIRCUITS_DIR/deposit.circom --prime bls12381
+# circom --r1cs --wasm --c --sym --inspect $CIRCUITS_DIR/deposit.circom --prime bls12381
+circom --r1cs --wasm --c --sym --inspect "$CIRCUITS_DIR/deposit.circom" --prime bn128
 check_ptau_fits_r1cs "$CIRCUITS_DIR/deposit.r1cs" "$PTAU_PATH"
 # snarkjs plonk setup $CIRCUITS_DIR/deposit.r1cs $PTAU_PATH $CIRCUITS_DIR/deposit_test.zkey
 snarkjs groth16 setup $CIRCUITS_DIR/deposit.r1cs $PTAU_PATH $CIRCUITS_DIR/deposit_test.zkey
 
-circom --r1cs --wasm --c --sym --inspect $CIRCUITS_DIR/spend.circom --prime bls12381
+# circom --r1cs --wasm --c --sym --inspect $CIRCUITS_DIR/spend.circom --prime bls12381
+circom --r1cs --wasm --c --sym --inspect "$CIRCUITS_DIR/spend.circom" --prime bn128
 check_ptau_fits_r1cs "$CIRCUITS_DIR/spend.r1cs" "$PTAU_PATH"
 # snarkjs plonk setup $CIRCUITS_DIR/spend.r1cs $PTAU_PATH $CIRCUITS_DIR/spend_test.zkey
 snarkjs groth16 setup $CIRCUITS_DIR/spend.r1cs $PTAU_PATH $CIRCUITS_DIR/spend_test.zkey

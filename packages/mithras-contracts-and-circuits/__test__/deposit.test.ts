@@ -1,7 +1,8 @@
 import { describe, it, beforeAll, expect } from "vitest";
 import { CircuitTester, MimcCalculator } from "./utils/test-utils";
 // import { PlonkAppVerifier } from "snarkjs-algorand";
-import { Groth16Bls12381AppVerifier } from "snarkjs-algorand";
+// import { Groth16Bls12381AppVerifier } from "snarkjs-algorand";
+import { Groth16Bn254AppVerifier } from "snarkjs-algorand";
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 
 describe("Deposit Circuit", () => {
@@ -70,7 +71,8 @@ describe("Deposit Circuit", () => {
   it("verifies on chain", async () => {
     const algorand = AlgorandClient.defaultLocalNet();
     // const verifier = new PlonkAppVerifier({
-    const verifier = new Groth16Bls12381AppVerifier({
+    // const verifier = new Groth16Bls12381AppVerifier({
+    const verifier = new Groth16Bn254AppVerifier({
       algorand,
       zKey: "circuits/deposit_test.zkey",
 
