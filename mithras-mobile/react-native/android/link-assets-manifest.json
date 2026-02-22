@@ -6,8 +6,16 @@
       "sha1": "3e030053091b300a3fb17b967329271fc7786136"
     },
     {
+      "path": "assets/keys/deposit_test.zkey",
+      "sha1": "fe3dd23a61f056e4c27974e5cbb95b2671c0c036"
+    },
+    {
       "path": "assets/keys/noir_multiplier2.srs",
       "sha1": "b328db23de94269e32e0659f1c9cca40432ae450"
+    },
+    {
+      "path": "assets/keys/spend_test.zkey",
+      "sha1": "a6d924aa9bebfae135d2fa045c684ac95f3c857f"
     },
     {
       "path": "assets/keys/plonk_fibonacci_srs.bin",
@@ -50,12 +58,20 @@
       "sha1": "669536bb2d89904ceb2a4e3d5e42bf74bf9b0de5"
     },
     {
+      "path": "assets/keys/spend.zkey",
+      "sha1": "a6d924aa9bebfae135d2fa045c684ac95f3c857f"
+    },
+    {
       "path": "assets/keys/multiplier2_final.zkey",
       "sha1": "63bdbf3c24b9f108a09ceef52dd2fca0069d01b2"
     },
     {
       "path": "assets/keys/plonk_fibonacci_vk.bin",
       "sha1": "6979d2547f039bf73c0cc0545b9230b57c084172"
+    },
+    {
+      "path": "assets/keys/deposit.zkey",
+      "sha1": "fe3dd23a61f056e4c27974e5cbb95b2671c0c036"
     },
     {
       "path": "assets/keys/hyperplonk_fibonacci_vk.bin",

@@ -1,139 +1,67 @@
-# Mopro example app
+# Mithras Mobile
 
-This is the example app of mopro. You can use the following commands to build native bindings for your iOS and/or Android app.
+Welcome to Mithras Mobile, the mobile version of the Mithras Protocol created by joe-p.
 
-**📚 To learn more about mopro, visit: https://zkmopro.org**
+Mithras Protocol is a privacy protocol built on Algorand, using ZK-SNARKs and Stealth Addresses.
 
-## Getting Started
+## Introduction
 
-To set up and build bindings, follow these steps.
+Mithras Mobile was built using [ZK Mopro](https://zkmopro.org), the Mobile Proving toolkit that allows you to generate and verify ZK-SNARKs on your phone.
 
-### 1. Install the Mopro CLI Tool
+In order to make things work with Mopro, Mithras Mobile is relies on Groth16 over BN254. The hope is to one day be able to do Groth16 over BLS12-381, or even better, Plonk over BLS12-381.
 
--   Get published CLI
+## How to Run App
 
-```sh
-cargo install mopro-cli
+Navigate into `react-native` and run `npm install && npm run ios` for iOS, or `npm install && npm run android` for Android. It might be that the Metro bundler is not started automatically, in which case you need to (in a new terminal window/tab) run `npm run start`.
+
+## Packages & Mithras Mobile
+
+Mithras Mobile needs the appropriate .wasm and .zkey files. For now it bundles them (deposit{.zkey, .wasm}, spend{.zkey, .wasm}) from test-vectors/circom when you build the react native project.
+
+Note that `deposit` (deposit Algo funds into the privacy set of Mithras) and `spend` (send private Algo funds to someone's stealth address) are currently the only ZK-SNARKs available to generate. In the future `withdraw` (withdraw funds out of the privacy set into public Algorand) will also be added.
+
+## Updating the Project with New ZK stuff
+
+**Note: The following guide can be improved...**
+
+This should only be done in case you've made changes to the ZK circuit itself or the Powers-of-Tau ceremony.
+
+1) Navigate to {root}/packages/mithras-contracts-and-circuits.
+2) Run `pnpm run build && pnpm run test`. (The crucial part is that hte build command runs the zkey.sh script, which produces the .wasm and .zkey files necesary. But it is good to build the Algorand contracts files and the full test suite to make sure things are OK.)
+3) Run:
+     ```
+     mv /circuit/deposit_test.zkey ../../mithras-mobile/test-vectors/deposit.zkey
+     mv /circuit/spend_test.zkey ../../mithras-mobile/test-vectors/spend.zkey
+     mv /circuit/deposit_js/deposit.wasm ../../mithras-mobile/test-vectors/deposit.wasm
+     mv /circuit/spend_js/spend.wasm ../../mithras-mobile/test-vectors/spend.wasm
+     ```
+4) Navigate to {root}/mithras-mobile/react-native
+5) For iOS: `npm install && npm run ubrn:ios && npm run ios` (switch ios for android as needed)
+6) If needed, open up a new terminal and run `npm run start` to run the Metro Bundler.
+
+
+The `{root}/mithras-mobile/react-native/MoproReactNativeBindings` folder contains the bindings allowing `generateCircomProof()` and `verifyCircomProof()` to be called from React Native. It has been built for the `debug` target.
+
+It might come to be that you wish to change that. Then you can install the `mopro` cli tool (`cargo install mopro-cli`) and call `mopro build` from within `{root}/mithras-mobile`. 
+
+Instead of `debug` you can pick `release` build mode. Stick to `react-native` and the relevant platforms (currently: `aarch64-apple-ios` (iOS phone), `aarch64-apple-ios-sim`(iOS Simulator), `✔ x86_64-linux-android` and `✔ aarch64-linux-android`).
+
+Afterwards, a new `MoproReactNativeBindings` will be created. Use `mv MoproReactNativeBindings react-native/MoproReactNativeBindings`.
+
+Then open `react-native/MoproReactNativeBindings/package.json` and replace the script section with the following:
+
+```
+    "scripts": {
+        "ubrn:ios": "ubrn build ios --and-generate --release && (cd ../ios && pod install)",
+        "ubrn:android": "ubrn build android --and-generate --release --targets aarch64-linux-android",
+        "test": "jest",
+        "typecheck": "tsc",
+        "lint": "eslint \"**/*.{js,ts,tsx}\"",
+        "clean": "del-cli android/build ../android/build ../android/app/build ../ios/build lib",
+        "prepare": "bob build",
+        "release": "release-it --only-version"
+    },
 ```
 
--   Or get the latest CLI on GitHub
+Basically, we replace `example/` with `../`, since `MoproReactNativeBindings` is placed inside `react-native`, in accordance with [the guide](https://zkmopro.org/docs/setup/react-native-setup).
 
-```sh
-git clone https://github.com/zkmopro/mopro
-cd mopro/cli
-cargo install --path .
-```
-
-### 2. Initialize adapter
-
-Navigate to the Mopro example app directory and initialize setup by running:
-
-```sh
-mopro init
-```
-
-### 3. Generate Native Bindings
-
-Build bindings for your project by executing:
-
-```sh
-mopro build
-```
-
-### 4. Create Platform-Specific Templates
-
-To generate templates tailored to your target platform, use:
-
-```sh
-mopro create
-```
-
-### 5. Open the project
-
-Follow the instructions to open the development tools
-
-For iOS:
-
-```sh
-open ios/MoproApp.xcodeproj
-```
-
-For Android:
-
-```sh
-open android -a Android\ Studio
-```
-
-For Web:
-
-```sh
-cd web && yarn && yarn start
-```
-
-For React Native:
-Follow the README in the `react-native` directory. Or [zkmopro/react-native-app/README.md](https://github.com/zkmopro/react-native-app/blob/main/README.md)
-
-For Flutter:
-Follow the README in the `flutter` directory. Or [zkmopro/flutter-app/README.md](https://github.com/zkmopro/flutter-app/blob/main/README.md)
-
-### 6. Update bindings
-
-After creating templates, you may still need to update the bindings.
-
-`mopro build` will prompt you to run `mopro update` to refresh the bindings in each template. You can also run it automatically:
-
-```sh
-mopro build --auto-update
-```
-
-Or manually:
-
-```sh
-mopro update
-```
-
-## Customize Bindings
-
-### UniFFI
-
-For mobile native apps (iOS and Android), you can use `#[uniffi::export]` to define custom functions that will be included in the generated bindings. For example:
-
-```rust
-#[uniffi::export]
-fn mopro_hello_world() -> String {
-    "Hello, World!".to_string()
-}
-```
-
-After defining your custom functions, run the standard Mopro commands (`mopro build`, `mopro create`, or `mopro update`) to regenerate and update the bindings for each target platform.
-
-### `wasm_bindgen`
-
-For web (WASM) apps, you can use `#[wasm_bindgen]` in [`src/lib.rs`](src/lib.rs) to expose custom functions to JavaScript. For example:
-
-```rust
-#[cfg_attr(
-    all(feature = "wasm", target_arch = "wasm32"),
-    wasm_bindgen(js_name = "moproWasmHelloWorld")
-)]
-pub fn mopro_wasm_hello_world() -> String {
-    "Hello, World!".to_string()
-}
-```
-
-After running `mopro build`, be sure to run `mopro update` to refresh the bindings in each template. This command automatically finds the appropriate bindings folders and updates them accordingly.
-
-## Test
-
-Run tests before building bindings
-
-```sh
-curl -L https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar -o jna-5.13.0.jar
-export CLASSPATH=jna-5.13.0.jar
-cargo test
-```
-
-## Community
-
--   X account: <a href="https://twitter.com/zkmopro"><img src="https://img.shields.io/twitter/follow/zkmopro?style=flat-square&logo=x&label=zkmopro"></a>
--   Telegram group: <a href="https://t.me/zkmopro"><img src="https://img.shields.io/badge/telegram-@zkmopro-blue.svg?style=flat-square&logo=telegram"></a>

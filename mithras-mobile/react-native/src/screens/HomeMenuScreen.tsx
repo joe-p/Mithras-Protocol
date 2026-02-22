@@ -2,6 +2,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Props = {
   onDeposit: () => void;
+  onSpend: () => void;
+  onMultiplier: () => void;
 };
 
 function MenuButton({ label, onPress }: { label: string; onPress?: () => void }) {
@@ -16,7 +18,7 @@ function MenuButton({ label, onPress }: { label: string; onPress?: () => void })
   );
 }
 
-export function HomeMenuScreen({ onDeposit }: Props) {
+export function HomeMenuScreen({ onDeposit, onSpend, onMultiplier }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.titleCorner}>
@@ -24,7 +26,8 @@ export function HomeMenuScreen({ onDeposit }: Props) {
       </View>
       <View style={styles.card}>
         <MenuButton label="Deposit funds into Mithras" onPress={onDeposit} />
-        <MenuButton label="Send funds" />
+        <MenuButton label="Send funds" onPress={onSpend} />
+        <MenuButton label="Multiplier" onPress={onMultiplier} />
         <MenuButton label="Withdraw out of Mithras" />
       </View>
     </View>

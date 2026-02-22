@@ -6,11 +6,11 @@
     "MoproReactNativeBindings"
   ],
   "scripts": {
-    "assets": "npx react-native-asset",
+    "assets": "node ./scripts/sync-circom-zkeys.mjs && npx react-native-asset",
     "ubrn:ios": "cd MoproReactNativeBindings && npm run ubrn:ios",
     "ubrn:android": "cd MoproReactNativeBindings && npm run ubrn:android",
-    "prebuild": "npm run assets && bundle install && (cd ios && bundle exec pod install)",
-    "ios": "npm run prebuild && react-native run-ios",
+    "prebuild:ios": "npm run assets && bundle install && (cd ios && bundle exec pod install)",
+    "ios": "npm run prebuild:ios && react-native run-ios",
     "android": "npm run assets && react-native run-android",
     "start": "react-native start",
     "build:android": "react-native build-android --extra-params \"--no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a\"",

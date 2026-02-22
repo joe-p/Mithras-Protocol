@@ -1123,6 +1123,10 @@ name = "mithras-mobile"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-ec",
+ "ark-ff",
  "circom-prover",
  "mopro-ffi",
  "num-bigint",
@@ -1132,7 +1136,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "wasm-bindgen",
- "witnesscalc-adapter",
 ]
 
 [[package]]
@@ -2358,19 +2361,6 @@ dependencies = [
  "serde_json",
  "unicode-xid",
  "wasmparser",
-]
-
-[[package]]
-name = "witnesscalc-adapter"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0cc7b8298349526318f3ac7f13283f747c28eeb1e6690ed6560cbdd46fb81c3"
-dependencies = [
- "anyhow",
- "num-bigint",
- "num-traits",
- "paste",
- "serde_json",
 ]
 
 [[package]]

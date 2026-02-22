@@ -33,12 +33,12 @@
         "*.xcframework/**"
     ],
     "scripts": {
-        "ubrn:ios": "ubrn build ios --and-generate --release && (cd example/ios && pod install)",
+        "ubrn:ios": "ubrn build ios --and-generate --release && (cd ../ios && pod install)",
         "ubrn:android": "ubrn build android --and-generate --release --targets aarch64-linux-android",
         "test": "jest",
         "typecheck": "tsc",
         "lint": "eslint \"**/*.{js,ts,tsx}\"",
-        "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
+        "clean": "del-cli android/build ../android/build ../android/app/build ../ios/build lib",
         "prepare": "bob build",
         "release": "release-it --only-version"
     },

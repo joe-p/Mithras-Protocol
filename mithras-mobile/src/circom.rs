@@ -10,7 +10,63 @@ use circom_prover::{
     CircomProver,
 };
 use num_bigint::BigUint;
+use serde_json::Value;
 use std::str::FromStr;
+
+fn normalize_circuit_inputs_json(circuit_inputs: &str) -> Result<String, MoproError> {
+    // circom-prover's RustWitness backend currently expects inputs shaped as:
+    // { "signal": ["123"], "arr": ["0", "1", ...] }
+    // and ignores scalar JSON values entirely.
+    let value: Value = serde_json::from_str(circuit_inputs).map_err(|e| {
+        MoproError::CircomError(format!("failed to parse circuit_inputs JSON: {e}"))
+    })?;
+
+    let Value::Object(map) = value else {
+        return Err(MoproError::CircomError(
+            "circuit_inputs must be a JSON object".to_string(),
+        ));
+    };
+
+    let mut normalized = serde_json::Map::new();
+
+    for (key, val) in map {
+        let vec: Vec<String> = match val {
+            Value::Array(arr) => arr
+                .into_iter()
+                .map(|v| match v {
+                    Value::String(s) => Ok(s),
+                    Value::Number(n) => Ok(n.to_string()),
+                    Value::Bool(b) => Ok(if b { "1".to_string() } else { "0".to_string() }),
+                    _ => Err(MoproError::CircomError(format!(
+                        "unsupported input element type for '{key}': {v}"
+                    ))),
+                })
+                .collect::<Result<Vec<_>, _>>()?,
+            Value::String(s) => vec![s],
+            Value::Number(n) => vec![n.to_string()],
+            Value::Bool(b) => vec![if b { "1".to_string() } else { "0".to_string() }],
+            Value::Null => {
+                return Err(MoproError::CircomError(format!(
+                    "null is not a valid circom input for '{key}'"
+                )))
+            }
+            Value::Object(_) => {
+                return Err(MoproError::CircomError(format!(
+                    "nested objects are not valid circom inputs for '{key}'"
+                )))
+            }
+        };
+
+        normalized.insert(
+            key,
+            Value::Array(vec.into_iter().map(Value::String).collect()),
+        );
+    }
+
+    serde_json::to_string(&Value::Object(normalized)).map_err(|e| {
+        MoproError::CircomError(format!("failed to serialize normalized inputs JSON: {e}"))
+    })
+}
 
 //
 // Data structures for Circom proof representation
@@ -160,7 +216,9 @@ pub fn generate_circom_proof(
         MoproError::CircomError(format!("Unknown ZKEY: {}", name.to_string_lossy()))
     })?;
 
-    let ret = CircomProver::prove(proof_lib.into(), witness_fn, circuit_inputs, zkey_path)
+    let normalized_inputs = normalize_circuit_inputs_json(&circuit_inputs)?;
+
+    let ret = CircomProver::prove(proof_lib.into(), witness_fn, normalized_inputs, zkey_path)
         .map_err(|e| MoproError::CircomError(format!("Generate Proof error: {}", e)))?;
 
     let (proof, pub_inputs) = match ret.proof.curve.as_ref() {
@@ -211,11 +269,22 @@ macro_rules! set_circom_circuits {
             )+
         ];
 
+        const CIRCOM_KEYS: &[&'static str] = &[
+            $(
+                $key,
+            )+
+        ];
+
         #[inline]
         pub(crate) fn circom_get(name: &str) -> Option<WitnessFn> {
             CIRCOM_CIRCUITS.iter()
                 .find(|(k, _)| *k == name)
                 .map(|(_, v)| *v)
+        }
+
+        #[inline]
+        pub(crate) fn circom_list() -> &'static [&'static str] {
+            CIRCOM_KEYS
         }
     };
 }
