@@ -235,7 +235,7 @@ export class MithrasProtocolClient {
 
     const feePayment = await this.algorand.createTransaction.payment({
       ...senderSigner,
-      receiver: addr,
+      receiver: this.appClient.appAddress,
       amount: microAlgos(0),
       extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE + 1000n),
       closeRemainderTo: this.appClient.appAddress,
