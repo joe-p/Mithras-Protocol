@@ -80,7 +80,7 @@ export class Mithras extends MimcMerkle {
     this.bootstrap();
   }
 
-  addCommitment(commitment: Uint256) {
+  private addCommitment(commitment: Uint256) {
     this.addLeaf(commitment);
     emit<NewLeaf>({
       leaf: commitment,
