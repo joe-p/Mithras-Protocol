@@ -11,7 +11,6 @@ import {
   assertMatch,
   BigUint,
   Txn,
-  Bytes,
   biguint,
   BoxMap,
   itxn,
@@ -24,10 +23,6 @@ import { Address, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 const BLS12_381_SCALAR_MODULUS = BigUint(
   "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
 );
-
-function getSignal(signals: Uint256[], idx: uint64): Uint256 {
-  return signals[idx];
-}
 
 const HPKE_SIZE = 250;
 
@@ -97,8 +92,8 @@ export class Mithras extends MimcMerkle {
   ) {
     assert(verifierTxn.sender === this.depositVerifier.value.native);
 
-    const commitment = getSignal(signals, 0);
-    const amount = op.extractUint64(getSignal(signals, 1).bytes, 24);
+    const commitment = signals.at(0)!;
+    const amount = op.extractUint64(signals.at(1)!.bytes, 24);
 
     this.addCommitment(commitment);
 
@@ -124,12 +119,12 @@ export class Mithras extends MimcMerkle {
       "sender of verifier call must be the spend verifier lsig",
     );
 
-    const out0Commitment = getSignal(signals, 0);
-    const out1Commitment = getSignal(signals, 1);
-    const utxoRoot = getSignal(signals, 2);
-    const nullifier = getSignal(signals, 3);
-    const utxoFee = op.extractUint64(getSignal(signals, 4).bytes, 24);
-    const spender = getSignal(signals, 5);
+    const out0Commitment = signals.at(0)!;
+    const out1Commitment = signals.at(1)!;
+    const utxoRoot = signals.at(2)!;
+    const nullifier = signals.at(3)!;
+    const utxoFee = op.extractUint64(signals.at(4)!.bytes, 24);
+    const spender = signals.at(5)!;
 
     assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
 
