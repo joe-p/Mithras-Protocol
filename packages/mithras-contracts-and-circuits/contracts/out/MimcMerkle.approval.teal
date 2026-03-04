@@ -7,18 +7,11 @@ main:
     // @contract({ avmVersion: 11 })
     // export class MimcMerkle extends Contract {
     txn NumAppArgs
-    bnz main_after_if_else@7
+    !
+    assert
     txn OnCompletion
-    bnz main_after_if_else@7
+    !
     txn ApplicationID
     !
-    assert // can only call when creating
-    pushint 1 // 1
-    return
-
-main_after_if_else@7:
-    // contracts/mimc_merkle.algo.ts:25-26
-    // @contract({ avmVersion: 11 })
-    // export class MimcMerkle extends Contract {
-    pushint 0 // 0
+    &&
     return
