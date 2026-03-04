@@ -300,11 +300,11 @@ deposit:
     ==
     assert
     // contracts/mithras.algo.ts:95
-    // const commitment = signals.at(0)!;
+    // const commitment = signals[0];
     dig 1
     extract 2 32
     // contracts/mithras.algo.ts:96
-    // const amount = op.extractUint64(signals.at(1)!.bytes, 24);
+    // const amount = op.extractUint64(signals[1].bytes, 24);
     uncover 2
     extract 34 32
     pushint 24
@@ -415,26 +415,26 @@ spend:
     // );
     assert // sender of verifier call must be the spend verifier lsig
     // contracts/mithras.algo.ts:122
-    // const out0Commitment = signals.at(0)!;
+    // const out0Commitment = signals[0];
     dup
     extract 2 32
     swap
     // contracts/mithras.algo.ts:123
-    // const out1Commitment = signals.at(1)!;
+    // const out1Commitment = signals[1];
     dup
     extract 34 32
     swap
     // contracts/mithras.algo.ts:124
-    // const utxoRoot = signals.at(2)!;
+    // const utxoRoot = signals[2];
     dup
     extract 66 32
     swap
     // contracts/mithras.algo.ts:125
-    // const nullifier = signals.at(3)!;
+    // const nullifier = signals[3];
     dup
     extract 98 32
     // contracts/mithras.algo.ts:126
-    // const utxoFee = op.extractUint64(signals.at(4)!.bytes, 24);
+    // const utxoFee = op.extractUint64(signals[4].bytes, 24);
     dig 1
     extract 130 32
     pushint 24
@@ -443,7 +443,7 @@ spend:
     uncover 2
     uncover 3
     // contracts/mithras.algo.ts:127
-    // const spender = signals.at(5)!;
+    // const spender = signals[5];
     extract 162 32
     // contracts/mithras.algo.ts:66
     // nullifiers = BoxMap<Uint256, bytes<0>>({ keyPrefix: "n" });

@@ -92,8 +92,8 @@ export class Mithras extends MimcMerkle {
   ) {
     assert(verifierTxn.sender === this.depositVerifier.value.native);
 
-    const commitment = signals.at(0)!;
-    const amount = op.extractUint64(signals.at(1)!.bytes, 24);
+    const commitment = signals[0];
+    const amount = op.extractUint64(signals[1].bytes, 24);
 
     this.addCommitment(commitment);
 
@@ -119,12 +119,12 @@ export class Mithras extends MimcMerkle {
       "sender of verifier call must be the spend verifier lsig",
     );
 
-    const out0Commitment = signals.at(0)!;
-    const out1Commitment = signals.at(1)!;
-    const utxoRoot = signals.at(2)!;
-    const nullifier = signals.at(3)!;
-    const utxoFee = op.extractUint64(signals.at(4)!.bytes, 24);
-    const spender = signals.at(5)!;
+    const out0Commitment = signals[0];
+    const out1Commitment = signals[1];
+    const utxoRoot = signals[2];
+    const nullifier = signals[3];
+    const utxoFee = op.extractUint64(signals[4].bytes, 24);
+    const spender = signals[5];
 
     assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
 
