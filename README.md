@@ -30,7 +30,7 @@ To spend funds, the user must generate a ZK proof that they have the right to sp
 
 ### Cost
 
-Due to the ZK verification and Merkle tree management, spending a UTXO on Mithras is more expensive than a regular Algorand transaction. The cost of spending a single UTXO is 0.071 ALGO. It should be noted that transactions may involve multiple UTXO spends which would increase the cost.
+Due to the ZK verification and Merkle tree management, spending a UTXO on Mithras is more expensive than a regular Algorand transaction. The cost of spending a single UTXO is 0.083 ALGO. It should be noted that transactions may involve multiple UTXO spends which would increase the cost.
 
 ### Speed
 

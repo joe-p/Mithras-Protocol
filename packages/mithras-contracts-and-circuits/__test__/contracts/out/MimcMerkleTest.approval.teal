@@ -3,7 +3,7 @@
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
-    intcblock 0 32 1 16
+    intcblock 0 32 1 20
     bytecblock "i" "r" "e" "c" "t" "lr" "z" 0x151f7c75 0x068101
     // __test__/contracts/MimcMerkleTest.algo.ts:10-11
     // @contract({ avmVersion: 11 })
@@ -193,12 +193,12 @@ bootstrapTest:
     proto 0 0
     // contracts/mimc_merkle.algo.ts:46
     // ensureBudget(MIMC_OPCODE_COST);
-    pushint 17600 // 17600
+    pushint 22000 // 22000
     intc_0 // 0
     callsub ensure_budget
     // contracts/mimc_merkle.algo.ts:47
     // const tree = new FixedArray<Uint256, typeof TREE_DEPTH>();
-    pushint 512 // 512
+    pushint 640 // 640
     bzero
     // contracts/mimc_merkle.algo.ts:49
     // tree[0] = new Uint256(0);
@@ -212,7 +212,7 @@ bootstrapTest_while_top@2:
     // contracts/mimc_merkle.algo.ts:51
     // for (let i: uint64 = 1; i < TREE_DEPTH; i++) {
     frame_dig 1
-    intc_3 // 16
+    intc_3 // 20
     <
     bz bootstrapTest_after_while@4
     // contracts/mimc_merkle.algo.ts:56
@@ -309,7 +309,7 @@ bootstrapTest_after_while@4:
     app_global_put
     // contracts/mimc_merkle.algo.ts:69
     // this.lastComputedRoot.value = tree[TREE_DEPTH - 1];
-    pushint 480 // 480
+    pushint 608 // 608
     intc_1 // 32
     extract3 // on error: index access is out of bounds
     // contracts/mimc_merkle.algo.ts:39
@@ -332,7 +332,7 @@ addLeafTest:
     pushbytes ""
     // contracts/mimc_merkle.algo.ts:74
     // ensureBudget(MIMC_OPCODE_COST + 700 * 2);
-    pushint 19000 // 19000
+    pushint 23400 // 23400
     intc_0 // 0
     callsub ensure_budget
     // contracts/mimc_merkle.algo.ts:76
@@ -350,7 +350,7 @@ addLeafTest:
     assert // check GlobalState exists
     // contracts/mimc_merkle.algo.ts:78
     // if (!(index < 2 ** TREE_DEPTH)) {
-    pushint 65536 // 65536
+    pushint 1048576 // 1048576
     <
     bnz addLeafTest_after_if_else@3
     // contracts/mimc_merkle.algo.ts:80
@@ -418,7 +418,7 @@ addLeafTest_while_top@4:
     // contracts/mimc_merkle.algo.ts:92
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     frame_dig 4
-    intc_3 // 16
+    intc_3 // 20
     <
     bz addLeafTest_after_while@9
     // contracts/mimc_merkle.algo.ts:93
@@ -771,7 +771,7 @@ sealAndRotate:
     pop
     // contracts/mimc_merkle.algo.ts:145
     // const emptyRoot = zeros[TREE_DEPTH - 1];
-    pushint 480 // 480
+    pushint 608 // 608
     intc_1 // 32
     extract3 // on error: index access is out of bounds
     // contracts/mimc_merkle.algo.ts:39

@@ -9,7 +9,13 @@ import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";
 import { Address } from "algosdk";
-import { depositVerifier, MithrasProtocolClient, spendVerifier } from "../src";
+import {
+  DEPOSIT_APP_FEE,
+  depositVerifier,
+  MithrasProtocolClient,
+  SPEND_APP_FEE,
+  spendVerifier,
+} from "../src";
 import {
   ViewKeypair,
   MithrasAddr,
@@ -20,10 +26,6 @@ import { TREE_DEPTH } from "../src/constants";
 
 const SPEND_LSIGS = 12;
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
-const SPEND_APP_FEE = 110n * 1000n;
-const DEPOSIT_APP_FEE = 53n * 1000n;
-const APP_MBR = 1567900n;
-const BOOTSTRAP_FEE = 51n * 1000n;
 const NULLIFIER_MBR = 15_700n;
 
 const BLS12_381_SCALAR_MODULUS = BigInt(
