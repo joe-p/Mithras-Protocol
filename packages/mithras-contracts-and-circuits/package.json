@@ -19,8 +19,8 @@
   "packageManager": "pnpm@10.9.0",
   "devDependencies": {
     "@algorandfoundation/algokit-utils": "^9.1.2",
-    "@algorandfoundation/algorand-typescript": "^1.1.0",
-    "@algorandfoundation/puya-ts": "1.0.0-alpha.77",
+    "@algorandfoundation/algorand-typescript": "1.2.0-beta.12",
+    "@algorandfoundation/puya-ts": "1.2.0-beta.12",
     "@types/node": "^24.3.0",
     "algosdk": "^3.4.0",
     "circom_tester": "^0.0.24",
