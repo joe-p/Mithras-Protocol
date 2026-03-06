@@ -18,6 +18,7 @@ import { equalBytes } from "../../mithras-subscriber/src";
 
 const DEPOSIT_LSIGS = 7;
 const SPEND_LSIGS = 12;
+const INSERT_LEAF_LSIGS = 15; // Estimated based on circuit complexity
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
 export const SPEND_APP_FEE = 69n * 1000n;
 export const DEPOSIT_APP_FEE = 33n * 1000n;
@@ -63,6 +64,23 @@ export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
     zKey,
     wasmProver,
     totalLsigs: SPEND_LSIGS,
+    appOffset: 1,
+  });
+}
+
+export function insertLeafVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+  const thisFileDir = new URL(".", import.meta.url);
+  const zKey = path.join(thisFileDir.pathname, "../circuits/insert_leaf_test.zkey");
+  const wasmProver = path.join(
+    thisFileDir.pathname,
+    "../circuits/insert_leaf_js/insert_leaf.wasm",
+  );
+
+  return new PlonkLsigVerifier({
+    algorand,
+    zKey,
+    wasmProver,
+    totalLsigs: INSERT_LEAF_LSIGS,
     appOffset: 1,
   });
 }

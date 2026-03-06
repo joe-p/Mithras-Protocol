@@ -8,3 +8,6 @@ pnpm snarkjs plonk setup $CIRCUITS_DIR/deposit.r1cs $CIRCUITS_DIR/../ceremonies/
 
 circom --r1cs --wasm --c --sym --inspect $CIRCUITS_DIR/spend.circom --prime bls12381
 pnpm snarkjs plonk setup $CIRCUITS_DIR/spend.r1cs $CIRCUITS_DIR/../ceremonies/test/pot16_final.ptau $CIRCUITS_DIR/spend_test.zkey
+
+circom --r1cs --wasm --c --sym --inspect $CIRCUITS_DIR/insert_leaf.circom --prime bls12381
+pnpm snarkjs plonk setup $CIRCUITS_DIR/insert_leaf.r1cs $CIRCUITS_DIR/../ceremonies/test/pot16_final.ptau $CIRCUITS_DIR/insert_leaf_test.zkey

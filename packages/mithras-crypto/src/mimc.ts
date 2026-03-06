@@ -154,10 +154,13 @@ export function mimcSum(msgs: bigint[]): bigint {
   return checksum(msgs, h);
 }
 
-export interface MerkleProof {
-  pathElements: bigint[];
-  pathSelectors: number[];
-  root: bigint;
+export interface InsertLeafProofInputs {
+  old_root: bigint;
+  leaf: bigint;
+  new_root: bigint;
+  insertion_index: bigint;
+  path_selectors: number[];
+  siblings: bigint[];
 }
 
 export class MimcMerkleTree {
@@ -245,6 +248,89 @@ export class MimcMerkleTree {
     }
 
     return currentHash;
+  }
+
+  /**
+   * Get the frontier values needed for the insert_leaf circuit proof.
+   * The frontier contains the current hash at each level that would be the sibling
+   * when inserting at the given index.
+   */
+  getFrontier(insertionIndex: number): bigint[] {
+    const siblings: bigint[] = [];
+    let index = BigInt(insertionIndex);
+
+    for (let level = 0; level < TREE_DEPTH; level++) {
+      const position = Number(index);
+      const isRightChild = (index & 1n) === 1n;
+
+      // When inserting, the sibling is:
+      // - If going right (bit is 1): the left sibling (exists in tree at position-1)
+      // - If going left (bit is 0): zero hash (no sibling exists yet)
+      if (isRightChild) {
+        const leftSibling = this.tree[level].get(position - 1);
+        if (leftSibling === undefined) {
+          throw new Error(
+            `Cannot insert at index ${insertionIndex}: no left sibling at level ${level}`
+          );
+        }
+        siblings.push(leftSibling);
+      } else {
+        siblings.push(this.zeroHashes[level]);
+      }
+
+      index >>= 1n;
+    }
+
+    return siblings;
+  }
+
+  /**
+   * Generate all proof inputs needed for the insert_leaf circuit.
+   * This captures the state before insertion, then computes the new root.
+   */
+  generateInsertLeafProofInputs(leaf: bigint): InsertLeafProofInputs {
+    const insertionIndex = this.leaves.length;
+    const oldRoot = this.getRoot();
+
+    // Get frontier values from current state
+    const siblings = this.getFrontier(insertionIndex);
+
+    // Compute path selectors from insertion_index bits
+    const pathSelectors: number[] = [];
+    let tempIndex = BigInt(insertionIndex);
+    for (let i = 0; i < TREE_DEPTH; i++) {
+      pathSelectors.push((tempIndex & 1n) === 1n ? 1 : 0);
+      tempIndex >>= 1n;
+    }
+
+    // Temporarily compute what the new root would be
+    let currentHash = leaf;
+    let index = BigInt(insertionIndex);
+
+    for (let level = 0; level < TREE_DEPTH; level++) {
+      const isRightChild = (index & 1n) === 1n;
+
+      if (isRightChild) {
+        // Sibling is on the left
+        currentHash = mimcSum([siblings[level], currentHash]);
+      } else {
+        // Sibling is zero hash on the right
+        currentHash = mimcSum([currentHash, this.zeroHashes[level]]);
+      }
+
+      index >>= 1n;
+    }
+
+    const newRoot = currentHash;
+
+    return {
+      old_root: oldRoot,
+      leaf,
+      new_root: newRoot,
+      insertion_index: BigInt(insertionIndex),
+      path_selectors: pathSelectors,
+      siblings,
+    };
   }
 
   getMerkleProof(leafIndex: number): MerkleProof {

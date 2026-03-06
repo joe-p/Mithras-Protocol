@@ -32,6 +32,14 @@ export interface MerklePathInput {
   pathSelectors: number[];
 }
 
+export interface InsertLeafInput {
+  old_root: bigint;
+  leaf: bigint;
+  insertion_index: bigint;
+  path_selectors: number[];
+  siblings: bigint[];
+}
+
 export class CircuitTester {
   static async create(config: CircuitTestConfig) {
     return await wasm_tester(config.circuitPath, {
