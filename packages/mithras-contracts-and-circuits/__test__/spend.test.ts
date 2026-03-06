@@ -5,7 +5,7 @@ import {
   MerkleTestHelpers,
 } from "./utils/test-utils";
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
-import { PlonkAppVerifier } from "snarkjs-algorand";
+import { Groth16Bls12381AppVerifier as AppVerifier } from "snarkjs-algorand";
 
 describe("Spend Circuit", () => {
   let circuit: any;
@@ -158,7 +158,7 @@ describe("Spend Circuit", () => {
     const pathSelectors = MerkleTestHelpers.createDefaultPathSelectors();
 
     const algorand = AlgorandClient.defaultLocalNet();
-    const verifier = new PlonkAppVerifier({
+    const verifier = new AppVerifier({
       algorand,
       zKey: "circuits/spend_test.zkey",
       wasmProver: "circuits/spend_js/spend.wasm",

@@ -1,10 +1,5 @@
 import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
-import {
-  PlonkLsigVerifier,
-  PlonkSignalsAndProofClient,
-  PlonkSignalsAndProofFactory,
-} from "snarkjs-algorand";
-import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
+import { MithrasClient } from "../contracts/clients/Mithras";
 
 import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";

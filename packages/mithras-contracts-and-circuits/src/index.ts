@@ -1,10 +1,9 @@
 import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
-import { PlonkLsigVerifier } from "snarkjs-algorand";
+import { Groth16Bls12381LsigVerifier as LsigVerifier } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import path from "path";
 
 import {
-  bytesToNumberBE,
   MerkleProof,
   MithrasAddr,
   SpendKeypair,
@@ -33,7 +32,7 @@ export function addressInScalarField(addr: Uint8Array): bigint {
   return asBigint % BLS12_381_SCALAR_MODULUS;
 }
 
-export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+export function depositVerifier(algorand: AlgorandClient): LsigVerifier {
   const thisFileDir = new URL(".", import.meta.url);
 
   const zKey = path.join(thisFileDir.pathname, "../circuits/deposit_test.zkey");
@@ -41,7 +40,7 @@ export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
     thisFileDir.pathname,
     "../circuits/deposit_js/deposit.wasm",
   );
-  return new PlonkLsigVerifier({
+  return new LsigVerifier({
     algorand,
     zKey,
     wasmProver,
@@ -50,7 +49,7 @@ export function depositVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
   });
 }
 
-export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+export function spendVerifier(algorand: AlgorandClient): LsigVerifier {
   const thisFileDir = new URL(".", import.meta.url);
   const zKey = path.join(thisFileDir.pathname, "../circuits/spend_test.zkey");
   const wasmProver = path.join(
@@ -58,7 +57,7 @@ export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
     "../circuits/spend_js/spend.wasm",
   );
 
-  return new PlonkLsigVerifier({
+  return new LsigVerifier({
     algorand,
     zKey,
     wasmProver,
@@ -73,8 +72,8 @@ type Output = {
 };
 
 export class MithrasProtocolClient {
-  depositVerifier: PlonkLsigVerifier;
-  spendVerifier: PlonkLsigVerifier;
+  depositVerifier: LsigVerifier;
+  spendVerifier: LsigVerifier;
   appClient: MithrasClient;
   private _zeroHashes?: bigint[];
 

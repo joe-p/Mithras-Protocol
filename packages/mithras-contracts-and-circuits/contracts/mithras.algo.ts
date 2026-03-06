@@ -27,26 +27,16 @@ const BLS12_381_SCALAR_MODULUS = BigUint(
 const HPKE_SIZE = 250;
 
 /**
- * PLONK proof structure: G1 points (96B BE) and field evals (32B BE)
+ * Groth16 BLS12-381 proof structure
+ * Contains three commitments that prove knowledge of a satisfying assignment
  */
-export type PlonkProof = {
-  // Uncompressed G1 points
-  A: bytes<96>;
-  B: bytes<96>;
-  C: bytes<96>;
-  Z: bytes<96>;
-  T1: bytes<96>;
-  T2: bytes<96>;
-  T3: bytes<96>;
-  Wxi: bytes<96>;
-  Wxiw: bytes<96>;
-  // Field evaluations are 32 bytes (SNARKJS internal representation, BE)
-  eval_a: Uint256;
-  eval_b: Uint256;
-  eval_c: Uint256;
-  eval_s1: Uint256;
-  eval_s2: Uint256;
-  eval_zw: Uint256;
+export type ZkProof = {
+  /** Prover's first commitment (G1 point) */
+  pi_a: bytes<96>;
+  /** Prover's second commitment (G2 point) */
+  pi_b: bytes<192>;
+  /** Prover's third commitment (G1 point) */
+  pi_c: bytes<96>;
 };
 
 /**
@@ -85,7 +75,7 @@ export class Mithras extends MimcMerkle {
 
   deposit(
     signals: Uint256[],
-    _proof: PlonkProof,
+    _proof: ZkProof,
     _outHpke: bytes<typeof HPKE_SIZE>,
     deposit: gtxn.PaymentTxn,
     verifierTxn: gtxn.Transaction,
@@ -109,7 +99,7 @@ export class Mithras extends MimcMerkle {
 
   spend(
     signals: Uint256[],
-    _proof: PlonkProof,
+    _proof: ZkProof,
     _out0Hpke: bytes<typeof HPKE_SIZE>,
     _out1Hpke: bytes<typeof HPKE_SIZE>,
     verifierTxn: gtxn.Transaction,
