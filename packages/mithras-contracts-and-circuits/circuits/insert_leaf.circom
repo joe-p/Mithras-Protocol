@@ -1,5 +1,7 @@
 pragma circom 2.1.5;
 
+// FIXME: Right now we arne't verifying the old root. We need to take in the frontier, calculate the old root, output the old root, then add the elaft and output the new root
+
 include "./mimc.circom";
 
 // Circuit that proves the transition from old_root to new_root when inserting a leaf
