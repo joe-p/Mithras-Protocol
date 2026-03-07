@@ -182,6 +182,19 @@ export class MimcMerkle extends Contract {
     this.commitLeafRootAndSubtree(args.newLeaf, args.newRoot, args.newSubtree);
   }
 
+  protected commitMultipleLeaves(leaves: Uint256[]): void {
+    ensureBudget(MIMC_OPCODE_COST * leaves.length);
+    for (const leaf of leaves) {
+      const { root, subtree } = calculateRootAndSubtree(
+        leaf,
+        this.nextLeafIndex.value,
+        this.subtree.value,
+      );
+
+      this.commitLeafRootAndSubtree(leaf, root, subtree);
+    }
+  }
+
   /**
    * Add a leaf to the merkle tree in an app call. Compared to `commitLeafWithLsig` this method will be much more
    * expensive to cover the cost of op-ups, but it allows a leaf to committed without the risk of a race condition.
