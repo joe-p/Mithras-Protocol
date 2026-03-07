@@ -3,7 +3,7 @@
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
-    // contracts/mimc_merkle.algo.ts:25-26
+    // contracts/mimc_merkle.algo.ts:34-35
     // @contract({ avmVersion: 11 })
     // export class MimcMerkle extends Contract {
     txn NumAppArgs

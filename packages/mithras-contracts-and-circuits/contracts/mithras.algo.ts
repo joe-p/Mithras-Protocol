@@ -16,6 +16,7 @@ import {
   itxn,
   emit,
   TransactionType,
+  Account,
 } from "@algorandfoundation/algorand-typescript";
 import { MimcMerkle } from "./mimc_merkle.algo";
 import { Address, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
@@ -71,8 +72,8 @@ export class Mithras extends MimcMerkle {
     this.creationRound.value = Global.round;
   }
 
-  bootstrapMerkleTree() {
-    this.bootstrap();
+  bootstrapMerkleTree(commitmentLsig: Account) {
+    this.bootstrap(commitmentLsig);
   }
 
   private addCommitment(commitment: Uint256) {

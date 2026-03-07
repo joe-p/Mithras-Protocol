@@ -20,6 +20,7 @@ import {
 import { TREE_DEPTH } from "../src/constants";
 import {
   decodeArc4,
+  encodeArc4,
   Uint256,
 } from "@algorandfoundation/algorand-typescript/arc4";
 
@@ -174,7 +175,7 @@ export class MimcMerkle extends Contract {
     );
 
     assert(
-      args.currentSubtree === this.subtree.value,
+      encodeArc4(args.currentSubtree) === encodeArc4(this.subtree.value),
       "previous subtree mismatch",
     );
 
@@ -221,7 +222,7 @@ export class MimcMerkle extends Contract {
     this.lastCommittedLeaf.value = newLeaf;
     this.addRoot(root);
     this.nextLeafIndex.value += 1;
-    this.subtree.value = subtree;
+    this.subtree.value = clone(subtree);
   }
 }
 
@@ -257,7 +258,10 @@ export class CommitLeaf extends LogicSig {
     );
 
     assert(newRoot === args.newRoot, "new root mismatch");
-    assert(newSubtree === args.newSubtree, "new subtree mismatch");
+    assert(
+      encodeArc4(newSubtree) === encodeArc4(args.newSubtree),
+      "new subtree mismatch",
+    );
     return true;
   }
 }
