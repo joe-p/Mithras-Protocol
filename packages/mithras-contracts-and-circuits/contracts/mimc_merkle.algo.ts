@@ -71,14 +71,32 @@ export class MimcMerkle extends Contract {
       );
     }
 
-    this.rootCounter.value = 0;
-    this.nextLeafIndex.value = 0;
-    this.rootCache.create();
     this.zeroHashes.value = clone(tree);
     this.epochId.value = 0;
-    this.subtree.value = clone(tree);
-    // The empty tree root
-    this.addRoot(tree[TREE_DEPTH - 1]);
+
+    this.newEpoch();
+  }
+
+  private newEpoch(): void {
+    this.epochId.value += 1;
+
+    // Commit sentinel leaf at index 0 so the lsig never sees index 0
+    const sentinelLeaf = new Uint256(this.epochId.value);
+
+    // Clear existing cache by recreating
+    this.rootCache.delete();
+    this.rootCache.create();
+
+    const result = calculateRootAndSubtree(
+      sentinelLeaf,
+      0,
+      clone(this.zeroHashes.value),
+    );
+    this.subtree.value = result.subtree;
+    this.lastCommittedLeaf.value = sentinelLeaf;
+    this.addRoot(result.root);
+    this.nextLeafIndex.value = 1;
+    this.rootCounter.value = 0;
   }
 
   protected currentRoot(): Uint256 {
@@ -93,7 +111,7 @@ export class MimcMerkle extends Contract {
   // Seal the current full (or partial) tree as an epoch and reset to a new tree
   protected sealAndRotate(): void {
     // Optional: require at least one leaf in the epoch
-    assert(this.nextLeafIndex.value > 0, "nothing to seal");
+    assert(this.nextLeafIndex.value === 2 ** TREE_DEPTH, "nothing to seal");
 
     const epoch = this.epochId.value;
     const epochBoxKey: uint64 = epoch / EPOCHS_PER_BOX;
@@ -106,18 +124,9 @@ export class MimcMerkle extends Contract {
 
     // Prepare next epoch: reset tree state
     this.epochId.value = epoch + 1;
-    this.nextLeafIndex.value = 0;
-    const zeros = clone(this.zeroHashes.value);
-
     // Reset recent root cache and seed with empty root
-    this.rootCounter.value = 0;
 
-    // Optionally clear existing cache by recreating
-    this.rootCache.delete();
-    this.rootCache.create();
-    const emptyRoot = zeros[TREE_DEPTH - 1];
-    this.subtree.value = zeros;
-    this.addRoot(emptyRoot);
+    this.newEpoch();
   }
 
   protected isValidRoot(root: Uint256): boolean {
@@ -200,6 +209,7 @@ export class MimcMerkle extends Contract {
     root: Uint256,
     subtree: Subtree,
   ): void {
+    assert(this.nextLeafIndex.value < 2 ** TREE_DEPTH, "tree is full");
     assert(this.pendingLeafs(newLeaf).delete(), "leaf not pending");
     this.lastCommittedLeaf.value = newLeaf;
     this.addRoot(root);
