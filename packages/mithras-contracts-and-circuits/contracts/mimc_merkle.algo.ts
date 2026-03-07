@@ -40,7 +40,7 @@ export class MimcMerkle extends Contract {
 
   nextLeafIndex = GlobalState<uint64>({ key: "i" });
 
-  zeroHashes = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "z" });
+  zeroHashes = Box<Subtree>({ key: "z" });
 
   // Track epochs and cache the last computed root for sealing
   epochId = GlobalState<uint64>({ key: "e" });
@@ -55,9 +55,10 @@ export class MimcMerkle extends Contract {
 
   pendingLeafs = BoxMap<Uint256, bytes<0>>({ keyPrefix: "p" });
 
-  protected bootstrap(): void {
+  protected bootstrap(commitLeafLsig: Account): void {
+    this.commitmentLsigAddr.value = commitLeafLsig;
     ensureBudget(MIMC_OPCODE_COST);
-    const tree = new FixedArray<Uint256, typeof TREE_DEPTH>();
+    const tree: Subtree = new FixedArray<Uint256, typeof TREE_DEPTH>();
 
     tree[0] = new Uint256(0);
 
@@ -142,7 +143,7 @@ export class MimcMerkle extends Contract {
     this.rootCounter.value += 1;
   }
 
-  protected commitLeaf(
+  protected commitLeafWithLsig(
     commitmentLsig: gtxn.Transaction,
     args: CommitLeafArgs,
   ): void {
@@ -151,6 +152,10 @@ export class MimcMerkle extends Contract {
       "invalid commitment Lsig",
     );
 
+    this.commitLeaf(args);
+  }
+
+  private commitLeaf(args: CommitLeafArgs): void {
     assert(this.pendingLeafs(args.newLeaf).delete(), "leaf not pending");
 
     assert(
@@ -187,23 +192,27 @@ export class CommitLeaf extends LogicSig {
     const appl = gtxn.ApplicationCallTxn(Txn.groupIndex + 1);
     const args = decodeArc4<CommitLeafArgs>(appl.appArgs(1));
 
-    const { root: currentRoot, subtree: currentSubtree } =
-      calculateRootAndSubtree(
-        args.previousLeaf,
-        args.newLeafIndex - 1,
-        args.previousSubtree,
-      );
-    assert(currentRoot === args.currentRoot, "old root mismatch");
-
-    const { root: newRoot } = calculateRootAndSubtree(
-      args.newLeaf,
-      args.newLeafIndex,
-      currentSubtree,
-    );
-
-    assert(newRoot === args.newRoot, "new root mismatch");
+    commitLeafFn(args);
     return true;
   }
+}
+
+function commitLeafFn(args: CommitLeafArgs): void {
+  const { root: currentRoot, subtree: currentSubtree } =
+    calculateRootAndSubtree(
+      args.previousLeaf,
+      args.newLeafIndex - 1,
+      args.previousSubtree,
+    );
+  assert(currentRoot === args.currentRoot, "old root mismatch");
+
+  const { root: newRoot } = calculateRootAndSubtree(
+    args.newLeaf,
+    args.newLeafIndex,
+    currentSubtree,
+  );
+
+  assert(newRoot === args.newRoot, "new root mismatch");
 }
 
 function calculateRootAndSubtree(
