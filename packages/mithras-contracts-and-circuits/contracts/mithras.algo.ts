@@ -16,8 +16,9 @@ import {
   itxn,
   emit,
   TransactionType,
+  Account,
 } from "@algorandfoundation/algorand-typescript";
-import { MimcMerkle } from "./mimc_merkle.algo";
+import { MimcMerkle, PlonkProof } from "./mimc_merkle.algo";
 import { Address, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 
 const BLS12_381_SCALAR_MODULUS = BigUint(
@@ -27,34 +28,15 @@ const BLS12_381_SCALAR_MODULUS = BigUint(
 const HPKE_SIZE = 250;
 
 /**
- * PLONK proof structure: G1 points (96B BE) and field evals (32B BE)
- */
-export type PlonkProof = {
-  // Uncompressed G1 points
-  A: bytes<96>;
-  B: bytes<96>;
-  C: bytes<96>;
-  Z: bytes<96>;
-  T1: bytes<96>;
-  T2: bytes<96>;
-  T3: bytes<96>;
-  Wxi: bytes<96>;
-  Wxiw: bytes<96>;
-  // Field evaluations are 32 bytes (SNARKJS internal representation, BE)
-  eval_a: Uint256;
-  eval_b: Uint256;
-  eval_c: Uint256;
-  eval_s1: Uint256;
-  eval_s2: Uint256;
-  eval_zw: Uint256;
-};
-
-/**
  * Event emitted when a new leaf is added to the tree. Global state deltas will contain the new index and root
  */
 type NewLeaf = {
   leaf: Uint256;
   epochId: uint64;
+};
+
+type PendingLeaf = {
+  leaf: Uint256;
 };
 
 @contract({ avmVersion: 11 })
@@ -71,15 +53,14 @@ export class Mithras extends MimcMerkle {
     this.creationRound.value = Global.round;
   }
 
-  bootstrapMerkleTree() {
-    this.bootstrap();
+  bootstrapMerkleTree(commitLeafVerifier: Account) {
+    this.bootstrap(commitLeafVerifier);
   }
 
-  private addCommitment(commitment: Uint256) {
-    this.addLeaf(commitment);
-    emit<NewLeaf>({
+  private addPendingUtxo(commitment: Uint256) {
+    this.addPendingLeaf(commitment);
+    emit<PendingLeaf>({
       leaf: commitment,
-      epochId: this.epochId.value,
     });
   }
 
@@ -95,7 +76,7 @@ export class Mithras extends MimcMerkle {
     const commitment = signals[0];
     const amount = op.extractUint64(signals[1].bytes, 24);
 
-    this.addCommitment(commitment);
+    this.addPendingUtxo(commitment);
 
     assertMatch(
       deposit,
@@ -146,8 +127,8 @@ export class Mithras extends MimcMerkle {
 
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 
-    this.addCommitment(out0Commitment);
-    this.addCommitment(out1Commitment);
+    this.addPendingUtxo(out0Commitment);
+    this.addPendingUtxo(out1Commitment);
 
     this.maybeCoverFee(utxoFee - nullifierMbr);
   }

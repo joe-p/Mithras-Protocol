@@ -1,7 +1,6 @@
 import {
   assert,
   Box,
-  clone,
   Contract,
   FixedArray,
   GlobalState,
@@ -10,10 +9,35 @@ import {
   contract,
   ensureBudget,
   BoxMap,
-  BigUint,
+  gtxn,
+  bytes,
+  Account,
 } from "@algorandfoundation/algorand-typescript";
 import { TREE_DEPTH } from "../src/constants";
-import { Uint, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
+import { Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
+
+/**
+ * PLONK proof structure: G1 points (96B BE) and field evals (32B BE)
+ */
+export type PlonkProof = {
+  // Uncompressed G1 points
+  A: bytes<96>;
+  B: bytes<96>;
+  C: bytes<96>;
+  Z: bytes<96>;
+  T1: bytes<96>;
+  T2: bytes<96>;
+  T3: bytes<96>;
+  Wxi: bytes<96>;
+  Wxiw: bytes<96>;
+  // Field evaluations are 32 bytes (SNARKJS internal representation, BE)
+  eval_a: Uint256;
+  eval_b: Uint256;
+  eval_c: Uint256;
+  eval_s1: Uint256;
+  eval_s2: Uint256;
+  eval_zw: Uint256;
+};
 
 const ROOT_CACHE_SIZE = 50;
 
@@ -26,23 +50,28 @@ const MIMC_OPCODE_COST = 1100 * TREE_DEPTH;
 export class MimcMerkle extends Contract {
   rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
 
-  rootCounter = GlobalState<uint64>({ key: "c" });
-
-  subtree = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "t" });
+  cachedRootCounter = GlobalState<uint64>({ key: "c" });
 
   treeIndex = GlobalState<uint64>({ key: "i" });
 
-  zeroHashes = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "z" });
-
   // Track epochs and cache the last computed root for sealing
   epochId = GlobalState<uint64>({ key: "e" });
+
   lastComputedRoot = GlobalState<Uint256>({ key: "lr" });
 
   epochBoxes = BoxMap<uint64, FixedArray<Uint256, typeof EPOCHS_PER_BOX>>({
     keyPrefix: "e",
   });
 
-  protected bootstrap(): void {
+  initialRoot = GlobalState<Uint256>({ key: "ir" });
+
+  commitLeafVerifier = GlobalState<Account>({ key: "lv" });
+
+  pendingLeafs = BoxMap<Uint256, bytes<0>>({ keyPrefix: "p" });
+
+  protected bootstrap(addLeafVerifier: Account): void {
+    this.commitLeafVerifier.value = addLeafVerifier;
+
     ensureBudget(MIMC_OPCODE_COST);
     const tree = new FixedArray<Uint256, typeof TREE_DEPTH>();
 
@@ -57,64 +86,37 @@ export class MimcMerkle extends Contract {
       );
     }
 
-    this.rootCounter.value = 0;
+    this.cachedRootCounter.value = 0;
     this.treeIndex.value = 0;
     this.rootCache.create();
-    this.zeroHashes.value = clone(tree);
-    this.subtree.value = clone(tree);
     this.epochId.value = 0;
-    // The empty tree root
     this.lastComputedRoot.value = tree[TREE_DEPTH - 1];
   }
 
-  protected addLeaf(leafHash: Uint256): void {
-    // Some extra budget needed for the loop logic opcodes
-    ensureBudget(MIMC_OPCODE_COST + 700 * 2);
+  protected addPendingLeaf(leaf: Uint256) {
+    this.pendingLeafs(leaf).create();
+  }
 
-    let index = this.treeIndex.value;
+  protected commitLeaf(
+    verifier: gtxn.Transaction,
+    _proof: PlonkProof,
+    signals: Uint256[],
+  ): void {
+    assert(
+      verifier.sender === this.commitLeafVerifier.value,
+      "invalid addLeaf verifier",
+    );
+    const [oldRoot, leaf, newRoot, insertionIndex] = signals;
 
-    if (!(index < 2 ** TREE_DEPTH)) {
-      // tree is full — seal current epoch and rotate to a fresh tree
-      this.sealAndRotate();
-      // refresh local index after rotation
-      index = this.treeIndex.value;
-    }
+    assert(oldRoot === this.lastComputedRoot.value);
+    assert(insertionIndex.asUint64() === this.treeIndex.value);
+    this.lastComputedRoot.value = newRoot;
 
-    this.treeIndex.value += 1;
-    let currentHash = leafHash;
-    let left: Uint256;
-    let right: Uint256;
-    let subtree = clone(this.subtree.value);
-    const zeroHashes = clone(this.zeroHashes.value);
-
-    for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
-      if ((index & 1) === 0) {
-        subtree[i] = currentHash;
-        left = currentHash;
-        right = zeroHashes[i];
-      } else {
-        left = subtree[i];
-        right = currentHash;
-      }
-
-      currentHash = new Uint256(
-        op.mimc(
-          op.MimcConfigurations.BLS12_381Mp111,
-          left.bytes.concat(right.bytes),
-        ),
-      );
-
-      index >>= 1;
-    }
-
-    this.subtree.value = clone(subtree);
-    this.lastComputedRoot.value = currentHash;
-    this.addRoot(currentHash);
+    this.pendingLeafs(leaf).delete();
   }
 
   // Seal the current full (or partial) tree as an epoch and reset to a new tree
   protected sealAndRotate(): void {
-    // Optional: require at least one leaf in the epoch
     assert(this.treeIndex.value > 0, "nothing to seal");
 
     const epoch = this.epochId.value;
@@ -129,16 +131,14 @@ export class MimcMerkle extends Contract {
     // Prepare next epoch: reset tree state
     this.epochId.value = epoch + 1;
     this.treeIndex.value = 0;
-    const zeros = clone(this.zeroHashes.value);
-    this.subtree.value = clone(zeros);
 
     // Reset recent root cache and seed with empty root
-    this.rootCounter.value = 0;
+    this.cachedRootCounter.value = 0;
 
     // Optionally clear existing cache by recreating
     this.rootCache.delete();
     this.rootCache.create();
-    const emptyRoot = zeros[TREE_DEPTH - 1];
+    const emptyRoot = this.initialRoot.value;
     this.lastComputedRoot.value = emptyRoot;
     this.addRoot(emptyRoot);
   }
@@ -162,9 +162,9 @@ export class MimcMerkle extends Contract {
   }
 
   protected addRoot(rootHash: Uint256): void {
-    const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
+    const index: uint64 = this.cachedRootCounter.value % ROOT_CACHE_SIZE;
     this.rootCache.value[index] = rootHash;
 
-    this.rootCounter.value += 1;
+    this.cachedRootCounter.value += 1;
   }
 }
