@@ -45,8 +45,6 @@ export class MimcMerkle extends Contract {
   // Track epochs and cache the last computed root for sealing
   epochId = GlobalState<uint64>({ key: "e" });
 
-  currentRoot = GlobalState<Uint256>({ key: "cr" });
-
   lastCommittedLeaf = GlobalState<Uint256>({ key: "ll" });
 
   epochBoxes = BoxMap<uint64, FixedArray<Uint256, typeof EPOCHS_PER_BOX>>({
@@ -78,7 +76,11 @@ export class MimcMerkle extends Contract {
     this.zeroHashes.value = clone(tree);
     this.epochId.value = 0;
     // The empty tree root
-    this.currentRoot.value = tree[TREE_DEPTH - 1];
+    this.addRoot(tree[TREE_DEPTH - 1]);
+  }
+
+  protected currentRoot(): Uint256 {
+    return this.rootCache.value[(this.rootCounter.value - 1) % ROOT_CACHE_SIZE];
   }
 
   protected addLeaf(leafHash: Uint256): void {
@@ -98,7 +100,7 @@ export class MimcMerkle extends Contract {
     const epochBox = this.epochBoxes(epochBoxKey);
     epochBox.create();
 
-    epochBox.value[index] = this.currentRoot.value;
+    epochBox.value[index] = this.currentRoot();
 
     // Prepare next epoch: reset tree state
     this.epochId.value = epoch + 1;
@@ -112,7 +114,6 @@ export class MimcMerkle extends Contract {
     this.rootCache.delete();
     this.rootCache.create();
     const emptyRoot = zeros[TREE_DEPTH - 1];
-    this.currentRoot.value = emptyRoot;
     this.addRoot(emptyRoot);
   }
 
@@ -162,11 +163,9 @@ export class MimcMerkle extends Contract {
       "unexpected leaf index",
     );
 
-    assert(
-      this.currentRoot.value === args.currentRoot,
-      "current root mismatch",
-    );
+    assert(this.currentRoot() === args.currentRoot, "current root mismatch");
 
+    this.lastCommittedLeaf.value = args.newLeaf;
     this.addRoot(args.newRoot);
     this.nextLeafIndex.value = args.newLeafIndex + 1;
   }
