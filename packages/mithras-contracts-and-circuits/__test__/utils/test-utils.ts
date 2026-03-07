@@ -34,7 +34,6 @@ export interface MerklePathInput {
 
 export interface InsertLeafInput {
   leaf: bigint;
-  insertion_index: bigint;
   path_selectors: number[];
   siblings: bigint[];
 }

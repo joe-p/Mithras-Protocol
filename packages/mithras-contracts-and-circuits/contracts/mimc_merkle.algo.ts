@@ -107,7 +107,7 @@ export class MimcMerkle extends Contract {
       verifier.sender === this.commitLeafVerifier.value,
       "invalid addLeaf verifier",
     );
-    const [newRoot, leaf, insertionIndex] = signals;
+    const [newRoot, insertionIndex, leaf] = signals;
 
     assert(insertionIndex.asUint64() === this.treeIndex.value);
     this.addRoot(newRoot);

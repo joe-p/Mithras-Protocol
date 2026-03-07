@@ -161,7 +161,6 @@ export function mimcSum(msgs: bigint[]): bigint {
 
 export interface InsertLeafProofInputs {
   leaf: bigint;
-  insertion_index: bigint;
   path_selectors: number[];
   siblings: bigint[];
 }
@@ -328,7 +327,6 @@ export class MimcMerkleTree {
 
     const inputs = {
       leaf,
-      insertion_index: BigInt(insertionIndex),
       path_selectors: pathSelectors,
       siblings,
     };

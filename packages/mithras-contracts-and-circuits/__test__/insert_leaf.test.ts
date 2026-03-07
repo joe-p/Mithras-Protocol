@@ -32,7 +32,6 @@ describe("Insert Leaf Circuit Tests", () => {
     // Test the circuit
     const circuitInput: InsertLeafInput = {
       leaf: inputs.leaf,
-      insertion_index: inputs.insertion_index,
       path_selectors: inputs.path_selectors,
       siblings: inputs.siblings,
     };
@@ -53,7 +52,6 @@ describe("Insert Leaf Circuit Tests", () => {
 
       const circuitInput: InsertLeafInput = {
         leaf: inputs.leaf,
-        insertion_index: inputs.insertion_index,
         path_selectors: inputs.path_selectors,
         siblings: inputs.siblings,
       };
@@ -82,7 +80,6 @@ describe("Insert Leaf Circuit Tests", () => {
 
       const circuitInput: InsertLeafInput = {
         leaf: inputs.leaf,
-        insertion_index: inputs.insertion_index,
         path_selectors: inputs.path_selectors,
         siblings: inputs.siblings,
       };
@@ -113,7 +110,6 @@ describe("Insert Leaf Circuit Tests", () => {
 
     const circuitInput: InsertLeafInput = {
       leaf: inputs.leaf,
-      insertion_index: inputs.insertion_index,
       path_selectors: inputs.path_selectors,
       siblings: inputs.siblings,
     };
@@ -135,11 +131,8 @@ describe("Insert Leaf Circuit Tests", () => {
     const leaf = 9999999n;
     const { inputs, newRoot } = tree.generateInsertLeafProofInputs(leaf);
 
-    expect(inputs.insertion_index).toBe(10n);
-
     const circuitInput: InsertLeafInput = {
       leaf: inputs.leaf,
-      insertion_index: inputs.insertion_index,
       path_selectors: inputs.path_selectors,
       siblings: inputs.siblings,
     };
@@ -166,7 +159,6 @@ describe("Insert Leaf Circuit Tests", () => {
 
     const circuitInput: InsertLeafInput = {
       leaf: inputs.leaf,
-      insertion_index: inputs.insertion_index,
       path_selectors: inputs.path_selectors,
       siblings: badSiblings,
     };

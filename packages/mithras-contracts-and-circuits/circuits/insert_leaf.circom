@@ -5,10 +5,10 @@ include "./mimc.circom";
 // Circuit that proves the transition from old_root to new_root when inserting a leaf
 // at a specific index in the Merkle tree.
 //
-// Public inputs:
+// Public signals:
 //   - leaf: The leaf value being inserted
 //   - new_root: The Merkle root after insertion (computed by circuit)
-//   - insertion_index: The position where the leaf is inserted (0-indexed)
+//   - index: The insertion index computed from path_selectors
 //
 // Private inputs:
 //   - path_selectors[DEPTH]: Binary decomposition of insertion_index (0=left, 1=right)
@@ -16,8 +16,8 @@ include "./mimc.circom";
 template InsertLeaf(DEPTH) {
     // Public inputs
     signal output new_root;
+    signal output index;
     signal input leaf;
-    signal input insertion_index;
 
     // Private inputs
     signal input path_selectors[DEPTH];
@@ -65,6 +65,9 @@ template InsertLeaf(DEPTH) {
     for (var i = 0; i < DEPTH; i++) {
         mimcHashers[i] = MiMC_Sum(2);
         
+        // Constrain path_selectors[i] to be binary (0 or 1)
+        path_selectors[i] * (1 - path_selectors[i]) === 0;
+        
         // Compute left and right using intermediate signals for quadratic constraints
         // left = (1 - selector) * currentHash + selector * siblings[i]
         // right = selector * currentHash + (1 - selector) * z[i]
@@ -82,8 +85,16 @@ template InsertLeaf(DEPTH) {
         currentHash[i + 1] <== mimcHashers[i].out;
     }
 
+    // Compute index from path_selectors (binary decomposition)
+    // index = Σ(path_selectors[i] * 2^i) for i from 0 to DEPTH-1
+    var computed_index = 0;
+    for (var i = 0; i < DEPTH; i++) {
+        computed_index += path_selectors[i] * (1 << i);
+    }
+    index <== computed_index;
+
     // The computed root should match the claimed new_root
     new_root <== currentHash[DEPTH];
 }
 
-component main {public [leaf, insertion_index]} = InsertLeaf(20);
+component main {public [leaf]} = InsertLeaf(20);

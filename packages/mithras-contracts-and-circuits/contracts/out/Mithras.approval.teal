@@ -298,7 +298,7 @@ commitUtxo:
     // );
     assert // invalid addLeaf verifier
     // contracts/mimc_merkle.algo.ts:110
-    // const [newRoot, leaf, insertionIndex] = signals;
+    // const [newRoot, insertionIndex, leaf] = signals;
     dup
     extract 2 32
     dig 1
@@ -307,11 +307,12 @@ commitUtxo:
     extract 66 32
     // contracts/mimc_merkle.algo.ts:112
     // assert(insertionIndex.asUint64() === this.treeIndex.value);
-    dup
+    dig 1
     bitlen
     pushint 64
     <=
     assert // overflow
+    swap
     pushint 24
     extract_uint64
     intc_0 // 0
