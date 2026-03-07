@@ -109,7 +109,6 @@ export class MimcMerkle extends Contract {
   }
 
   protected sealAndRotate(): void {
-    // Optional: require at least one leaf in the epoch
     assert(this.nextLeafIndex.value === 2 ** TREE_DEPTH, "nothing to seal");
 
     const epoch = this.epochId.value;
