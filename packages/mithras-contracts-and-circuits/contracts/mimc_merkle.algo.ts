@@ -16,6 +16,7 @@ import {
   Txn,
   TemplateVar,
   Account,
+  bytes,
 } from "@algorandfoundation/algorand-typescript";
 import { TREE_DEPTH } from "../src/constants";
 import {
@@ -54,6 +55,8 @@ export class MimcMerkle extends Contract {
 
   commitmentLsigAddr = GlobalState<Account>({ key: "a" });
 
+  pendingLeafs = BoxMap<Uint256, bytes<0>>({ keyPrefix: "p" });
+
   protected bootstrap(): void {
     ensureBudget(MIMC_OPCODE_COST);
     const tree = new FixedArray<Uint256, typeof TREE_DEPTH>();
@@ -78,7 +81,10 @@ export class MimcMerkle extends Contract {
     this.currentRoot.value = tree[TREE_DEPTH - 1];
   }
 
-  protected addLeaf(leafHash: Uint256): void {}
+  protected addLeaf(leafHash: Uint256): void {
+    assert(!this.pendingLeafs(leafHash).exists, "leaf already pending");
+    this.pendingLeafs(leafHash).create();
+  }
 
   // Seal the current full (or partial) tree as an epoch and reset to a new tree
   protected sealAndRotate(): void {
@@ -144,7 +150,7 @@ export class MimcMerkle extends Contract {
       "invalid commitment Lsig",
     );
 
-    // TODO: Remove newLeaf from pending leafs
+    assert(this.pendingLeafs(args.newLeaf).delete(), "leaf not pending");
 
     assert(
       args.previousLeaf === this.lastCommittedLeaf.value,
