@@ -99,19 +99,17 @@ export class MimcMerkle extends Contract {
 
   protected commitLeaf(
     verifier: gtxn.Transaction,
-    _proof: PlonkProof,
     signals: Uint256[],
+    _proof: PlonkProof,
   ): void {
     assert(
       verifier.sender === this.commitLeafVerifier.value,
       "invalid addLeaf verifier",
     );
-    const [oldRoot, leaf, newRoot, insertionIndex] = signals;
+    const [newRoot, leaf, insertionIndex] = signals;
 
-    assert(oldRoot === this.lastComputedRoot.value);
     assert(insertionIndex.asUint64() === this.treeIndex.value);
-    this.lastComputedRoot.value = newRoot;
-
+    this.addRoot(newRoot);
     this.pendingLeafs(leaf).delete();
   }
 
@@ -135,12 +133,11 @@ export class MimcMerkle extends Contract {
     // Reset recent root cache and seed with empty root
     this.cachedRootCounter.value = 0;
 
-    // Optionally clear existing cache by recreating
+    // recreate the cache
     this.rootCache.delete();
     this.rootCache.create();
     const emptyRoot = this.initialRoot.value;
     this.lastComputedRoot.value = emptyRoot;
-    this.addRoot(emptyRoot);
   }
 
   protected isValidRoot(root: Uint256): boolean {
@@ -164,6 +161,7 @@ export class MimcMerkle extends Contract {
   protected addRoot(rootHash: Uint256): void {
     const index: uint64 = this.cachedRootCounter.value % ROOT_CACHE_SIZE;
     this.rootCache.value[index] = rootHash;
+    this.lastComputedRoot.value = rootHash;
 
     this.cachedRootCounter.value += 1;
   }

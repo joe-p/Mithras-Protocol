@@ -10,6 +10,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";
 import { Address } from "algosdk";
 import {
+  commitLeafVerifier,
   DEPOSIT_APP_FEE,
   depositVerifier,
   MithrasProtocolClient,
@@ -21,6 +22,7 @@ import {
   MithrasAddr,
   SpendKeypair,
   SupportedHpkeSuite,
+  MimcMerkleTree,
 } from "../../mithras-crypto/src";
 import { TREE_DEPTH } from "../src/constants";
 
@@ -56,6 +58,15 @@ describe("Mithras App", () => {
     appClient = algorand.client.getTypedAppClientById(MithrasClient, {
       appId: deployment.appClient.appId,
       defaultSender: depositor,
+    });
+
+    await appClient.send.bootstrapMerkleTree({
+      args: {
+        commitLeafVerifier: (
+          await commitLeafVerifier(algorand).lsigAccount()
+        ).addr.toString(),
+      },
+      extraFee: microAlgos(256_000n),
     });
   });
 
@@ -180,9 +191,27 @@ describe("Mithras App", () => {
       pathSelectors,
     );
 
+    const client = new MithrasProtocolClient(algorand, appClient.appId);
+    const tree = new MimcMerkleTree();
+
+    const { newRoot } = tree.generateInsertLeafProofInputs(utxoCommitment);
+    expect(newRoot).toBe(expectedRoot);
+
+    const commitGrp = await client.composeCommitLeafGroup(
+      depositor,
+      utxoCommitment,
+      tree,
+    );
+
+    await commitGrp.send();
+
     const onChainRoot = await appClient.state.global.lastComputedRoot();
 
     expect(expectedRoot).toBe(onChainRoot);
+
+    const proof = tree.getMerkleProof(tree.addLeaf(utxoCommitment));
+
+    expect(expectedRoot).toBe(tree.getRoot());
 
     const inputSignals = {
       fee,
@@ -190,8 +219,8 @@ describe("Mithras App", () => {
       utxo_spending_secret,
       utxo_nullifier_secret,
       utxo_amount,
-      path_selectors: pathSelectors,
-      utxo_path: pathElements,
+      path_selectors: proof.pathSelectors,
+      utxo_path: proof.pathElements,
       out0_amount,
       out0_receiver,
       out0_spending_secret,

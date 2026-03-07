@@ -64,6 +64,14 @@ export class Mithras extends MimcMerkle {
     });
   }
 
+  commitUtxo(
+    verifier: gtxn.Transaction,
+    signals: Uint256[],
+    proof: PlonkProof,
+  ) {
+    this.commitLeaf(verifier, signals, proof);
+  }
+
   deposit(
     signals: Uint256[],
     _proof: PlonkProof,

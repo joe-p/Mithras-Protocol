@@ -1,5 +1,10 @@
-import { bytesToNumberBE } from "@noble/curves/utils.js";
 import { TREE_DEPTH } from "../../mithras-contracts-and-circuits/src/constants";
+
+export type MerkleProof = {
+  pathElements: bigint[];
+  pathSelectors: number[];
+  root: bigint;
+};
 
 const MODULUS = BigInt(
   "52435875175126190479447740508185965837690552500527637822603658699938581184513",
@@ -155,9 +160,7 @@ export function mimcSum(msgs: bigint[]): bigint {
 }
 
 export interface InsertLeafProofInputs {
-  old_root: bigint;
   leaf: bigint;
-  new_root: bigint;
   insertion_index: bigint;
   path_selectors: number[];
   siblings: bigint[];
@@ -270,7 +273,7 @@ export class MimcMerkleTree {
         const leftSibling = this.tree[level].get(position - 1);
         if (leftSibling === undefined) {
           throw new Error(
-            `Cannot insert at index ${insertionIndex}: no left sibling at level ${level}`
+            `Cannot insert at index ${insertionIndex}: no left sibling at level ${level}`,
           );
         }
         siblings.push(leftSibling);
@@ -288,9 +291,11 @@ export class MimcMerkleTree {
    * Generate all proof inputs needed for the insert_leaf circuit.
    * This captures the state before insertion, then computes the new root.
    */
-  generateInsertLeafProofInputs(leaf: bigint): InsertLeafProofInputs {
+  generateInsertLeafProofInputs(leaf: bigint): {
+    newRoot: bigint;
+    inputs: InsertLeafProofInputs;
+  } {
     const insertionIndex = this.leaves.length;
-    const oldRoot = this.getRoot();
 
     // Get frontier values from current state
     const siblings = this.getFrontier(insertionIndex);
@@ -321,15 +326,16 @@ export class MimcMerkleTree {
       index >>= 1n;
     }
 
-    const newRoot = currentHash;
-
-    return {
-      old_root: oldRoot,
+    const inputs = {
       leaf,
-      new_root: newRoot,
       insertion_index: BigInt(insertionIndex),
       path_selectors: pathSelectors,
       siblings,
+    };
+
+    return {
+      newRoot: currentHash,
+      inputs,
     };
   }
 

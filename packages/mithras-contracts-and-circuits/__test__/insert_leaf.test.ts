@@ -4,7 +4,10 @@ import {
   InsertLeafInput,
   MerkleTestHelpers,
 } from "./utils/test-utils";
-import { MimcMerkleTree, InsertLeafProofInputs } from "../../mithras-crypto/src/mimc";
+import {
+  MimcMerkleTree,
+  InsertLeafProofInputs,
+} from "../../mithras-crypto/src/mimc";
 import { TREE_DEPTH } from "../src/constants";
 
 describe("Insert Leaf Circuit Tests", () => {
@@ -21,15 +24,13 @@ describe("Insert Leaf Circuit Tests", () => {
     const leaf = 123456789n;
 
     // Generate proof inputs
-    const inputs = tree.generateInsertLeafProofInputs(leaf);
+    const { inputs, newRoot } = tree.generateInsertLeafProofInputs(leaf);
 
     // Verify the expected new root matches what the tree would compute
     tree.addLeaf(leaf);
-    expect(inputs.new_root).toBe(tree.getRoot());
 
     // Test the circuit
     const circuitInput: InsertLeafInput = {
-      old_root: inputs.old_root,
       leaf: inputs.leaf,
       insertion_index: inputs.insertion_index,
       path_selectors: inputs.path_selectors,
@@ -38,9 +39,9 @@ describe("Insert Leaf Circuit Tests", () => {
 
     const witness = await circuit.calculateWitness(circuitInput);
     await circuit.checkConstraints(witness);
-    
+
     // The new_root should be at witness[1] (output signals come first after the constant 1)
-    expect(witness[1]).toBe(inputs.new_root);
+    expect(witness[1]).toBe(newRoot);
   });
 
   it("should verify multiple sequential insertions", async () => {
@@ -48,10 +49,9 @@ describe("Insert Leaf Circuit Tests", () => {
     const leaves = [111111n, 222222n, 333333n];
 
     for (const leaf of leaves) {
-      const inputs = tree.generateInsertLeafProofInputs(leaf);
-      
+      const { inputs, newRoot } = tree.generateInsertLeafProofInputs(leaf);
+
       const circuitInput: InsertLeafInput = {
-        old_root: inputs.old_root,
         leaf: inputs.leaf,
         insertion_index: inputs.insertion_index,
         path_selectors: inputs.path_selectors,
@@ -60,7 +60,7 @@ describe("Insert Leaf Circuit Tests", () => {
 
       const witness = await circuit.calculateWitness(circuitInput);
       await circuit.checkConstraints(witness);
-      expect(witness[1]).toBe(inputs.new_root);
+      expect(witness[1]).toBe(newRoot);
 
       // Add leaf to tree after verifying
       tree.addLeaf(leaf);
@@ -69,7 +69,7 @@ describe("Insert Leaf Circuit Tests", () => {
 
   it("should verify insertion at alternating positions", async () => {
     const tree = new MimcMerkleTree();
-    
+
     // Insert 4 leaves to test different bit patterns
     // Index 0: 00000... (all bits 0)
     // Index 1: 00001... (first bit 1)
@@ -78,10 +78,9 @@ describe("Insert Leaf Circuit Tests", () => {
     const leaves = [1000n, 2000n, 3000n, 4000n];
 
     for (const leaf of leaves) {
-      const inputs = tree.generateInsertLeafProofInputs(leaf);
-      
+      const { inputs, newRoot } = tree.generateInsertLeafProofInputs(leaf);
+
       const circuitInput: InsertLeafInput = {
-        old_root: inputs.old_root,
         leaf: inputs.leaf,
         insertion_index: inputs.insertion_index,
         path_selectors: inputs.path_selectors,
@@ -90,7 +89,7 @@ describe("Insert Leaf Circuit Tests", () => {
 
       const witness = await circuit.calculateWitness(circuitInput);
       await circuit.checkConstraints(witness);
-      expect(witness[1]).toBe(inputs.new_root);
+      expect(witness[1]).toBe(newRoot);
 
       tree.addLeaf(leaf);
     }
@@ -99,7 +98,7 @@ describe("Insert Leaf Circuit Tests", () => {
   it("should verify that the empty tree root is computed correctly", async () => {
     const tree = new MimcMerkleTree();
     const emptyRoot = tree.getRoot();
-    
+
     // The empty tree root should be the last zero hash
     const zeroHashes: bigint[] = [];
     let currentZero = 0n;
@@ -107,15 +106,12 @@ describe("Insert Leaf Circuit Tests", () => {
       zeroHashes.push(currentZero);
       currentZero = 0n; // We'll compute properly below
     }
-    
+
     // Actually let's just verify inserting first leaf works
     const leaf = 999999n;
-    const inputs = tree.generateInsertLeafProofInputs(leaf);
-    
-    expect(inputs.old_root).toBe(tree.getRoot()); // Old root is the empty tree root
-    
+    const { inputs, newRoot } = tree.generateInsertLeafProofInputs(leaf);
+
     const circuitInput: InsertLeafInput = {
-      old_root: inputs.old_root,
       leaf: inputs.leaf,
       insertion_index: inputs.insertion_index,
       path_selectors: inputs.path_selectors,
@@ -124,12 +120,12 @@ describe("Insert Leaf Circuit Tests", () => {
 
     const witness = await circuit.calculateWitness(circuitInput);
     await circuit.checkConstraints(witness);
-    expect(witness[1]).toBe(inputs.new_root);
+    expect(witness[1]).toBe(newRoot);
   });
 
   it("should handle large indices correctly", async () => {
     const tree = new MimcMerkleTree();
-    
+
     // Add some leaves first to build up state
     for (let i = 0; i < 10; i++) {
       tree.addLeaf(BigInt(i + 1));
@@ -137,12 +133,11 @@ describe("Insert Leaf Circuit Tests", () => {
 
     // Now insert at index 10
     const leaf = 9999999n;
-    const inputs = tree.generateInsertLeafProofInputs(leaf);
+    const { inputs, newRoot } = tree.generateInsertLeafProofInputs(leaf);
 
     expect(inputs.insertion_index).toBe(10n);
 
     const circuitInput: InsertLeafInput = {
-      old_root: inputs.old_root,
       leaf: inputs.leaf,
       insertion_index: inputs.insertion_index,
       path_selectors: inputs.path_selectors,
@@ -151,7 +146,7 @@ describe("Insert Leaf Circuit Tests", () => {
 
     const witness = await circuit.calculateWitness(circuitInput);
     await circuit.checkConstraints(witness);
-    expect(witness[1]).toBe(inputs.new_root);
+    expect(witness[1]).toBe(newRoot);
   });
 
   it("should reject invalid siblings array", async () => {
@@ -161,7 +156,7 @@ describe("Insert Leaf Circuit Tests", () => {
     // Add one leaf first so index 1 has a left sibling
     tree.addLeaf(111n);
 
-    const inputs = tree.generateInsertLeafProofInputs(leaf);
+    const { inputs, newRoot } = tree.generateInsertLeafProofInputs(leaf);
 
     // Corrupt the siblings array
     const badSiblings = [...inputs.siblings];
@@ -170,7 +165,6 @@ describe("Insert Leaf Circuit Tests", () => {
     }
 
     const circuitInput: InsertLeafInput = {
-      old_root: inputs.old_root,
       leaf: inputs.leaf,
       insertion_index: inputs.insertion_index,
       path_selectors: inputs.path_selectors,
@@ -180,8 +174,8 @@ describe("Insert Leaf Circuit Tests", () => {
     // The circuit should still calculate a root, but it won't match the expected new_root
     const witness = await circuit.calculateWitness(circuitInput);
     await circuit.checkConstraints(witness);
-    
+
     // The computed new_root should differ from what the correct computation produces
-    expect(witness[1]).not.toBe(inputs.new_root);
+    expect(witness[1]).not.toBe(newRoot);
   });
 });

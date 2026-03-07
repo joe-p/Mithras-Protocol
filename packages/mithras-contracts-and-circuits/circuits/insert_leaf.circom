@@ -6,7 +6,6 @@ include "./mimc.circom";
 // at a specific index in the Merkle tree.
 //
 // Public inputs:
-//   - old_root: The Merkle root before insertion (verified by contract)
 //   - leaf: The leaf value being inserted
 //   - new_root: The Merkle root after insertion (computed by circuit)
 //   - insertion_index: The position where the leaf is inserted (0-indexed)
@@ -14,15 +13,10 @@ include "./mimc.circom";
 // Private inputs:
 //   - path_selectors[DEPTH]: Binary decomposition of insertion_index (0=left, 1=right)
 //   - siblings[DEPTH]: Frontier values from the old tree state at each level
-//
-// Note: The contract must verify that old_root is valid before accepting the proof.
-// The path_selectors must correspond to the binary representation of insertion_index.
-// The zero hashes for empty tree positions are computed within the circuit.
 template InsertLeaf(DEPTH) {
     // Public inputs
-    signal input old_root;
-    signal input leaf;
     signal output new_root;
+    signal input leaf;
     signal input insertion_index;
 
     // Private inputs
@@ -92,4 +86,4 @@ template InsertLeaf(DEPTH) {
     new_root <== currentHash[DEPTH];
 }
 
-component main {public [old_root, leaf, insertion_index]} = InsertLeaf(20);
+component main {public [leaf, insertion_index]} = InsertLeaf(20);

@@ -23,7 +23,7 @@ import { TransactionComposer, AppCallMethodCall, AppMethodCallTransactionArgumen
 import { SendParams, SendSingleTransactionResult, SendAtomicTransactionComposerResults } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Address, encodeAddress, modelsv2, OnApplicationComplete, Transaction, TransactionSigner } from 'algosdk'
 
-export const APP_SPEC: Arc56Contract = {"name":"MimcMerkle","structs":{},"methods":[],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":3,"bytes":1},"local":{"ints":0,"bytes":0}},"keys":{"global":{"rootCounter":{"keyType":"AVMString","valueType":"AVMUint64","key":"Yw=="},"treeIndex":{"keyType":"AVMString","valueType":"AVMUint64","key":"aQ=="},"epochId":{"keyType":"AVMString","valueType":"AVMUint64","key":"ZQ=="},"lastComputedRoot":{"keyType":"AVMString","valueType":"uint256","key":"bHI="}},"local":{},"box":{"rootCache":{"keyType":"AVMString","valueType":"uint256[50]","key":"cg=="},"subtree":{"keyType":"AVMString","valueType":"uint256[20]","key":"dA=="},"zeroHashes":{"keyType":"AVMString","valueType":"uint256[20]","key":"eg=="}}},"maps":{"global":{},"local":{},"box":{"epochBoxes":{"keyType":"uint64","valueType":"uint256[32]","prefix":"ZQ=="}}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICAvLyBjb250cmFjdHMvbWltY19tZXJrbGUuYWxnby50czoyNS0yNgogICAgLy8gQGNvbnRyYWN0KHsgYXZtVmVyc2lvbjogMTEgfSkKICAgIC8vIGV4cG9ydCBjbGFzcyBNaW1jTWVya2xlIGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE51bUFwcEFyZ3MKICAgICEKICAgIGFzc2VydAogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgICEKICAgICYmCiAgICByZXR1cm4K","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEKICAgIHJldHVybgo="},"byteCode":{"approval":"CzEbFEQxGRQxGBQQQw==","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
+export const APP_SPEC: Arc56Contract = {"name":"MimcMerkle","structs":{},"methods":[],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":3,"bytes":3},"local":{"ints":0,"bytes":0}},"keys":{"global":{"cachedRootCounter":{"keyType":"AVMString","valueType":"AVMUint64","key":"Yw=="},"treeIndex":{"keyType":"AVMString","valueType":"AVMUint64","key":"aQ=="},"epochId":{"keyType":"AVMString","valueType":"AVMUint64","key":"ZQ=="},"lastComputedRoot":{"keyType":"AVMString","valueType":"uint256","key":"bHI="},"initialRoot":{"keyType":"AVMString","valueType":"uint256","key":"aXI="},"commitLeafVerifier":{"keyType":"AVMString","valueType":"address","key":"bHY="}},"local":{},"box":{"rootCache":{"keyType":"AVMString","valueType":"uint256[50]","key":"cg=="}}},"maps":{"global":{},"local":{},"box":{"epochBoxes":{"keyType":"uint64","valueType":"uint256[32]","prefix":"ZQ=="},"pendingLeafs":{"keyType":"uint256","valueType":"AVMBytes","prefix":"cA=="}}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICAvLyBjb250cmFjdHMvbWltY19tZXJrbGUuYWxnby50czo0OS01MAogICAgLy8gQGNvbnRyYWN0KHsgYXZtVmVyc2lvbjogMTEgfSkKICAgIC8vIGV4cG9ydCBjbGFzcyBNaW1jTWVya2xlIGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE51bUFwcEFyZ3MKICAgICEKICAgIGFzc2VydAogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgICEKICAgICYmCiAgICByZXR1cm4K","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEKICAgIHJldHVybgo="},"byteCode":{"approval":"CzEbFEQxGRQxGBQQQw==","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
 
 /**
  * A state record containing binary data
@@ -98,21 +98,22 @@ export type MimcMerkleTypes = {
   state: {
     global: {
       keys: {
-        rootCounter: bigint
+        cachedRootCounter: bigint
         treeIndex: bigint
         epochId: bigint
         lastComputedRoot: bigint
+        initialRoot: bigint
+        commitLeafVerifier: string
       }
       maps: {}
     }
     box: {
       keys: {
         rootCache: [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
-        subtree: [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
-        zeroHashes: [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
       }
       maps: {
         epochBoxes: Map<bigint | number, [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]>
+        pendingLeafs: Map<bigint | number, Uint8Array>
       }
     }
   }
@@ -462,16 +463,18 @@ export class MimcMerkleClient {
       getAll: async (): Promise<Partial<Expand<GlobalKeysState>>> => {
         const result = await this.appClient.state.global.getAll()
         return {
-          rootCounter: result.rootCounter,
+          cachedRootCounter: result.cachedRootCounter,
           treeIndex: result.treeIndex,
           epochId: result.epochId,
           lastComputedRoot: result.lastComputedRoot,
+          initialRoot: result.initialRoot,
+          commitLeafVerifier: result.commitLeafVerifier,
         }
       },
       /**
-       * Get the current value of the rootCounter key in global state
+       * Get the current value of the cachedRootCounter key in global state
        */
-      rootCounter: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("rootCounter")) as bigint | undefined },
+      cachedRootCounter: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("cachedRootCounter")) as bigint | undefined },
       /**
        * Get the current value of the treeIndex key in global state
        */
@@ -484,6 +487,14 @@ export class MimcMerkleClient {
        * Get the current value of the lastComputedRoot key in global state
        */
       lastComputedRoot: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("lastComputedRoot")) as bigint | undefined },
+      /**
+       * Get the current value of the initialRoot key in global state
+       */
+      initialRoot: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("initialRoot")) as bigint | undefined },
+      /**
+       * Get the current value of the commitLeafVerifier key in global state
+       */
+      commitLeafVerifier: async (): Promise<string | undefined> => { return (await this.appClient.state.global.getValue("commitLeafVerifier")) as string | undefined },
     },
     /**
      * Methods to access box state for the current MimcMerkle app
@@ -496,22 +507,12 @@ export class MimcMerkleClient {
         const result = await this.appClient.state.box.getAll()
         return {
           rootCache: result.rootCache,
-          subtree: result.subtree,
-          zeroHashes: result.zeroHashes,
         }
       },
       /**
        * Get the current value of the rootCache key in box state
        */
       rootCache: async (): Promise<[bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined> => { return (await this.appClient.state.box.getValue("rootCache")) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined },
-      /**
-       * Get the current value of the subtree key in box state
-       */
-      subtree: async (): Promise<[bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined> => { return (await this.appClient.state.box.getValue("subtree")) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined },
-      /**
-       * Get the current value of the zeroHashes key in box state
-       */
-      zeroHashes: async (): Promise<[bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined> => { return (await this.appClient.state.box.getValue("zeroHashes")) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined },
       /**
        * Get values from the epochBoxes map in box state
        */
@@ -524,6 +525,19 @@ export class MimcMerkleClient {
          * Get a current value of the epochBoxes map by key from box state
          */
         value: async (key: bigint | number): Promise<[bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined> => { return await this.appClient.state.box.getMapValue("epochBoxes", key) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined },
+      },
+      /**
+       * Get values from the pendingLeafs map in box state
+       */
+      pendingLeafs: {
+        /**
+         * Get all current values of the pendingLeafs map in box state
+         */
+        getMap: async (): Promise<Map<bigint, Uint8Array>> => { return (await this.appClient.state.box.getMap("pendingLeafs")) as Map<bigint, Uint8Array> },
+        /**
+         * Get a current value of the pendingLeafs map by key from box state
+         */
+        value: async (key: bigint | number): Promise<Uint8Array | undefined> => { return await this.appClient.state.box.getMapValue("pendingLeafs", key) as Uint8Array | undefined },
       },
     },
   }

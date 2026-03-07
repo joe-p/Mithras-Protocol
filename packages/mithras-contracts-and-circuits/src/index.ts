@@ -1,19 +1,23 @@
-import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
-import { PlonkLsigVerifier } from "snarkjs-algorand";
+import {
+  AlgorandClient,
+  compileTeal,
+  microAlgos,
+} from "@algorandfoundation/algokit-utils";
+import { PlonkAppVerifier, PlonkLsigVerifier } from "snarkjs-algorand";
 import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import path from "path";
 
 import {
-  bytesToNumberBE,
-  MerkleProof,
   MithrasAddr,
   SpendKeypair,
   TransactionMetadata,
   StealthKeypair,
   UtxoInputs,
   UtxoSecrets,
+  MimcMerkleTree,
+  MerkleProof,
 } from "../../mithras-crypto/src";
-import algosdk from "algosdk";
+import algosdk, { Address } from "algosdk";
 import { equalBytes } from "../../mithras-subscriber/src";
 
 const DEPOSIT_LSIGS = 7;
@@ -68,9 +72,14 @@ export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
   });
 }
 
-export function insertLeafVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
+export function commitLeafVerifier(
+  algorand: AlgorandClient,
+): PlonkLsigVerifier {
   const thisFileDir = new URL(".", import.meta.url);
-  const zKey = path.join(thisFileDir.pathname, "../circuits/insert_leaf_test.zkey");
+  const zKey = path.join(
+    thisFileDir.pathname,
+    "../circuits/insert_leaf_test.zkey",
+  );
   const wasmProver = path.join(
     thisFileDir.pathname,
     "../circuits/insert_leaf_js/insert_leaf.wasm",
@@ -93,6 +102,8 @@ type Output = {
 export class MithrasProtocolClient {
   depositVerifier: PlonkLsigVerifier;
   spendVerifier: PlonkLsigVerifier;
+  commitLeafVerifier: PlonkLsigVerifier;
+
   appClient: MithrasClient;
   private _zeroHashes?: bigint[];
 
@@ -102,6 +113,7 @@ export class MithrasProtocolClient {
   ) {
     this.depositVerifier = depositVerifier(algorand);
     this.spendVerifier = spendVerifier(algorand);
+    this.commitLeafVerifier = commitLeafVerifier(algorand);
 
     this.appClient = algorand.client.getTypedAppClientById(MithrasClient, {
       appId,
@@ -131,15 +143,15 @@ export class MithrasProtocolClient {
     await appClient.appClient.fundAppAccount({ amount: microAlgos(APP_MBR) });
 
     await appClient.send.bootstrapMerkleTree({
-      args: {},
+      args: {
+        commitLeafVerifier: (
+          await commitLeafVerifier(algorand).lsigAccount()
+        ).addr.toString(),
+      },
       extraFee: microAlgos(BOOTSTRAP_FEE),
     });
 
     return new MithrasProtocolClient(algorand, appClient.appId);
-  }
-
-  async getZeroHashes(): Promise<bigint[]> {
-    return this._zeroHashes ?? (await this.appClient.state.box.zeroHashes())!;
   }
 
   async composeDepositGroup(
@@ -199,6 +211,67 @@ export class MithrasProtocolClient {
     });
 
     return { group, txnMetadata };
+  }
+
+  async composeCommitLeafGroup(
+    commiter: Address,
+    leaf: bigint,
+    tree: MimcMerkleTree,
+  ) {
+    const group = this.appClient.newGroup();
+    const { inputs } = tree.generateInsertLeafProofInputs(leaf);
+
+    console.debug({ inputs });
+    await this.commitLeafVerifier.verificationParams({
+      composer: group,
+      inputs,
+      paramsCallback: async (params) => {
+        const { lsigParams, lsigsFee, args } = params;
+
+        const verifierTxn = await this.algorand.createTransaction.payment({
+          ...lsigParams,
+          receiver: lsigParams.sender,
+          amount: microAlgos(0),
+        });
+
+        group.commitUtxo({
+          sender: commiter,
+          extraFee: microAlgos(lsigsFee.microAlgos),
+          args: {
+            verifier: verifierTxn,
+            proof: args.proof,
+            signals: args.signals,
+          },
+        });
+      },
+    });
+
+    return group;
+  }
+
+  async simulateCommitLeaf(
+    committer: Address,
+    leaf: bigint,
+    tree: MimcMerkleTree,
+  ) {
+    const appVerifier = new PlonkAppVerifier({
+      algorand: this.algorand,
+      wasmProver: this.commitLeafVerifier.wasmProver,
+      zKey: this.commitLeafVerifier.zKey,
+    });
+
+    await appVerifier.deploy({
+      defaultSender: committer,
+      appName: `simulate-${Date.now()}`,
+    });
+
+    const { inputs } = tree.generateInsertLeafProofInputs(leaf);
+
+    console.debug(`Simulating commit leaf with inputs`, inputs);
+    await appVerifier.simulateVerification(inputs, {
+      allowEmptySignatures: true,
+      extraOpcodeBudget: 20_000 * 16,
+    });
   }
 
   async composeSpendGroup(

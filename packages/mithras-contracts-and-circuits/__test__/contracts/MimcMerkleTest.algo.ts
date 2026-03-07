@@ -1,4 +1,5 @@
 import {
+  Account,
   bytes,
   contract,
   FixedArray,
@@ -9,12 +10,13 @@ import { Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 
 @contract({ avmVersion: 11 })
 export class MimcMerkleTest extends MimcMerkle {
-  bootstrapTest() {
-    this.bootstrap();
+  bootstrapTest(verifier: Account) {
+    this.bootstrap(verifier);
   }
 
   addLeafTest(leafHash: Uint256) {
-    this.addLeaf(leafHash);
+    this.addPendingLeaf(leafHash);
+    // TODO: also commit
   }
 
   sealAndRotateTest() {
