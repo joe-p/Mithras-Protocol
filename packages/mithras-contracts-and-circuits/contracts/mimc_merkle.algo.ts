@@ -78,6 +78,7 @@ export class MimcMerkle extends Contract {
     this.rootCache.create();
     this.zeroHashes.value = clone(tree);
     this.epochId.value = 0;
+    this.subtree.value = clone(tree);
     // The empty tree root
     this.addRoot(tree[TREE_DEPTH - 1]);
   }
