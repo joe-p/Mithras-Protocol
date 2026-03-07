@@ -221,7 +221,6 @@ export class MithrasProtocolClient {
     const group = this.appClient.newGroup();
     const { inputs } = tree.generateInsertLeafProofInputs(leaf);
 
-    console.debug({ inputs });
     await this.commitLeafVerifier.verificationParams({
       composer: group,
       inputs,
@@ -267,7 +266,6 @@ export class MithrasProtocolClient {
 
     const { inputs } = tree.generateInsertLeafProofInputs(leaf);
 
-    console.debug(`Simulating commit leaf with inputs`, inputs);
     await appVerifier.simulateVerification(inputs, {
       allowEmptySignatures: true,
       extraOpcodeBudget: 20_000 * 16,

@@ -63,7 +63,7 @@ export class MimcMerkle extends Contract {
     keyPrefix: "e",
   });
 
-  initialRoot = GlobalState<Uint256>({ key: "ir" });
+  zeroRoot = GlobalState<Uint256>({ key: "z" });
 
   commitLeafVerifier = GlobalState<Account>({ key: "lv" });
 
@@ -91,6 +91,7 @@ export class MimcMerkle extends Contract {
     this.rootCache.create();
     this.epochId.value = 0;
     this.lastComputedRoot.value = tree[TREE_DEPTH - 1];
+    this.zeroRoot.value = tree[TREE_DEPTH - 1];
   }
 
   protected addPendingLeaf(leaf: Uint256) {
@@ -135,12 +136,14 @@ export class MimcMerkle extends Contract {
 
     // recreate the cache
     this.rootCache.delete();
-    this.rootCache.create();
-    const emptyRoot = this.initialRoot.value;
-    this.lastComputedRoot.value = emptyRoot;
+    this.lastComputedRoot.value = this.zeroRoot.value;
   }
 
   protected isValidRoot(root: Uint256): boolean {
+    assert(
+      root !== this.zeroRoot.value,
+      "invalid root: zero root is not valid",
+    );
     ensureBudget(700); // TODO: Determine budget needed here
     for (const validRoot of this.rootCache.value) {
       if (root === validRoot) {

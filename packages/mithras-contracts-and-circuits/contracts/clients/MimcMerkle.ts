@@ -23,7 +23,7 @@ import { TransactionComposer, AppCallMethodCall, AppMethodCallTransactionArgumen
 import { SendParams, SendSingleTransactionResult, SendAtomicTransactionComposerResults } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Address, encodeAddress, modelsv2, OnApplicationComplete, Transaction, TransactionSigner } from 'algosdk'
 
-export const APP_SPEC: Arc56Contract = {"name":"MimcMerkle","structs":{},"methods":[],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":3,"bytes":3},"local":{"ints":0,"bytes":0}},"keys":{"global":{"cachedRootCounter":{"keyType":"AVMString","valueType":"AVMUint64","key":"Yw=="},"treeIndex":{"keyType":"AVMString","valueType":"AVMUint64","key":"aQ=="},"epochId":{"keyType":"AVMString","valueType":"AVMUint64","key":"ZQ=="},"lastComputedRoot":{"keyType":"AVMString","valueType":"uint256","key":"bHI="},"initialRoot":{"keyType":"AVMString","valueType":"uint256","key":"aXI="},"commitLeafVerifier":{"keyType":"AVMString","valueType":"address","key":"bHY="}},"local":{},"box":{"rootCache":{"keyType":"AVMString","valueType":"uint256[50]","key":"cg=="}}},"maps":{"global":{},"local":{},"box":{"epochBoxes":{"keyType":"uint64","valueType":"uint256[32]","prefix":"ZQ=="},"pendingLeafs":{"keyType":"uint256","valueType":"AVMBytes","prefix":"cA=="}}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICAvLyBjb250cmFjdHMvbWltY19tZXJrbGUuYWxnby50czo0OS01MAogICAgLy8gQGNvbnRyYWN0KHsgYXZtVmVyc2lvbjogMTEgfSkKICAgIC8vIGV4cG9ydCBjbGFzcyBNaW1jTWVya2xlIGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE51bUFwcEFyZ3MKICAgICEKICAgIGFzc2VydAogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgICEKICAgICYmCiAgICByZXR1cm4K","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEKICAgIHJldHVybgo="},"byteCode":{"approval":"CzEbFEQxGRQxGBQQQw==","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
+export const APP_SPEC: Arc56Contract = {"name":"MimcMerkle","structs":{},"methods":[],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":3,"bytes":3},"local":{"ints":0,"bytes":0}},"keys":{"global":{"cachedRootCounter":{"keyType":"AVMString","valueType":"AVMUint64","key":"Yw=="},"treeIndex":{"keyType":"AVMString","valueType":"AVMUint64","key":"aQ=="},"epochId":{"keyType":"AVMString","valueType":"AVMUint64","key":"ZQ=="},"lastComputedRoot":{"keyType":"AVMString","valueType":"uint256","key":"bHI="},"zeroRoot":{"keyType":"AVMString","valueType":"uint256","key":"eg=="},"commitLeafVerifier":{"keyType":"AVMString","valueType":"address","key":"bHY="}},"local":{},"box":{"rootCache":{"keyType":"AVMString","valueType":"uint256[50]","key":"cg=="}}},"maps":{"global":{},"local":{},"box":{"epochBoxes":{"keyType":"uint64","valueType":"uint256[32]","prefix":"ZQ=="},"pendingLeafs":{"keyType":"uint256","valueType":"AVMBytes","prefix":"cA=="}}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICAvLyBjb250cmFjdHMvbWltY19tZXJrbGUuYWxnby50czo0OS01MAogICAgLy8gQGNvbnRyYWN0KHsgYXZtVmVyc2lvbjogMTEgfSkKICAgIC8vIGV4cG9ydCBjbGFzcyBNaW1jTWVya2xlIGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE51bUFwcEFyZ3MKICAgICEKICAgIGFzc2VydAogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgICEKICAgICYmCiAgICByZXR1cm4K","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEKICAgIHJldHVybgo="},"byteCode":{"approval":"CzEbFEQxGRQxGBQQQw==","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
 
 /**
  * A state record containing binary data
@@ -102,7 +102,7 @@ export type MimcMerkleTypes = {
         treeIndex: bigint
         epochId: bigint
         lastComputedRoot: bigint
-        initialRoot: bigint
+        zeroRoot: bigint
         commitLeafVerifier: string
       }
       maps: {}
@@ -467,7 +467,7 @@ export class MimcMerkleClient {
           treeIndex: result.treeIndex,
           epochId: result.epochId,
           lastComputedRoot: result.lastComputedRoot,
-          initialRoot: result.initialRoot,
+          zeroRoot: result.zeroRoot,
           commitLeafVerifier: result.commitLeafVerifier,
         }
       },
@@ -488,9 +488,9 @@ export class MimcMerkleClient {
        */
       lastComputedRoot: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("lastComputedRoot")) as bigint | undefined },
       /**
-       * Get the current value of the initialRoot key in global state
+       * Get the current value of the zeroRoot key in global state
        */
-      initialRoot: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("initialRoot")) as bigint | undefined },
+      zeroRoot: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("zeroRoot")) as bigint | undefined },
       /**
        * Get the current value of the commitLeafVerifier key in global state
        */
