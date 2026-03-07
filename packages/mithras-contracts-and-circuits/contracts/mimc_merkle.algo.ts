@@ -87,14 +87,14 @@ export class MimcMerkle extends Contract {
     this.rootCache.delete();
     this.rootCache.create();
 
-    const result = calculateRootAndSubtree(
+    const { root, subtree } = calculateRootAndSubtree(
       sentinelLeaf,
       0,
       clone(this.zeroHashes.value),
     );
-    this.subtree.value = result.subtree;
+    this.subtree.value = clone(subtree);
     this.lastCommittedLeaf.value = sentinelLeaf;
-    this.addRoot(result.root);
+    this.addRoot(root);
     this.nextLeafIndex.value = 1;
     this.rootCounter.value = 0;
   }
