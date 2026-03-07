@@ -11,9 +11,18 @@ import {
   ensureBudget,
   BoxMap,
   BigUint,
+  LogicSig,
+  gtxn,
+  Txn,
+  TemplateVar,
+  Account,
 } from "@algorandfoundation/algorand-typescript";
 import { TREE_DEPTH } from "../src/constants";
-import { Uint, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
+import {
+  decodeArc4,
+  Uint,
+  Uint256,
+} from "@algorandfoundation/algorand-typescript/arc4";
 
 const ROOT_CACHE_SIZE = 50;
 
@@ -28,19 +37,22 @@ export class MimcMerkle extends Contract {
 
   rootCounter = GlobalState<uint64>({ key: "c" });
 
-  subtree = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "t" });
-
-  treeIndex = GlobalState<uint64>({ key: "i" });
+  nextLeafIndex = GlobalState<uint64>({ key: "i" });
 
   zeroHashes = Box<FixedArray<Uint256, typeof TREE_DEPTH>>({ key: "z" });
 
   // Track epochs and cache the last computed root for sealing
   epochId = GlobalState<uint64>({ key: "e" });
-  lastComputedRoot = GlobalState<Uint256>({ key: "lr" });
+
+  currentRoot = GlobalState<Uint256>({ key: "cr" });
+
+  lastCommittedLeaf = GlobalState<Uint256>({ key: "ll" });
 
   epochBoxes = BoxMap<uint64, FixedArray<Uint256, typeof EPOCHS_PER_BOX>>({
     keyPrefix: "e",
   });
+
+  commitmentLsigAddr = GlobalState<Account>({ key: "a" });
 
   protected bootstrap(): void {
     ensureBudget(MIMC_OPCODE_COST);
@@ -58,64 +70,20 @@ export class MimcMerkle extends Contract {
     }
 
     this.rootCounter.value = 0;
-    this.treeIndex.value = 0;
+    this.nextLeafIndex.value = 0;
     this.rootCache.create();
     this.zeroHashes.value = clone(tree);
-    this.subtree.value = clone(tree);
     this.epochId.value = 0;
     // The empty tree root
-    this.lastComputedRoot.value = tree[TREE_DEPTH - 1];
+    this.currentRoot.value = tree[TREE_DEPTH - 1];
   }
 
-  protected addLeaf(leafHash: Uint256): void {
-    // Some extra budget needed for the loop logic opcodes
-    ensureBudget(MIMC_OPCODE_COST + 700 * 2);
-
-    let index = this.treeIndex.value;
-
-    if (!(index < 2 ** TREE_DEPTH)) {
-      // tree is full — seal current epoch and rotate to a fresh tree
-      this.sealAndRotate();
-      // refresh local index after rotation
-      index = this.treeIndex.value;
-    }
-
-    this.treeIndex.value += 1;
-    let currentHash = leafHash;
-    let left: Uint256;
-    let right: Uint256;
-    let subtree = clone(this.subtree.value);
-    const zeroHashes = clone(this.zeroHashes.value);
-
-    for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
-      if ((index & 1) === 0) {
-        subtree[i] = currentHash;
-        left = currentHash;
-        right = zeroHashes[i];
-      } else {
-        left = subtree[i];
-        right = currentHash;
-      }
-
-      currentHash = new Uint256(
-        op.mimc(
-          op.MimcConfigurations.BLS12_381Mp111,
-          left.bytes.concat(right.bytes),
-        ),
-      );
-
-      index >>= 1;
-    }
-
-    this.subtree.value = clone(subtree);
-    this.lastComputedRoot.value = currentHash;
-    this.addRoot(currentHash);
-  }
+  protected addLeaf(leafHash: Uint256): void {}
 
   // Seal the current full (or partial) tree as an epoch and reset to a new tree
   protected sealAndRotate(): void {
     // Optional: require at least one leaf in the epoch
-    assert(this.treeIndex.value > 0, "nothing to seal");
+    assert(this.nextLeafIndex.value > 0, "nothing to seal");
 
     const epoch = this.epochId.value;
     const epochBoxKey: uint64 = epoch / EPOCHS_PER_BOX;
@@ -124,13 +92,12 @@ export class MimcMerkle extends Contract {
     const epochBox = this.epochBoxes(epochBoxKey);
     epochBox.create();
 
-    epochBox.value[index] = this.lastComputedRoot.value;
+    epochBox.value[index] = this.currentRoot.value;
 
     // Prepare next epoch: reset tree state
     this.epochId.value = epoch + 1;
-    this.treeIndex.value = 0;
+    this.nextLeafIndex.value = 0;
     const zeros = clone(this.zeroHashes.value);
-    this.subtree.value = clone(zeros);
 
     // Reset recent root cache and seed with empty root
     this.rootCounter.value = 0;
@@ -139,7 +106,7 @@ export class MimcMerkle extends Contract {
     this.rootCache.delete();
     this.rootCache.create();
     const emptyRoot = zeros[TREE_DEPTH - 1];
-    this.lastComputedRoot.value = emptyRoot;
+    this.currentRoot.value = emptyRoot;
     this.addRoot(emptyRoot);
   }
 
@@ -167,4 +134,104 @@ export class MimcMerkle extends Contract {
 
     this.rootCounter.value += 1;
   }
+
+  protected commitLeaf(
+    commitmentLsig: gtxn.Transaction,
+    args: CommitLeafArgs,
+  ): void {
+    assert(
+      commitmentLsig.sender === this.commitmentLsigAddr.value,
+      "invalid commitment Lsig",
+    );
+
+    // TODO: Remove newLeaf from pending leafs
+
+    assert(
+      args.previousLeaf === this.lastCommittedLeaf.value,
+      "previous leaf mismatch",
+    );
+
+    assert(
+      args.newLeafIndex === this.nextLeafIndex.value,
+      "unexpected leaf index",
+    );
+
+    assert(
+      this.currentRoot.value === args.currentRoot,
+      "current root mismatch",
+    );
+
+    this.addRoot(args.newRoot);
+    this.nextLeafIndex.value = args.newLeafIndex + 1;
+  }
+}
+
+export type Subtree = FixedArray<Uint256, typeof TREE_DEPTH>;
+
+export type CommitLeafArgs = {
+  newLeaf: Uint256; // 32 bytes
+  previousLeaf: Uint256; // 32 + 32 = 64 bytes
+  newLeafIndex: uint64; // 64 + 8 = 72 bytes
+  previousSubtree: Subtree; // 72 + (32 * TREE_DEPTH) = 72 + (32 * 20) = 712 bytes
+  currentRoot: Uint256; // 712 + 32 = 744 bytes
+  newRoot: Uint256; // 744 + 32 = 776 bytes
+};
+
+export class CommitLeaf extends LogicSig {
+  program(): boolean {
+    const appl = gtxn.ApplicationCallTxn(Txn.groupIndex + 1);
+    const args = decodeArc4<CommitLeafArgs>(appl.appArgs(1));
+
+    const { root: currentRoot, subtree: currentSubtree } =
+      calculateRootAndSubtree(
+        args.previousLeaf,
+        args.newLeafIndex - 1,
+        args.previousSubtree,
+      );
+    assert(currentRoot === args.currentRoot, "old root mismatch");
+
+    const { root: newRoot } = calculateRootAndSubtree(
+      args.newLeaf,
+      args.newLeafIndex,
+      currentSubtree,
+    );
+
+    assert(newRoot === args.newRoot, "new root mismatch");
+    return true;
+  }
+}
+
+function calculateRootAndSubtree(
+  leaf: Uint256,
+  index: uint64,
+  subtree: Subtree,
+): { root: Uint256; subtree: Subtree } {
+  const zeroHashes =
+    TemplateVar<FixedArray<Uint256, typeof TREE_DEPTH>>("ZERO_HASHES");
+
+  let left: Uint256;
+  let right: Uint256;
+  let currentHash = leaf;
+
+  for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
+    if ((index & 1) === 0) {
+      subtree[i] = currentHash;
+      left = currentHash;
+      right = zeroHashes[i];
+    } else {
+      left = subtree[i];
+      right = currentHash;
+    }
+
+    currentHash = new Uint256(
+      op.mimc(
+        op.MimcConfigurations.BLS12_381Mp111,
+        left.bytes.concat(right.bytes),
+      ),
+    );
+
+    index >>= 1;
+  }
+
+  return { root: currentHash, subtree };
 }
