@@ -10,7 +10,6 @@ import {
   contract,
   ensureBudget,
   BoxMap,
-  BigUint,
   LogicSig,
   gtxn,
   Txn,
@@ -21,7 +20,6 @@ import {
 import { TREE_DEPTH } from "../src/constants";
 import {
   decodeArc4,
-  Uint,
   Uint256,
 } from "@algorandfoundation/algorand-typescript/arc4";
 
