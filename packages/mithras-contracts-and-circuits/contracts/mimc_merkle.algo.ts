@@ -51,7 +51,7 @@ export class MimcMerkle extends Contract {
 
   commitmentLsigAddr = GlobalState<Account>({ key: "a" });
 
-  pendingLeafs = BoxMap<Uint256, bytes<0>>({ keyPrefix: "p" });
+  pendingLeaves = BoxMap<Uint256, bytes<0>>({ keyPrefix: "p" });
 
   subtree = Box<Subtree>({ key: "s" });
 
@@ -104,11 +104,10 @@ export class MimcMerkle extends Contract {
   }
 
   protected addLeaf(leafHash: Uint256): void {
-    assert(!this.pendingLeafs(leafHash).exists, "leaf already pending");
-    this.pendingLeafs(leafHash).create();
+    assert(!this.pendingLeaves(leafHash).exists, "leaf already pending");
+    this.pendingLeaves(leafHash).create();
   }
 
-  // Seal the current full (or partial) tree as an epoch and reset to a new tree
   protected sealAndRotate(): void {
     // Optional: require at least one leaf in the epoch
     assert(this.nextLeafIndex.value === 2 ** TREE_DEPTH, "nothing to seal");
@@ -121,10 +120,6 @@ export class MimcMerkle extends Contract {
     epochBox.create();
 
     epochBox.value[index] = this.currentRoot();
-
-    // Prepare next epoch: reset tree state
-    this.epochId.value = epoch + 1;
-    // Reset recent root cache and seed with empty root
 
     this.newEpoch();
   }
@@ -210,7 +205,7 @@ export class MimcMerkle extends Contract {
     subtree: Subtree,
   ): void {
     assert(this.nextLeafIndex.value < 2 ** TREE_DEPTH, "tree is full");
-    assert(this.pendingLeafs(newLeaf).delete(), "leaf not pending");
+    assert(this.pendingLeaves(newLeaf).delete(), "leaf not pending");
     this.lastCommittedLeaf.value = newLeaf;
     this.addRoot(root);
     this.nextLeafIndex.value += 1;
