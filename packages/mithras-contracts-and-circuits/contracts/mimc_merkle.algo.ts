@@ -193,7 +193,6 @@ export class MimcMerkle extends Contract {
       this.subtree.value,
     );
 
-    assert(this.isValidRoot(root), "invalid leaf: root not recognized");
     this.commitLeafRootAndSubtree(leaf, root, subtree);
   }
 
