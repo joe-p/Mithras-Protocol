@@ -82,6 +82,14 @@ export class Mithras extends MimcMerkle {
     this.bootstrap(commitmentLsig);
   }
 
+  rotatePendingMerkleEpoch() {
+    this.rotatePendingEpoch();
+  }
+
+  commitMerkleEpochSentinel() {
+    this.commitEpochSentinel();
+  }
+
   private addCommitment(commitment: Uint256) {
     const leafIndex = this.addPendingLeaf(commitment);
     emit<NewPendingLeaf>({
