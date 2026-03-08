@@ -24,8 +24,6 @@ import {
 
 const ROOT_CACHE_SIZE = 50;
 
-const EPOCHS_PER_BOX = 32;
-
 // Base cost for mimc is 10 uALGO, and each bytes<32> costs 550 uALGO
 const MIMC_OPCODE_COST = 1110 * TREE_DEPTH;
 
@@ -89,11 +87,9 @@ export class MimcMerkle extends Contract {
   zeroHashes = Box<Subtree>({ key: "z" });
 
   /**
-   * When an epoch is sealed, the final root for that epoch is stored in epochBoxes under the epochId. Since we can't
-   * store an unbounded number of epochs in boxes, we store a fixed number of epochs per box, and calculate the box
-   * index and index within the box based on the epochId when sealing and validating sealed epochs.
+   * When an epoch is sealed, the final root for that epoch is stored in epochRoots under the epochId.
    */
-  epochBoxes = BoxMap<uint64, FixedArray<Uint256, typeof EPOCHS_PER_BOX>>({
+  epochRoots = BoxMap<uint64, Uint256>({
     keyPrefix: "e",
   });
 
@@ -145,13 +141,7 @@ export class MimcMerkle extends Contract {
 
     // Seal the OLD epoch (epochId was already incremented by rotatePendingEpoch)
     const epoch: uint64 = this.epochId.value - 1;
-    const epochBoxKey: uint64 = epoch / EPOCHS_PER_BOX;
-    const index: uint64 = epoch % EPOCHS_PER_BOX;
-
-    const epochBox = this.epochBoxes(epochBoxKey);
-    epochBox.create();
-
-    epochBox.value[index] = this.currentRoot();
+    this.epochRoots(epoch).value = this.currentRoot();
 
     // Reset committed index for new epoch
     this.nextCommittedLeafTreeIndex.value = 0;
@@ -215,9 +205,7 @@ export class MimcMerkle extends Contract {
 
   // Validate a sealed epoch final root by epochId
   protected isValidSealedRoot(epochId: uint64, root: Uint256): boolean {
-    const epochBoxId: uint64 = epochId / EPOCHS_PER_BOX;
-    const index: uint64 = epochId % EPOCHS_PER_BOX;
-    return this.epochBoxes(epochBoxId).value[index] === root;
+    return this.epochRoots(epochId).value === root;
   }
 
   protected addRoot(rootHash: Uint256): void {
