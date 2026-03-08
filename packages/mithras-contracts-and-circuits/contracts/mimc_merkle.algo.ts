@@ -31,30 +31,76 @@ const MIMC_OPCODE_COST = 1110 * TREE_DEPTH;
 
 @contract({ avmVersion: 11 })
 export class MimcMerkle extends Contract {
-  rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
+  /*************************************************************************************************
+   * Global State
+   *************************************************************************************************/
 
+  /**
+   * Keeps track of the number of roots stored in the root cache, and to determine the index to store the next root
+   */
   rootCounter = GlobalState<uint64>({ key: "c" });
 
+  /**
+   * The next index to use when committing a pending leaf to the tree.
+   */
   nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
 
+  /**
+   * The next index to use for the next pending leaf. Should be reset to 0 when rotating epoch.
+   */
   nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
 
-  zeroHashes = Box<Subtree>({ key: "z" });
-
-  // Track epochs and cache the last computed root for sealing
+  /**
+   * An epoch is the identifier for a root commitment period. When the epoch is rotated, a new sentinel leaf is added
+   * to the tree with the new epochId, and the previous epochId is sealed with the last root committed in that epoch.
+   */
   epochId = GlobalState<uint64>({ key: "e" });
 
+  /**
+   * The last leaf that was committed to the tree. This is needed for committing a new leaf to ensure order of leaf
+   * commitments
+   */
   lastCommittedLeaf = GlobalState<Uint256>({ key: "ll" });
 
+  /**
+   * The address of the logic signature that does the computation for committing a leaf to the tree
+   */
+  commitmentLsigAddr = GlobalState<Account>({ key: "a" });
+
+  /**
+   * The index at which the past epoch ended. This is needed to know when to seal an epoch, which happens when the
+   * next committed leaf index reaches this value
+   */
+  epochEndedOnIndex = GlobalState<uint64>({ key: "e" });
+
+  /*************************************************************************************************
+   * Boxes
+   *************************************************************************************************/
+
+  /**
+   * A cache of recent roots to validate against. This helps prevent race conditions for when a circuit proves a
+   * leaf against a root that has since changed within the block
+   */
+  rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
+
+  /**
+   * Precomputed MiMC hashes of zero for each level of the tree, used for calculating new roots when committing leaves
+   */
+  zeroHashes = Box<Subtree>({ key: "z" });
+
+  /**
+   * When an epoch is sealed, the final root for that epoch is stored in epochBoxes under the epochId. Since we can't
+   * store an unbounded number of epochs in boxes, we store a fixed number of epochs per box, and calculate the box
+   * index and index within the box based on the epochId when sealing and validating sealed epochs.
+   */
   epochBoxes = BoxMap<uint64, FixedArray<Uint256, typeof EPOCHS_PER_BOX>>({
     keyPrefix: "e",
   });
 
-  commitmentLsigAddr = GlobalState<Account>({ key: "a" });
-
+  /**
+   * Leaves that have been added but not yet committed to the tree
+   */
   pendingLeaves = BoxMap<Uint256, uint64>({ keyPrefix: "p" });
-
-  epochEndedOnIndex = GlobalState<uint64>({ key: "ee" });
 
   protected bootstrap(commitLeafLsig: Account): void {
     this.commitmentLsigAddr.value = commitLeafLsig;
