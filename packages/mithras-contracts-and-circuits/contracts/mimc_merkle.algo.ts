@@ -54,6 +54,8 @@ export class MimcMerkle extends Contract {
 
   pendingLeaves = BoxMap<Uint256, uint64>({ keyPrefix: "p" });
 
+  epochEndedOnIndex = GlobalState<uint64>({ key: "ee" });
+
   protected bootstrap(commitLeafLsig: Account): void {
     this.commitmentLsigAddr.value = commitLeafLsig;
     ensureBudget(MIMC_OPCODE_COST);
@@ -73,47 +75,21 @@ export class MimcMerkle extends Contract {
     this.zeroHashes.value = clone(tree);
     this.epochId.value = 0;
 
-    this.newEpoch();
-  }
-
-  private newEpoch(): void {
-    this.epochId.value += 1;
-
-    // Commit sentinel leaf at index 0 so the lsig never sees index 0
     const sentinelLeaf = new Uint256(this.epochId.value);
-
-    // Clear existing cache by recreating
-    this.rootCache.delete();
-    this.rootCache.create();
-
-    const { root } = calculateRootAndSubtree(
-      sentinelLeaf,
-      0,
-      clone(this.zeroHashes.value),
-    );
-    this.lastCommittedLeaf.value = sentinelLeaf;
-    this.addRoot(root);
-    this.nextCommittedLeafTreeIndex.value = 1;
     this.nextPendingLeafTreeIndex.value = 1;
-    this.rootCounter.value = 0;
+    const { root } = calculateRootAndSubtree(sentinelLeaf, 0, tree);
+    this.commitLeafRoot(sentinelLeaf, root);
   }
 
-  protected currentRoot(): Uint256 {
-    return this.rootCache.value[(this.rootCounter.value - 1) % ROOT_CACHE_SIZE];
+  private indexNearMax(index: uint64): boolean {
+    const maxLeafs = 2 ** TREE_DEPTH;
+    return index > maxLeafs - maxLeafs / 100;
   }
 
-  protected addPendingLeaf(leafHash: Uint256): uint64 {
-    assert(!this.pendingLeaves(leafHash).exists, "leaf already pending");
-    const leafIndex = this.nextPendingLeafTreeIndex.value;
-    this.pendingLeaves(leafHash).value = leafIndex;
-    this.nextPendingLeafTreeIndex.value += 1;
-    return leafIndex;
-  }
-
-  protected sealAndRotate(): void {
+  private committedEpochEnd(): void {
     assert(
-      this.nextCommittedLeafTreeIndex.value === 2 ** TREE_DEPTH,
-      "nothing to seal",
+      this.nextCommittedLeafTreeIndex.value === this.epochEndedOnIndex.value,
+      "epoch not ready to seal, not all pending leaves committed",
     );
 
     const epoch = this.epochId.value;
@@ -124,8 +100,30 @@ export class MimcMerkle extends Contract {
     epochBox.create();
 
     epochBox.value[index] = this.currentRoot();
+  }
 
-    this.newEpoch();
+  private pendingEpochEnd(): void {
+    this.epochId.value += 1;
+    const sentinelLeaf = new Uint256(this.epochId.value);
+    this.epochEndedOnIndex.value = this.nextPendingLeafTreeIndex.value;
+    this.nextPendingLeafTreeIndex.value = 1;
+    this.addPendingLeaf(sentinelLeaf);
+  }
+
+  protected currentRoot(): Uint256 {
+    return this.rootCache.value[(this.rootCounter.value - 1) % ROOT_CACHE_SIZE];
+  }
+
+  protected addPendingLeaf(leafHash: Uint256): uint64 {
+    assert(!this.pendingLeaves(leafHash).exists, "leaf already pending");
+
+    if (this.indexNearMax(this.nextPendingLeafTreeIndex.value)) {
+      this.pendingEpochEnd();
+    }
+    const leafIndex = this.nextPendingLeafTreeIndex.value;
+    this.pendingLeaves(leafHash).value = leafIndex;
+    this.nextPendingLeafTreeIndex.value += 1;
+    return leafIndex;
   }
 
   protected isValidRoot(root: Uint256): boolean {
@@ -185,11 +183,12 @@ export class MimcMerkle extends Contract {
   }
 
   private commitLeafRoot(newLeaf: Uint256, root: Uint256): void {
-    assert(
-      this.nextCommittedLeafTreeIndex.value < 2 ** TREE_DEPTH,
-      "tree is full",
-    );
     assert(this.pendingLeaves(newLeaf).delete(), "leaf not pending");
+    if (
+      this.nextCommittedLeafTreeIndex.value === this.epochEndedOnIndex.value
+    ) {
+      this.committedEpochEnd();
+    }
     this.lastCommittedLeaf.value = newLeaf;
     this.addRoot(root);
     this.nextCommittedLeafTreeIndex.value += 1;
