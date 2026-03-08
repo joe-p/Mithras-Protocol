@@ -22,6 +22,9 @@ import {
   Uint256,
 } from "@algorandfoundation/algorand-typescript/arc4";
 
+const ZERO_HASHES =
+  TemplateVar<FixedArray<Uint256, typeof TREE_DEPTH>>("ZERO_HASHES");
+
 const ROOT_CACHE_SIZE = 50;
 
 // Base cost for mimc is 10 uALGO, and each bytes<32> costs 550 uALGO
@@ -82,11 +85,6 @@ export class MimcMerkle extends Contract {
   rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
 
   /**
-   * Precomputed MiMC hashes of zero for each level of the tree, used for calculating new roots when committing leaves
-   */
-  zeroHashes = Box<Subtree>({ key: "z" });
-
-  /**
    * When an epoch is sealed, the final root for that epoch is stored in epochRoots under the epochId.
    */
   epochRoots = BoxMap<uint64, Uint256>({
@@ -101,27 +99,14 @@ export class MimcMerkle extends Contract {
   protected bootstrap(commitLeafLsig: Account): void {
     this.commitmentLsigAddr.value = commitLeafLsig;
     ensureBudget(MIMC_OPCODE_COST);
-    const tree: Subtree = new FixedArray<Uint256, typeof TREE_DEPTH>();
 
-    tree[0] = new Uint256(0);
-
-    for (let i: uint64 = 1; i < TREE_DEPTH; i++) {
-      tree[i] = new Uint256(
-        op.mimc(
-          op.MimcConfigurations.BLS12_381Mp111,
-          tree[i - 1].bytes.concat(tree[i - 1].bytes),
-        ),
-      );
-    }
-
-    this.zeroHashes.value = clone(tree);
     this.epochId.value = 0;
     this.rootCache.create();
 
     const sentinelLeaf = new Uint256(this.epochId.value);
     this.addPendingLeaf(sentinelLeaf);
 
-    const { root } = calculateRootAndSubtree(sentinelLeaf, 0, tree);
+    const { root } = calculateRootAndSubtree(sentinelLeaf, 0, ZERO_HASHES);
     assert(this.pendingLeaves(sentinelLeaf).delete(), "sentinel not pending");
     this.lastCommittedLeaf.value = sentinelLeaf;
     this.addRoot(root);
@@ -155,8 +140,7 @@ export class MimcMerkle extends Contract {
 
     ensureBudget(MIMC_OPCODE_COST);
     const sentinelLeaf = new Uint256(this.epochId.value);
-    const tree = clone(this.zeroHashes.value);
-    const { root } = calculateRootAndSubtree(sentinelLeaf, 0, tree);
+    const { root } = calculateRootAndSubtree(sentinelLeaf, 0, ZERO_HASHES);
 
     assert(this.pendingLeaves(sentinelLeaf).delete(), "sentinel not pending");
     this.lastCommittedLeaf.value = sentinelLeaf;
@@ -301,9 +285,6 @@ function calculateRootAndSubtree(
   index: uint64,
   subtree: Subtree,
 ): { root: Uint256; subtree: Subtree } {
-  const zeroHashes =
-    TemplateVar<FixedArray<Uint256, typeof TREE_DEPTH>>("ZERO_HASHES");
-
   let left: Uint256;
   let right: Uint256;
   let currentHash = leaf;
@@ -312,7 +293,7 @@ function calculateRootAndSubtree(
     if ((index & 1) === 0) {
       subtree[i] = currentHash;
       left = currentHash;
-      right = zeroHashes[i];
+      right = ZERO_HASHES[i];
     } else {
       left = subtree[i];
       right = currentHash;
