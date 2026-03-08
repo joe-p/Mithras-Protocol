@@ -51,11 +51,17 @@ export type PlonkProof = {
 };
 
 /**
- * Event emitted when a new leaf is added to the tree. Global state deltas will contain the new index and root
+ * Event emitted when a new leaf is committed to the tree. Global state deltas will contain the new index and root
  */
 type NewLeaf = {
   leaf: Uint256;
   epochId: uint64;
+};
+
+type NewPendingLeaf = {
+  leaf: Uint256;
+  epochId: uint64;
+  leafIndex: uint64;
 };
 
 @contract({ avmVersion: 11 })
@@ -77,10 +83,11 @@ export class Mithras extends MimcMerkle {
   }
 
   private addCommitment(commitment: Uint256) {
-    this.addLeaf(commitment);
-    emit<NewLeaf>({
+    const leafIndex = this.addPendingLeaf(commitment);
+    emit<NewPendingLeaf>({
       leaf: commitment,
       epochId: this.epochId.value,
+      leafIndex,
     });
   }
 

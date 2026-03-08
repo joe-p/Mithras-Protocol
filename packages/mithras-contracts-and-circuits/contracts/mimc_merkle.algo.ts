@@ -15,12 +15,10 @@ import {
   Txn,
   TemplateVar,
   Account,
-  bytes,
 } from "@algorandfoundation/algorand-typescript";
 import { TREE_DEPTH } from "../src/constants";
 import {
   decodeArc4,
-  encodeArc4,
   Uint256,
 } from "@algorandfoundation/algorand-typescript/arc4";
 
@@ -37,7 +35,9 @@ export class MimcMerkle extends Contract {
 
   rootCounter = GlobalState<uint64>({ key: "c" });
 
-  nextLeafIndex = GlobalState<uint64>({ key: "i" });
+  nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
+
+  nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
 
   zeroHashes = Box<Subtree>({ key: "z" });
 
@@ -52,9 +52,7 @@ export class MimcMerkle extends Contract {
 
   commitmentLsigAddr = GlobalState<Account>({ key: "a" });
 
-  pendingLeaves = BoxMap<Uint256, bytes<0>>({ keyPrefix: "p" });
-
-  subtree = Box<Subtree>({ key: "s" });
+  pendingLeaves = BoxMap<Uint256, uint64>({ keyPrefix: "p" });
 
   protected bootstrap(commitLeafLsig: Account): void {
     this.commitmentLsigAddr.value = commitLeafLsig;
@@ -88,15 +86,15 @@ export class MimcMerkle extends Contract {
     this.rootCache.delete();
     this.rootCache.create();
 
-    const { root, subtree } = calculateRootAndSubtree(
+    const { root } = calculateRootAndSubtree(
       sentinelLeaf,
       0,
       clone(this.zeroHashes.value),
     );
-    this.subtree.value = clone(subtree);
     this.lastCommittedLeaf.value = sentinelLeaf;
     this.addRoot(root);
-    this.nextLeafIndex.value = 1;
+    this.nextCommittedLeafTreeIndex.value = 1;
+    this.nextPendingLeafTreeIndex.value = 1;
     this.rootCounter.value = 0;
   }
 
@@ -104,13 +102,19 @@ export class MimcMerkle extends Contract {
     return this.rootCache.value[(this.rootCounter.value - 1) % ROOT_CACHE_SIZE];
   }
 
-  protected addLeaf(leafHash: Uint256): void {
+  protected addPendingLeaf(leafHash: Uint256): uint64 {
     assert(!this.pendingLeaves(leafHash).exists, "leaf already pending");
-    this.pendingLeaves(leafHash).create();
+    const leafIndex = this.nextPendingLeafTreeIndex.value;
+    this.pendingLeaves(leafHash).value = leafIndex;
+    this.nextPendingLeafTreeIndex.value += 1;
+    return leafIndex;
   }
 
   protected sealAndRotate(): void {
-    assert(this.nextLeafIndex.value === 2 ** TREE_DEPTH, "nothing to seal");
+    assert(
+      this.nextCommittedLeafTreeIndex.value === 2 ** TREE_DEPTH,
+      "nothing to seal",
+    );
 
     const epoch = this.epochId.value;
     const epochBoxKey: uint64 = epoch / EPOCHS_PER_BOX;
@@ -149,16 +153,18 @@ export class MimcMerkle extends Contract {
     this.rootCounter.value += 1;
   }
 
-  /**
-   * Add a leaf to the merkle tree in a separate transaction signed by the commitment logic sig.
-   * This will be significantly cheaper (~30x cheaper) than `commitLeafInAppCall` but it is susceptible to
-   * race conditions. Without coordination only one sender will be able to make commitments per block and it'll be whichever
-   * sender gets their transaction group included first.
-   */
   protected commitLeafWithLsig(
     commitmentLsig: gtxn.Transaction,
     args: CommitLeafArgs,
   ): void {
+    const pendingLeaf = this.pendingLeaves(args.newLeaf);
+    assert(pendingLeaf.exists, "leaf not pending");
+    assert(pendingLeaf.value === args.newLeafIndex, "invalid newLeafIndex");
+    assert(
+      pendingLeaf.value === this.nextCommittedLeafTreeIndex.value,
+      "leaf commitment out of order",
+    );
+
     assert(
       commitmentLsig.sender === this.commitmentLsigAddr.value,
       "invalid commitment Lsig",
@@ -170,59 +176,23 @@ export class MimcMerkle extends Contract {
     );
 
     assert(
-      args.newLeafIndex === this.nextLeafIndex.value,
+      args.newLeafIndex === this.nextCommittedLeafTreeIndex.value,
       "unexpected leaf index",
     );
 
-    assert(
-      encodeArc4(args.currentSubtree) === encodeArc4(this.subtree.value),
-      "previous subtree mismatch",
-    );
-
     assert(this.currentRoot() === args.currentRoot, "current root mismatch");
-    this.commitLeafRootAndSubtree(args.newLeaf, args.newRoot, args.newSubtree);
+    this.commitLeafRoot(args.newLeaf, args.newRoot);
   }
 
-  protected commitMultipleLeaves(leaves: Uint256[]): void {
-    ensureBudget(MIMC_OPCODE_COST * leaves.length);
-    for (const leaf of leaves) {
-      const { root, subtree } = calculateRootAndSubtree(
-        leaf,
-        this.nextLeafIndex.value,
-        this.subtree.value,
-      );
-
-      this.commitLeafRootAndSubtree(leaf, root, subtree);
-    }
-  }
-
-  /**
-   * Add a leaf to the merkle tree in an app call. Compared to `commitLeafWithLsig` this method will be much more
-   * expensive to cover the cost of op-ups, but it allows a leaf to committed without the risk of a race condition.
-   * This is useful when the ability to spend the UTXO instantly is required.
-   */
-  protected commitLeafInAppCall(leaf: Uint256): void {
-    ensureBudget(MIMC_OPCODE_COST);
-    const { root, subtree } = calculateRootAndSubtree(
-      leaf,
-      this.nextLeafIndex.value,
-      this.subtree.value,
+  private commitLeafRoot(newLeaf: Uint256, root: Uint256): void {
+    assert(
+      this.nextCommittedLeafTreeIndex.value < 2 ** TREE_DEPTH,
+      "tree is full",
     );
-
-    this.commitLeafRootAndSubtree(leaf, root, subtree);
-  }
-
-  private commitLeafRootAndSubtree(
-    newLeaf: Uint256,
-    root: Uint256,
-    subtree: Subtree,
-  ): void {
-    assert(this.nextLeafIndex.value < 2 ** TREE_DEPTH, "tree is full");
     assert(this.pendingLeaves(newLeaf).delete(), "leaf not pending");
     this.lastCommittedLeaf.value = newLeaf;
     this.addRoot(root);
-    this.nextLeafIndex.value += 1;
-    this.subtree.value = clone(subtree);
+    this.nextCommittedLeafTreeIndex.value += 1;
   }
 }
 
@@ -235,7 +205,6 @@ export type CommitLeafArgs = {
   currentSubtree: Subtree; // 72 + (32 * TREE_DEPTH) = 72 + (32 * 20) = 712 bytes
   currentRoot: Uint256; // 712 + 32 = 744 bytes
   newRoot: Uint256; // 744 + 32 = 776 bytes
-  newSubtree: Subtree; // 776 + (32 * TREE_DEPTH) = 776 + (32 * 20) = 1,416 bytes
 };
 
 export class CommitLeaf extends LogicSig {
@@ -251,17 +220,14 @@ export class CommitLeaf extends LogicSig {
       );
     assert(currentRoot === args.currentRoot, "old root mismatch");
 
-    const { root: newRoot, subtree: newSubtree } = calculateRootAndSubtree(
+    const { root: newRoot } = calculateRootAndSubtree(
       args.newLeaf,
       args.newLeafIndex,
       currentSubtree,
     );
 
     assert(newRoot === args.newRoot, "new root mismatch");
-    assert(
-      encodeArc4(newSubtree) === encodeArc4(args.newSubtree),
-      "new subtree mismatch",
-    );
+
     return true;
   }
 }
