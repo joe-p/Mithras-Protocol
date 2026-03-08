@@ -3,7 +3,7 @@
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
-    intcblock 1 0 32 2 250 22200 1038091
+    intcblock 1 0 32 2 250 28860 66437776
     bytecblock "p" "e" 0x0000000000000000000000000000000000000000000000000000000000000000 "r" "i" 0x068101 "ll" TMPL_ZERO_HASHES
     // contracts/mithras.algo.ts:67-68
     // @contract({ avmVersion: 11 })
@@ -89,7 +89,7 @@ calculateRootAndSubtree_while_top@1:
     // contracts/mimc_merkle.algo.ts:277
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     frame_dig 1
-    pushint 20
+    pushint 26
     <
     bz calculateRootAndSubtree_after_while@8
     // contracts/mimc_merkle.algo.ts:278
@@ -241,12 +241,12 @@ bootstrapMerkleTree:
     app_global_put
     // contracts/mimc_merkle.algo.ts:61
     // ensureBudget(MIMC_OPCODE_COST);
-    intc 5 // 22200
+    intc 5 // 28860
     intc_1 // 0
     callsub ensure_budget
     // contracts/mimc_merkle.algo.ts:62
     // const tree: Subtree = new FixedArray<Uint256, typeof TREE_DEPTH>();
-    pushint 640
+    pushint 832
     bzero
     // contracts/mimc_merkle.algo.ts:64
     // tree[0] = new Uint256(0);
@@ -260,7 +260,7 @@ bootstrapMerkleTree_while_top@2:
     // contracts/mimc_merkle.algo.ts:66
     // for (let i: uint64 = 1; i < TREE_DEPTH; i++) {
     dup
-    pushint 20
+    pushint 26
     <
     bz bootstrapMerkleTree_after_while@4
     // contracts/mimc_merkle.algo.ts:70
@@ -391,7 +391,7 @@ rotatePendingMerkleEpoch:
     assert // check GlobalState exists
     // contracts/mimc_merkle.algo.ts:91
     // return index > maxLeafs - maxLeafs / 100;
-    intc 6 // 1038091
+    intc 6 // 66437776
     >
     // contracts/mimc_merkle.algo.ts:132-135
     // assert(
@@ -487,7 +487,7 @@ commitMerkleEpochSentinel:
     assert // sentinel already committed
     // contracts/mimc_merkle.algo.ts:120
     // ensureBudget(MIMC_OPCODE_COST);
-    intc 5 // 22200
+    intc 5 // 28860
     intc_1 // 0
     callsub ensure_budget
     // contracts/mimc_merkle.algo.ts:121
@@ -1113,7 +1113,7 @@ addPendingLeaf:
     // contracts/mimc_merkle.algo.ts:91
     // return index > maxLeafs - maxLeafs / 100;
     dup
-    intc 6 // 1038091
+    intc 6 // 66437776
     >
     // contracts/mimc_merkle.algo.ts:150
     // !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
