@@ -91,7 +91,8 @@ export class Mithras extends MimcMerkle {
   }
 
   private addCommitment(commitment: Uint256) {
-    const leafIndex = this.addPendingLeaf(commitment);
+    // TODO: implement incentives
+    const leafIndex = this.addPendingLeaf(commitment, 0);
     emit<NewPendingLeaf>({
       leaf: commitment,
       epochId: this.epochId.value,

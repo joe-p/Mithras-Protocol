@@ -15,6 +15,9 @@ import {
   Txn,
   TemplateVar,
   Account,
+  itxn,
+  Global,
+  assertMatch,
 } from "@algorandfoundation/algorand-typescript";
 import { TREE_DEPTH } from "../src/constants";
 import {
@@ -93,8 +96,12 @@ export class MimcMerkle extends Contract {
 
   /**
    * Leaves that have been added but not yet committed to the tree
+   *
+   * The value is the leaf index for the pending leaf and the incentive amount for committing that leaf
    */
-  pendingLeaves = BoxMap<Uint256, uint64>({ keyPrefix: "p" });
+  pendingLeaves = BoxMap<Uint256, { index: uint64; incentive: uint64 }>({
+    keyPrefix: "p",
+  });
 
   protected bootstrap(commitLeafLsig: Account): void {
     this.commitmentLsigAddr.value = commitLeafLsig;
@@ -104,7 +111,7 @@ export class MimcMerkle extends Contract {
     this.rootCache.create();
 
     const sentinelLeaf = new Uint256(this.epochId.value);
-    this.addPendingLeaf(sentinelLeaf);
+    this.addPendingLeaf(sentinelLeaf, 0);
 
     const { root } = calculateRootAndSubtree(sentinelLeaf, 0, ZERO_HASHES);
     assert(this.pendingLeaves(sentinelLeaf).delete(), "sentinel not pending");
@@ -157,21 +164,21 @@ export class MimcMerkle extends Contract {
     this.epochEndedOnIndex.value = this.nextPendingLeafTreeIndex.value;
     this.nextPendingLeafTreeIndex.value = 0;
     const sentinelLeaf = new Uint256(this.epochId.value);
-    this.addPendingLeaf(sentinelLeaf);
+    this.addPendingLeaf(sentinelLeaf, 0);
   }
 
   protected currentRoot(): Uint256 {
     return this.rootCache.value[(this.rootCounter.value - 1) % ROOT_CACHE_SIZE];
   }
 
-  protected addPendingLeaf(leafHash: Uint256): uint64 {
+  protected addPendingLeaf(leafHash: Uint256, incentive: uint64): uint64 {
     assert(!this.pendingLeaves(leafHash).exists, "leaf already pending");
     assert(
       !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
       "tree full, call rotatePendingEpoch",
     );
     const leafIndex = this.nextPendingLeafTreeIndex.value;
-    this.pendingLeaves(leafHash).value = leafIndex;
+    this.pendingLeaves(leafHash).value = { index: leafIndex, incentive };
     this.nextPendingLeafTreeIndex.value += 1;
     return leafIndex;
   }
@@ -199,15 +206,35 @@ export class MimcMerkle extends Contract {
     this.rootCounter.value += 1;
   }
 
+  protected addIncentive(payment: gtxn.PaymentTxn, leafHash: Uint256): uint64 {
+    assertMatch(
+      payment,
+      { receiver: Global.currentApplicationAddress },
+      "incentive payment must be sent to the application address",
+    );
+
+    const pendingLeaf = this.pendingLeaves(leafHash);
+    assert(pendingLeaf.exists, "leaf not pending");
+
+    const incentive: uint64 = pendingLeaf.value.incentive + payment.amount;
+    this.pendingLeaves(leafHash).value = {
+      index: pendingLeaf.value.index,
+      incentive,
+    };
+
+    return incentive;
+  }
+
   protected commitLeafWithLsig(
     commitmentLsig: gtxn.Transaction,
     args: CommitLeafArgs,
   ): void {
     const pendingLeaf = this.pendingLeaves(args.newLeaf);
     assert(pendingLeaf.exists, "leaf not pending");
-    assert(pendingLeaf.value === args.newLeafIndex, "invalid newLeafIndex");
+    const pendingLeafIndex = pendingLeaf.value.index;
+    assert(pendingLeafIndex === args.newLeafIndex, "invalid newLeafIndex");
     assert(
-      pendingLeaf.value === this.nextCommittedLeafTreeIndex.value,
+      pendingLeafIndex === this.nextCommittedLeafTreeIndex.value,
       "leaf commitment out of order",
     );
 
@@ -228,6 +255,15 @@ export class MimcMerkle extends Contract {
 
     assert(this.currentRoot() === args.currentRoot, "current root mismatch");
     this.commitLeafRoot(args.newLeaf, args.newRoot);
+
+    if (pendingLeaf.value.incentive > 0) {
+      itxn
+        .payment({
+          receiver: Txn.sender,
+          amount: pendingLeaf.value.incentive,
+        })
+        .submit();
+    }
   }
 
   private commitLeafRoot(newLeaf: Uint256, root: Uint256): void {
