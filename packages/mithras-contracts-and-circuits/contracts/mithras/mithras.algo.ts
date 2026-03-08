@@ -18,7 +18,7 @@ import {
   TransactionType,
   Account,
 } from "@algorandfoundation/algorand-typescript";
-import { MimcMerkle } from "./mimc_merkle.algo";
+import { MimcMerkle } from "../mimc_merkle/mimc_merkle.algo";
 import { Address, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 
 const BLS12_381_SCALAR_MODULUS = BigUint(

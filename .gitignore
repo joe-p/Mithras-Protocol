@@ -1,13 +1,14 @@
 /target
 node_modules/
 packages/mithras-contracts-and-circuits/__test__/contracts/out/*
-packages/mithras-contracts-and-circuits/contracts/out/*
-!packages/mithras-contracts-and-circuits/contracts/out/Mithras.arc56.json
+packages/mithras-contracts-and-circuits/contracts/out/mimc_merkle/*
+packages/mithras-contracts-and-circuits/contracts/out/mithras/*
+!packages/mithras-contracts-and-circuits/contracts/out/mithras/Mithras.arc56.json
 *.dmypy
 
 # Keep approval programs so they have a record of past versions
-!packages/mithras-contracts-and-circuits/contracts/out/*.approval.teal
-!packages/mithras-contracts-and-circuits/__test__/contracts/out/*.approval.teal
+!packages/mithras-contracts-and-circuits/contracts/out/**/*.approval.teal
+!packages/mithras-contracts-and-circuits/__test__/contracts/out/**/*.approval.teal
 
 # Generated files from uniffi
 packages/*/rust_modules/

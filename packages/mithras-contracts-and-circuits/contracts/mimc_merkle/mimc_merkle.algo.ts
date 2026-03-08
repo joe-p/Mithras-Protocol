@@ -19,7 +19,7 @@ import {
   Global,
   assertMatch,
 } from "@algorandfoundation/algorand-typescript";
-import { TREE_DEPTH } from "../src/constants";
+import { TREE_DEPTH } from "../../src/constants";
 import {
   decodeArc4,
   Uint256,
