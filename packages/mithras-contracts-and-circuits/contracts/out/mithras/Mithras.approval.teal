@@ -3,8 +3,8 @@
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
-    intcblock 0 1 32 2 250 28860 66437776
-    bytecblock "e" "p" TMPL_ZERO_HASHES "r" 0x0000000000000000000000000000000000000000000000000000000000000000 "i" 0x068101 "ll"
+    intcblock 0 1 32 8 250 28860 66437776
+    bytecblock "e" "p" "r" TMPL_ZERO_HASHES 0x0000000000000000000000000000000000000000000000000000000000000000 "i" 0x068101 "ll"
     // contracts/mithras/mithras.algo.ts:67-68
     // @contract({ avmVersion: 11 })
     // export class Mithras extends MimcMerkle {
@@ -72,7 +72,7 @@ ensure_budget_after_while@6:
 
 // contracts/mimc_merkle/mimc_merkle.algo.ts::calculateRootAndFrontier(leaf: bytes, index: uint64, frontier: bytes) -> bytes, bytes:
 calculateRootAndFrontier:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:337-341
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:343-347
     // function calculateRootAndFrontier(
     //   leaf: Uint256,
     //   index: uint64,
@@ -80,25 +80,25 @@ calculateRootAndFrontier:
     // ): { root: Uint256; frontier: Frontier } {
     proto 3 2
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:346
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:352
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     dup
     frame_dig -3
 
 calculateRootAndFrontier_while_top@1:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:346
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:352
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     frame_dig 1
     pushint 26
     <
     bz calculateRootAndFrontier_after_while@8
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:347
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:353
     // if ((index & 1) === 0) {
     frame_dig -2
     intc_1 // 1
     &
     bnz calculateRootAndFrontier_else_body@6
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:348
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:354
     // frontier[i] = currentHash;
     frame_dig 1
     intc_2 // 32
@@ -110,9 +110,9 @@ calculateRootAndFrontier_while_top@1:
     cover 4
     replace3 // on error: index access is out of bounds
     frame_bury -1
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:350
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:356
     // right = ZERO_HASHES[i];
-    bytec_2 // TMPL_ZERO_HASHES
+    bytec_3 // TMPL_ZERO_HASHES
     swap
     intc_2 // 32
     extract3 // on error: index access is out of bounds
@@ -120,18 +120,18 @@ calculateRootAndFrontier_while_top@1:
     frame_bury 0
 
 calculateRootAndFrontier_after_if_else@7:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:359
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:365
     // left.bytes.concat(right.bytes),
     frame_dig 0
     swap
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:357-360
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:363-366
     // op.mimc(
     //   op.MimcConfigurations.BLS12_381Mp111,
     //   left.bytes.concat(right.bytes),
     // ),
     mimc BLS12_381Mp111
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:356-361
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:362-367
     // currentHash = new Uint256(
     //   op.mimc(
     //     op.MimcConfigurations.BLS12_381Mp111,
@@ -139,13 +139,13 @@ calculateRootAndFrontier_after_if_else@7:
     //   ),
     // );
     frame_bury 2
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:363
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:369
     // index >>= 1;
     frame_dig -2
     intc_1 // 1
     shr
     frame_bury -2
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:346
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:352
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     frame_dig 1
     intc_1 // 1
@@ -154,7 +154,7 @@ calculateRootAndFrontier_after_if_else@7:
     b calculateRootAndFrontier_while_top@1
 
 calculateRootAndFrontier_else_body@6:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:352
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:358
     // left = frontier[i];
     frame_dig 1
     intc_2 // 32
@@ -168,7 +168,7 @@ calculateRootAndFrontier_else_body@6:
     b calculateRootAndFrontier_after_if_else@7
 
 calculateRootAndFrontier_after_while@8:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:366
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:372
     // return { root: currentHash, frontier };
     frame_dig 2
     frame_dig -1
@@ -232,76 +232,82 @@ bootstrapMerkleTree:
     intc_2 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:72
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:66
     // commitmentLsigAddr = GlobalState<Account>({ key: "a" });
     pushbytes "a"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:107
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:109
     // this.commitmentLsigAddr.value = commitLeafLsig;
     swap
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:108
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:110
     // ensureBudget(MIMC_OPCODE_COST);
     intc 5 // 28860
     intc_0 // 0
     callsub ensure_budget
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:110
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:112
     // this.epochId.value = 0;
     intc_0 // 0
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:88
-    // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
-    bytec_3 // "r"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:111
-    // this.rootCache.create();
-    pushint 1600
-    box_create
-    pop
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:113
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:114
     // const sentinelLeaf = new Uint256(this.epochId.value);
     bytec 4 // 0x0000000000000000000000000000000000000000000000000000000000000000
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:114
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:115
     // this.addPendingLeaf(sentinelLeaf, 0);
     intc_0 // 0
     callsub addPendingLeaf
     pop
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:113
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:114
     // const sentinelLeaf = new Uint256(this.epochId.value);
     bytec 4 // 0x0000000000000000000000000000000000000000000000000000000000000000
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:116
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:117
     // const { root } = calculateRootAndFrontier(sentinelLeaf, 0, ZERO_HASHES);
     intc_0 // 0
-    bytec_2 // TMPL_ZERO_HASHES
+    bytec_3 // TMPL_ZERO_HASHES
     callsub calculateRootAndFrontier
     pop
     extract 0 32
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:102-104
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:104-106
     // pendingLeaves = BoxMap<Uint256, { index: uint64; incentive: uint64 }>({
     //   keyPrefix: "p",
     // });
     pushbytes 0x700000000000000000000000000000000000000000000000000000000000000000
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:117
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:118
     // assert(this.pendingLeaves(sentinelLeaf).delete(), "sentinel not pending");
     box_del
     assert // sentinel not pending
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:67
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
     // lastCommittedLeaf = GlobalState<Uint256>({ key: "ll" });
     bytec 7 // "ll"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:113
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:114
     // const sentinelLeaf = new Uint256(this.epochId.value);
     bytec 4 // 0x0000000000000000000000000000000000000000000000000000000000000000
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:118
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:119
     // this.lastCommittedLeaf.value = sentinelLeaf;
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:119
-    // this.addRoot(root);
-    callsub addRoot
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:50
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:90
+    // rootCache = BoxMap<Uint256, uint64>({ keyPrefix: "r" });
+    bytec_2 // "r"
+    dig 1
+    concat
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:190
+    // this.rootCache(rootHash).create();
+    intc_3 // 8
+    box_create
+    pop
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:78
+    // currentRoot = GlobalState<Uint256>({ key: "r" });
+    bytec_2 // "r"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:191
+    // this.currentRoot.value = rootHash;
+    swap
+    app_global_put
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:44
     // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
     bytec 5 // "i"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:120
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:121
     // this.nextCommittedLeafTreeIndex.value = 1;
     intc_1 // 1
     app_global_put
@@ -313,76 +319,76 @@ bootstrapMerkleTree:
 
 // contracts/mithras/mithras.algo.ts::Mithras.rotatePendingMerkleEpoch[routing]() -> void:
 rotatePendingMerkleEpoch:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:160
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:159
     // this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:160
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:159
     // this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:125
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:126
     // return index > maxLeafs - maxLeafs / 100;
     intc 6 // 66437776
     >
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:159-162
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:158-161
     // assert(
     //   this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     //   "tree not near max",
     // );
     assert // tree not near max
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:163
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:162
     // this.epochId.value += 1;
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:163
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:162
     // this.epochId.value += 1;
     app_global_get_ex
     assert // check GlobalState exists
     intc_1 // 1
     +
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:163
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:162
     // this.epochId.value += 1;
     swap
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:164
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:163
     // this.epochEndedOnIndex.value = this.nextPendingLeafTreeIndex.value;
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:164
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:163
     // this.epochEndedOnIndex.value = this.nextPendingLeafTreeIndex.value;
     app_global_get_ex
     assert // check GlobalState exists
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:78
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:72
     // epochEndedOnIndex = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:164
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:163
     // this.epochEndedOnIndex.value = this.nextPendingLeafTreeIndex.value;
     swap
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:165
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:164
     // this.nextPendingLeafTreeIndex.value = 0;
     intc_0 // 0
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:166
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:165
     // const sentinelLeaf = new Uint256(this.epochId.value);
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:166
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:165
     // const sentinelLeaf = new Uint256(this.epochId.value);
     app_global_get_ex
     assert // check GlobalState exists
@@ -390,7 +396,7 @@ rotatePendingMerkleEpoch:
     intc_2 // 32
     bzero
     b|
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:167
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:166
     // this.addPendingLeaf(sentinelLeaf, 0);
     intc_0 // 0
     callsub addPendingLeaf
@@ -403,35 +409,35 @@ rotatePendingMerkleEpoch:
 
 // contracts/mithras/mithras.algo.ts::Mithras.commitMerkleEpochSentinel[routing]() -> void:
 commitMerkleEpochSentinel:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:144
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:143
     // this.nextCommittedLeafTreeIndex.value === 0,
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:50
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:44
     // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
     bytec 5 // "i"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:144
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:143
     // this.nextCommittedLeafTreeIndex.value === 0,
     app_global_get_ex
     assert // check GlobalState exists
     !
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:143-146
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:142-145
     // assert(
     //   this.nextCommittedLeafTreeIndex.value === 0,
     //   "sentinel already committed",
     // );
     assert // sentinel already committed
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:148
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:147
     // ensureBudget(MIMC_OPCODE_COST);
     intc 5 // 28860
     intc_0 // 0
     callsub ensure_budget
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:149
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:148
     // const sentinelLeaf = new Uint256(this.epochId.value);
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:149
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:148
     // const sentinelLeaf = new Uint256(this.epochId.value);
     app_global_get_ex
     assert // check GlobalState exists
@@ -439,39 +445,53 @@ commitMerkleEpochSentinel:
     intc_2 // 32
     bzero
     b|
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:150
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:149
     // const { root } = calculateRootAndFrontier(sentinelLeaf, 0, ZERO_HASHES);
     dup
     intc_0 // 0
-    bytec_2 // TMPL_ZERO_HASHES
+    bytec_3 // TMPL_ZERO_HASHES
     callsub calculateRootAndFrontier
     pop
     extract 0 32
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:102-104
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:104-106
     // pendingLeaves = BoxMap<Uint256, { index: uint64; incentive: uint64 }>({
     //   keyPrefix: "p",
     // });
     bytec_1 // "p"
     dig 2
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:152
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:151
     // assert(this.pendingLeaves(sentinelLeaf).delete(), "sentinel not pending");
     box_del
     assert // sentinel not pending
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:67
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
     // lastCommittedLeaf = GlobalState<Uint256>({ key: "ll" });
     bytec 7 // "ll"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:153
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:152
     // this.lastCommittedLeaf.value = sentinelLeaf;
     uncover 2
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:154
-    // this.addRoot(root);
-    callsub addRoot
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:50
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:90
+    // rootCache = BoxMap<Uint256, uint64>({ keyPrefix: "r" });
+    bytec_2 // "r"
+    dig 1
+    concat
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:190
+    // this.rootCache(rootHash).create();
+    intc_3 // 8
+    box_create
+    pop
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:78
+    // currentRoot = GlobalState<Uint256>({ key: "r" });
+    bytec_2 // "r"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:191
+    // this.currentRoot.value = rootHash;
+    swap
+    app_global_put
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:44
     // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
     bytec 5 // "i"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:155
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:154
     // this.nextCommittedLeafTreeIndex.value = 1;
     intc_1 // 1
     app_global_put
@@ -497,7 +517,7 @@ deposit:
     extract_uint16 // on error: invalid array length header
     intc_2 // 32
     *
-    intc_3 // 2
+    pushint 2
     +
     dig 1
     len
@@ -514,7 +534,7 @@ deposit:
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 250>
     txn GroupIndex
-    intc_3 // 2
+    pushint 2
     -
     dup
     gtxns TypeEnum
@@ -610,7 +630,7 @@ spend:
     extract_uint16 // on error: invalid array length header
     intc_2 // 32
     *
-    intc_3 // 2
+    pushint 2
     +
     dig 1
     len
@@ -666,7 +686,8 @@ spend:
     // const utxoRoot = signals[2];
     dup
     extract 66 32
-    swap
+    dup
+    uncover 2
     // contracts/mithras/mithras.algo.ts:142
     // const nullifier = signals[3];
     dup
@@ -678,10 +699,11 @@ spend:
     pushint 24
     extract_uint64
     dup
-    uncover 2
-    uncover 3
+    cover 3
+    cover 4
     // contracts/mithras/mithras.algo.ts:144
     // const spender = signals[5];
+    swap
     extract 162 32
     // contracts/mithras/mithras.algo.ts:73
     // nullifiers = BoxMap<Uint256, bytes<0>>({ keyPrefix: "n" });
@@ -716,7 +738,7 @@ spend:
     swap
     -
     dup
-    cover 3
+    cover 4
     // contracts/mithras/mithras.algo.ts:155
     // utxoFee >= nullifierMbr,
     uncover 2
@@ -736,62 +758,72 @@ spend:
     // assert(BigUint(spender.bytes) === senderInScalarField, "Invalid spender");
     b==
     assert // Invalid spender
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:187
-    // ensureBudget(700); // TODO: Determine budget needed here
-    pushint 700
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:183
+    // root === this.currentRoot.value ||
     intc_0 // 0
-    callsub ensure_budget
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:88
-    // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
-    bytec_3 // "r"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:188
-    // for (const validRoot of this.rootCache.value) {
-    box_get
-    assert // Box must have value
-    intc_0 // 0
-
-spend_for_header@2:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:188
-    // for (const validRoot of this.rootCache.value) {
-    dup
-    pushint 50
-    <
-    bz spend_after_for@6
-    dup
-    intc_2 // 32
-    *
-    dig 2
-    swap
-    intc_2 // 32
-    extract3 // on error: index access is out of bounds
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:189
-    // if (root === validRoot) {
-    dig 5
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:78
+    // currentRoot = GlobalState<Uint256>({ key: "r" });
+    bytec_2 // "r"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:183
+    // root === this.currentRoot.value ||
+    app_global_get_ex
+    assert // check GlobalState exists
     ==
-    bz spend_after_if_else@5
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:190
-    // return true;
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:183-184
+    // root === this.currentRoot.value ||
+    // this.rootCache(root).exists ||
+    bnz spend_bool_true@4
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:90
+    // rootCache = BoxMap<Uint256, uint64>({ keyPrefix: "r" });
+    bytec_2 // "r"
+    dig 3
+    concat
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:184
+    // this.rootCache(root).exists ||
+    box_len
+    bury 1
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:183-184
+    // root === this.currentRoot.value ||
+    // this.rootCache(root).exists ||
+    bnz spend_bool_true@4
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:95-97
+    // epochRoots = BoxMap<Uint256, bytes<0>>({
+    //   keyPrefix: "e",
+    // });
+    bytec_0 // "e"
+    dig 3
+    concat
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:185
+    // this.epochRoots(root).exists
+    box_len
+    bury 1
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:183-185
+    // root === this.currentRoot.value ||
+    // this.rootCache(root).exists ||
+    // this.epochRoots(root).exists
+    bz spend_bool_false@5
+
+spend_bool_true@4:
     intc_1 // 1
 
-spend_after_inlined_contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@7:
+spend_bool_merge@6:
     // contracts/mithras/mithras.algo.ts:164
     // assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
     assert // Invalid UTXO root
     // contracts/mithras/mithras.algo.ts:166
     // this.addCommitment(out0Commitment);
-    dig 6
+    dig 4
     callsub addCommitment
     // contracts/mithras/mithras.algo.ts:167
     // this.addCommitment(out1Commitment);
-    dig 5
+    dig 3
     callsub addCommitment
     // contracts/mithras/mithras.algo.ts:169
     // this.maybeCoverFee(utxoFee - nullifierMbr);
-    dig 3
-    dig 3
+    dup2
     -
     dup
-    bury 10
+    bury 8
     // contracts/mithras/mithras.algo.ts:175-177
     // coverageAmount === 0 ||
     // // There are no more txns in the group
@@ -830,7 +862,7 @@ spend_after_inlined_contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.isVali
     intc_1 // 1
     +
     dup
-    bury 9
+    bury 7
     dup
     gtxns TypeEnum
     intc_1 // pay
@@ -848,7 +880,7 @@ spend_after_inlined_contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.isVali
     bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
     // contracts/mithras/mithras.algo.ts:191
     // feePayment.receiver === Global.currentApplicationAddress &&
-    dig 7
+    dig 5
     gtxns Receiver
     global CurrentApplicationAddress
     ==
@@ -859,7 +891,7 @@ spend_after_inlined_contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.isVali
     bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
     // contracts/mithras/mithras.algo.ts:193
     // feePayment.amount === 0 &&
-    dig 7
+    dig 5
     gtxns Amount
     // contracts/mithras/mithras.algo.ts:189-193
     // feePayment.sender === Txn.sender &&
@@ -870,7 +902,7 @@ spend_after_inlined_contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.isVali
     bnz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
     // contracts/mithras/mithras.algo.ts:197
     // feePayment.closeRemainderTo === Global.currentApplicationAddress
-    dig 7
+    dig 5
     gtxns CloseRemainderTo
     global CurrentApplicationAddress
     ==
@@ -900,7 +932,7 @@ spend_after_inlined_contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.isVali
     // contracts/mithras/mithras.algo.ts:205
     // amount: Global.minBalance + coverageAmount,
     global MinBalance
-    dig 10
+    dig 8
     +
     itxn_field Amount
     itxn_field Receiver
@@ -937,20 +969,9 @@ spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18:
     intc_1 // 1
     return
 
-spend_after_if_else@5:
-    dup
-    intc_1 // 1
-    +
-    bury 1
-    b spend_for_header@2
-
-spend_after_for@6:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:194
-    // return false;
+spend_bool_false@5:
     intc_0 // 0
-    // contracts/mithras/mithras.algo.ts:164
-    // assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
-    b spend_after_inlined_contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.isValidRoot@7
+    b spend_bool_merge@6
 
 
 // contracts/mithras/mithras.algo.ts::Mithras.ensureBudget[routing]() -> void:
@@ -960,7 +981,7 @@ ensureBudget:
     txna ApplicationArgs 1
     dup
     len
-    pushint 8
+    intc_3 // 8
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
@@ -987,7 +1008,7 @@ addCommitment:
     // contracts/mithras/mithras.algo.ts:98
     // epochId: this.epochId.value,
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
     // contracts/mithras/mithras.algo.ts:98
@@ -1016,48 +1037,48 @@ addCommitment:
 
 // contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.addPendingLeaf(leafHash: bytes, incentive: uint64) -> uint64:
 addPendingLeaf:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:174
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:169
     // protected addPendingLeaf(leafHash: Uint256, incentive: uint64): uint64 {
     proto 2 1
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:102-104
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:104-106
     // pendingLeaves = BoxMap<Uint256, { index: uint64; incentive: uint64 }>({
     //   keyPrefix: "p",
     // });
     bytec_1 // "p"
     frame_dig -2
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:175
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:170
     // assert(!this.pendingLeaves(leafHash).exists, "leaf already pending");
     dup
     box_len
     bury 1
     !
     assert // leaf already pending
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:177
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:172
     // !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:177
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:172
     // !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:125
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:126
     // return index > maxLeafs - maxLeafs / 100;
     dup
     intc 6 // 66437776
     >
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:177
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:172
     // !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     !
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:176-179
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:171-174
     // assert(
     //   !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     //   "tree full, call rotatePendingEpoch",
     // );
     assert // tree full, call rotatePendingEpoch
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:181
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:176
     // this.pendingLeaves(leafHash).value = { index: leafIndex, incentive };
     dup
     itob
@@ -1067,62 +1088,18 @@ addPendingLeaf:
     uncover 2
     swap
     box_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:182
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:177
     // this.nextPendingLeafTreeIndex.value += 1;
     dup
     intc_1 // 1
     +
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:182
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:177
     // this.nextPendingLeafTreeIndex.value += 1;
     swap
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:183
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:178
     // return leafIndex;
-    retsub
-
-
-// contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.addRoot(rootHash: bytes) -> void:
-addRoot:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:202
-    // protected addRoot(rootHash: Uint256): void {
-    proto 1 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:203
-    // const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
-    intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:45
-    // rootCounter = GlobalState<uint64>({ key: "c" });
-    pushbytes "c"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:203
-    // const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
-    app_global_get_ex
-    assert // check GlobalState exists
-    dup
-    pushint 50
-    %
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:204
-    // this.rootCache.value[index] = rootHash;
-    intc_2 // 32
-    *
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:88
-    // rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
-    bytec_3 // "r"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:204
-    // this.rootCache.value[index] = rootHash;
-    swap
-    frame_dig -1
-    box_replace
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:206
-    // this.rootCounter.value += 1;
-    intc_1 // 1
-    +
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:45
-    // rootCounter = GlobalState<uint64>({ key: "c" });
-    pushbytes "c"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:206
-    // this.rootCounter.value += 1;
-    swap
-    app_global_put
     retsub

@@ -1,7 +1,5 @@
 import {
   assert,
-  Box,
-  clone,
   Contract,
   FixedArray,
   GlobalState,
@@ -18,6 +16,7 @@ import {
   itxn,
   Global,
   assertMatch,
+  bytes,
 } from "@algorandfoundation/algorand-typescript";
 import { TREE_DEPTH } from "../../src/constants";
 import {
@@ -28,7 +27,7 @@ import {
 const ZERO_HASHES =
   TemplateVar<FixedArray<Uint256, typeof TREE_DEPTH>>("ZERO_HASHES");
 
-const ROOT_CACHE_SIZE = 50;
+const ROOT_CACHE_ROUNDS = 1000;
 
 // Base cost for mimc is 10 uALGO, and each bytes<32> costs 550 uALGO
 const MIMC_OPCODE_COST = 1110 * TREE_DEPTH;
@@ -38,11 +37,6 @@ export class MimcMerkle extends Contract {
   /*************************************************************************************************
    * Global State
    *************************************************************************************************/
-
-  /**
-   * Keeps track of the number of roots stored in the root cache, and to determine the index to store the next root
-   */
-  rootCounter = GlobalState<uint64>({ key: "c" });
 
   /**
    * The next index to use when committing a pending leaf to the tree.
@@ -77,20 +71,28 @@ export class MimcMerkle extends Contract {
    */
   epochEndedOnIndex = GlobalState<uint64>({ key: "e" });
 
+  /**
+   * The current root of the tree. This is needed to validate proofs against the current tree state
+   * and to ensure the order of leaf commitments
+   */
+  currentRoot = GlobalState<Uint256>({ key: "r" });
+
   /*************************************************************************************************
    * Boxes
    *************************************************************************************************/
 
   /**
    * A cache of recent roots to validate against. This helps prevent race conditions for when a circuit proves a
-   * leaf against a root that has since changed within the block
+   * leaf against a root that has since changed within the block. The value stored is the round when the root was
+   * added to the cache, which is used to ensure roots are only removed from the cache after a certain number of
+   * rounds have passed
    */
-  rootCache = Box<FixedArray<Uint256, typeof ROOT_CACHE_SIZE>>({ key: "r" });
+  rootCache = BoxMap<Uint256, uint64>({ keyPrefix: "r" });
 
   /**
    * When an epoch is sealed, the final root for that epoch is stored in epochRoots under the epochId.
    */
-  epochRoots = BoxMap<uint64, Uint256>({
+  epochRoots = BoxMap<Uint256, bytes<0>>({
     keyPrefix: "e",
   });
 
@@ -108,7 +110,6 @@ export class MimcMerkle extends Contract {
     ensureBudget(MIMC_OPCODE_COST);
 
     this.epochId.value = 0;
-    this.rootCache.create();
 
     const sentinelLeaf = new Uint256(this.epochId.value);
     this.addPendingLeaf(sentinelLeaf, 0);
@@ -131,9 +132,7 @@ export class MimcMerkle extends Contract {
       "epoch not ready to seal, not all pending leaves committed",
     );
 
-    // Seal the OLD epoch (epochId was already incremented by rotatePendingEpoch)
-    const epoch: uint64 = this.epochId.value - 1;
-    this.epochRoots(epoch).value = this.currentRoot();
+    this.epochRoots(this.currentRoot.value).create();
 
     // Reset committed index for new epoch
     this.nextCommittedLeafTreeIndex.value = 0;
@@ -167,10 +166,6 @@ export class MimcMerkle extends Contract {
     this.addPendingLeaf(sentinelLeaf, 0);
   }
 
-  protected currentRoot(): Uint256 {
-    return this.rootCache.value[(this.rootCounter.value - 1) % ROOT_CACHE_SIZE];
-  }
-
   protected addPendingLeaf(leafHash: Uint256, incentive: uint64): uint64 {
     assert(!this.pendingLeaves(leafHash).exists, "leaf already pending");
     assert(
@@ -184,26 +179,34 @@ export class MimcMerkle extends Contract {
   }
 
   protected isValidRoot(root: Uint256): boolean {
-    ensureBudget(700); // TODO: Determine budget needed here
-    for (const validRoot of this.rootCache.value) {
-      if (root === validRoot) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  // Validate a sealed epoch final root by epochId
-  protected isValidSealedRoot(epochId: uint64, root: Uint256): boolean {
-    return this.epochRoots(epochId).value === root;
+    return (
+      root === this.currentRoot.value ||
+      this.rootCache(root).exists ||
+      this.epochRoots(root).exists
+    );
   }
 
   protected addRoot(rootHash: Uint256): void {
-    const index: uint64 = this.rootCounter.value % ROOT_CACHE_SIZE;
-    this.rootCache.value[index] = rootHash;
+    this.rootCache(rootHash).create();
+    this.currentRoot.value = rootHash;
+  }
 
-    this.rootCounter.value += 1;
+  protected removeRootFromCache(root: Uint256): void {
+    assert(
+      Global.round - this.rootCache(root).value < ROOT_CACHE_ROUNDS,
+      "cannot remove root from cache in the same round it was added",
+    );
+
+    const preMbr = Global.currentApplicationAddress.minBalance;
+    this.rootCache(root).delete();
+    const postMbr = Global.currentApplicationAddress.minBalance;
+
+    itxn
+      .payment({
+        receiver: Txn.sender,
+        amount: preMbr - postMbr,
+      })
+      .submit();
   }
 
   protected addIncentive(payment: gtxn.PaymentTxn, leafHash: Uint256): uint64 {
@@ -253,7 +256,10 @@ export class MimcMerkle extends Contract {
       "unexpected leaf index",
     );
 
-    assert(this.currentRoot() === args.currentRoot, "current root mismatch");
+    assert(
+      this.currentRoot.value === args.currentRoot,
+      "current root mismatch",
+    );
     this.commitLeafRoot(args.newLeaf, args.newRoot);
 
     if (pendingLeaf.value.incentive > 0) {
