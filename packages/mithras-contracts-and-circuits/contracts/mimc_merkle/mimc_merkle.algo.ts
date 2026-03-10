@@ -113,7 +113,7 @@ export class MimcMerkle extends Contract {
     const sentinelLeaf = new Uint256(this.epochId.value);
     this.addPendingLeaf(sentinelLeaf, 0);
 
-    const { root } = calculateRootAndSubtree(sentinelLeaf, 0, ZERO_HASHES);
+    const { root } = calculateRootAndFrontier(sentinelLeaf, 0, ZERO_HASHES);
     assert(this.pendingLeaves(sentinelLeaf).delete(), "sentinel not pending");
     this.lastCommittedLeaf.value = sentinelLeaf;
     this.addRoot(root);
@@ -147,7 +147,7 @@ export class MimcMerkle extends Contract {
 
     ensureBudget(MIMC_OPCODE_COST);
     const sentinelLeaf = new Uint256(this.epochId.value);
-    const { root } = calculateRootAndSubtree(sentinelLeaf, 0, ZERO_HASHES);
+    const { root } = calculateRootAndFrontier(sentinelLeaf, 0, ZERO_HASHES);
 
     assert(this.pendingLeaves(sentinelLeaf).delete(), "sentinel not pending");
     this.lastCommittedLeaf.value = sentinelLeaf;
@@ -280,15 +280,33 @@ export class MimcMerkle extends Contract {
   }
 }
 
-export type Subtree = FixedArray<Uint256, typeof TREE_DEPTH>;
+export type Frontier = FixedArray<Uint256, typeof TREE_DEPTH>;
 
+/**
+ * The arguments needed for the commitment logic signature to commit a leaf to the tree
+ * These are verified by the application
+ *
+ * size breakdown:
+ *  - newLeaf: 32 bytes
+ *  - lastLeaf: 32 + 32 = 64 bytes
+ *  - newLeafIndex: 64 + 8 = 72 bytes
+ *  - currentFrontier: 72 + (32 * TREE_DEPTH) = 72 + (32 * 20) = 712 bytes
+ *  - currentRoot: 712 + 32 = 744 bytes
+ *  - newRoot: 744 + 32 = 776 bytes
+ */
 export type CommitLeafArgs = {
-  newLeaf: Uint256; // 32 bytes
-  lastLeaf: Uint256; // 32 + 32 = 64 bytes
-  newLeafIndex: uint64; // 64 + 8 = 72 bytes
-  currentSubtree: Subtree; // 72 + (32 * TREE_DEPTH) = 72 + (32 * 20) = 712 bytes
-  currentRoot: Uint256; // 712 + 32 = 744 bytes
-  newRoot: Uint256; // 744 + 32 = 776 bytes
+  /** The frontier before adding the new leaf. This is needed to calculate the new root and to ensure the proof is valid for the current tree state */
+  currentFrontier: Frontier;
+  /** The last leaf that was committed to the tree. This is needed to ensure the order of leaf commitments */
+  lastLeaf: Uint256;
+  /** The current root of the tree. This is needed to ensure the proof is valid for the current tree state */
+  currentRoot: Uint256;
+  /** The new leaf we are appending to the tree */
+  newLeaf: Uint256;
+  /** The index of the new leaf being committed. This is needed to ensure the order of leaf commitments and to calculate the new root */
+  newLeafIndex: uint64;
+  /** The new root of the tree after adding the new leaf. This is needed to ensure the proof is valid and to update the tree state in the application */
+  newRoot: Uint256;
 };
 
 export class CommitLeaf extends LogicSig {
@@ -296,18 +314,18 @@ export class CommitLeaf extends LogicSig {
     const appl = gtxn.ApplicationCallTxn(Txn.groupIndex + 1);
     const args = decodeArc4<CommitLeafArgs>(appl.appArgs(1));
 
-    const { root: currentRoot, subtree: currentSubtree } =
-      calculateRootAndSubtree(
+    const { root: currentRoot, frontier: currentFrontier } =
+      calculateRootAndFrontier(
         args.lastLeaf,
         args.newLeafIndex - 1,
-        args.currentSubtree,
+        args.currentFrontier,
       );
     assert(currentRoot === args.currentRoot, "old root mismatch");
 
-    const { root: newRoot } = calculateRootAndSubtree(
+    const { root: newRoot } = calculateRootAndFrontier(
       args.newLeaf,
       args.newLeafIndex,
-      currentSubtree,
+      currentFrontier,
     );
 
     assert(newRoot === args.newRoot, "new root mismatch");
@@ -316,22 +334,22 @@ export class CommitLeaf extends LogicSig {
   }
 }
 
-function calculateRootAndSubtree(
+function calculateRootAndFrontier(
   leaf: Uint256,
   index: uint64,
-  subtree: Subtree,
-): { root: Uint256; subtree: Subtree } {
+  frontier: Frontier,
+): { root: Uint256; frontier: Frontier } {
   let left: Uint256;
   let right: Uint256;
   let currentHash = leaf;
 
   for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     if ((index & 1) === 0) {
-      subtree[i] = currentHash;
+      frontier[i] = currentHash;
       left = currentHash;
       right = ZERO_HASHES[i];
     } else {
-      left = subtree[i];
+      left = frontier[i];
       right = currentHash;
     }
 
@@ -345,5 +363,5 @@ function calculateRootAndSubtree(
     index >>= 1;
   }
 
-  return { root: currentHash, subtree };
+  return { root: currentHash, frontier };
 }
