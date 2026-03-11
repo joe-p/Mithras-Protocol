@@ -1,5 +1,8 @@
-import { bytesToNumberBE } from "@noble/curves/utils.js";
 import { TREE_DEPTH } from "../../mithras-contracts-and-circuits/src/constants";
+
+type Tuple<T, N extends number, R extends T[] = []> = R["length"] extends N
+  ? R
+  : Tuple<T, N, [T, ...R]>;
 
 const MODULUS = BigInt(
   "52435875175126190479447740508185965837690552500527637822603658699938581184513",
@@ -169,12 +172,12 @@ export class MimcMerkleTree {
     if (zeroHashes) {
       this.zeroHashes = [...zeroHashes];
     } else {
-      this.zeroHashes = this.computeZeroHashes();
+      this.zeroHashes = MimcMerkleTree.computeZeroHashes();
     }
     this.initializeTree();
   }
 
-  private computeZeroHashes(): bigint[] {
+  static computeZeroHashes(): bigint[] {
     const zeros: bigint[] = [];
     let currentZero = 0n;
     for (let i = 0; i < TREE_DEPTH; i++) {
@@ -220,6 +223,24 @@ export class MimcMerkleTree {
 
       index >>= 1n;
     }
+  }
+
+  getFrontier(): Tuple<bigint, typeof TREE_DEPTH> {
+    const frontier: bigint[] = [];
+    const nextIndex = this.leaves.length;
+    let index = BigInt(nextIndex);
+
+    for (let level = 0; level < TREE_DEPTH; level++) {
+      const position = Number(index);
+      const isRightChild = (index & 1n) === 1n;
+      const siblingPosition = isRightChild ? position - 1 : position + 1;
+      const node =
+        this.tree[level].get(siblingPosition) ?? this.zeroHashes[level];
+      frontier.push(node);
+      index >>= 1n;
+    }
+
+    return frontier as Tuple<bigint, typeof TREE_DEPTH>;
   }
 
   getRoot(): bigint {

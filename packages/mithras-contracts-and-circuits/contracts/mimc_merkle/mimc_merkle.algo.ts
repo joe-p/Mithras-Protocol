@@ -107,9 +107,12 @@ export class MimcMerkle extends Contract {
 
   protected bootstrap(commitLeafLsig: Account): void {
     this.commitmentLsigAddr.value = commitLeafLsig;
-    ensureBudget(MIMC_OPCODE_COST);
+
+    // TODO: determine budget needed here
+    ensureBudget(MIMC_OPCODE_COST + 7000);
 
     this.epochId.value = 0;
+    this.nextPendingLeafTreeIndex.value = 0;
 
     const sentinelLeaf = new Uint256(this.epochId.value);
     this.addPendingLeaf(sentinelLeaf, 0);
@@ -260,7 +263,6 @@ export class MimcMerkle extends Contract {
       this.currentRoot.value === args.currentRoot,
       "current root mismatch",
     );
-    this.commitLeafRoot(args.newLeaf, args.newRoot);
 
     if (pendingLeaf.value.incentive > 0) {
       itxn
@@ -270,6 +272,8 @@ export class MimcMerkle extends Contract {
         })
         .submit();
     }
+
+    this.commitLeafRoot(args.newLeaf, args.newRoot);
   }
 
   private commitLeafRoot(newLeaf: Uint256, root: Uint256): void {
