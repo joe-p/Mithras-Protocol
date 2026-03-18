@@ -18,7 +18,7 @@ import {
   TransactionType,
   Account,
 } from "@algorandfoundation/algorand-typescript";
-import { MimcMerkle } from "../mimc_merkle/mimc_merkle.algo";
+import { CommitLeafArgs, MimcMerkle } from "../mimc_merkle/mimc_merkle.algo";
 import { Address, Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
 
 const BLS12_381_SCALAR_MODULUS = BigUint(
@@ -90,13 +90,23 @@ export class Mithras extends MimcMerkle {
     this.commitEpochSentinel();
   }
 
-  private addCommitment(commitment: Uint256) {
+  private addCommitment(commitment: Uint256): uint64 {
     // TODO: implement incentives
     const leafIndex = this.addPendingLeaf(commitment, 0);
     emit<NewPendingLeaf>({
       leaf: commitment,
       epochId: this.epochId.value,
       leafIndex,
+    });
+
+    return leafIndex;
+  }
+
+  commitUtxo(commitmentLsig: gtxn.Transaction, args: CommitLeafArgs) {
+    this.commitLeafWithLsig(commitmentLsig, args);
+    emit<NewLeaf>({
+      leaf: args.newLeaf,
+      epochId: this.epochId.value,
     });
   }
 
@@ -112,8 +122,6 @@ export class Mithras extends MimcMerkle {
     const commitment = signals[0];
     const amount = op.extractUint64(signals[1].bytes, 24);
 
-    this.addCommitment(commitment);
-
     assertMatch(
       deposit,
       {
@@ -122,6 +130,7 @@ export class Mithras extends MimcMerkle {
       },
       "invalid deposit txn",
     );
+    return this.addCommitment(commitment);
   }
 
   spend(

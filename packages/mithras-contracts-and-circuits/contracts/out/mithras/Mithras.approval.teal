@@ -3,8 +3,8 @@
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
-    intcblock 0 1 32 8 250 28860 66437776
-    bytecblock "e" "p" "r" TMPL_ZERO_HASHES 0x0000000000000000000000000000000000000000000000000000000000000000 "i" 0x068101 "ll"
+    intcblock 0 1 32 8 250 66437776
+    bytecblock "e" "p" "r" "i" "ll" TMPL_ZERO_HASHES 0x068101
     // contracts/mithras/mithras.algo.ts:67-68
     // @contract({ avmVersion: 11 })
     // export class Mithras extends MimcMerkle {
@@ -12,13 +12,13 @@ main:
     !
     assert
     txn ApplicationID
-    bz main_create_NoOp@10
-    pushbytess 0x2779ad8c 0x8718c41b 0xb790a51d 0xffd40054 0xa8bd08dc 0x232eee10 // method "bootstrapMerkleTree(address)void", method "rotatePendingMerkleEpoch()void", method "commitMerkleEpochSentinel()void", method "deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)void", method "spend(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],byte[250],txn)void", method "ensureBudget(uint64)void"
+    bz main_create_NoOp@11
+    pushbytess 0x2779ad8c 0x8718c41b 0xb790a51d 0x8d79c84c 0xce610e16 0xa8bd08dc 0x232eee10 // method "bootstrapMerkleTree(address)void", method "rotatePendingMerkleEpoch()void", method "commitMerkleEpochSentinel()void", method "commitUtxo(txn,(uint256[26],uint256,uint256,uint256,uint64,uint256))void", method "deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)uint64", method "spend(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],byte[250],txn)void", method "ensureBudget(uint64)void"
     txna ApplicationArgs 0
-    match bootstrapMerkleTree rotatePendingMerkleEpoch commitMerkleEpochSentinel deposit spend ensureBudget
+    match bootstrapMerkleTree rotatePendingMerkleEpoch commitMerkleEpochSentinel commitUtxo deposit spend ensureBudget
     err
 
-main_create_NoOp@10:
+main_create_NoOp@11:
     // contracts/mithras/mithras.algo.ts:67-68
     // @contract({ avmVersion: 11 })
     // export class Mithras extends MimcMerkle {
@@ -72,7 +72,7 @@ ensure_budget_after_while@6:
 
 // contracts/mimc_merkle/mimc_merkle.algo.ts::calculateRootAndFrontier(leaf: bytes, index: uint64, frontier: bytes) -> bytes, bytes:
 calculateRootAndFrontier:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:343-347
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:347-351
     // function calculateRootAndFrontier(
     //   leaf: Uint256,
     //   index: uint64,
@@ -80,25 +80,25 @@ calculateRootAndFrontier:
     // ): { root: Uint256; frontier: Frontier } {
     proto 3 2
     intc_0 // 0
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:352
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:356
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     dup
     frame_dig -3
 
 calculateRootAndFrontier_while_top@1:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:352
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:356
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     frame_dig 1
     pushint 26
     <
     bz calculateRootAndFrontier_after_while@8
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:353
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:357
     // if ((index & 1) === 0) {
     frame_dig -2
     intc_1 // 1
     &
     bnz calculateRootAndFrontier_else_body@6
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:354
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:358
     // frontier[i] = currentHash;
     frame_dig 1
     intc_2 // 32
@@ -110,9 +110,9 @@ calculateRootAndFrontier_while_top@1:
     cover 4
     replace3 // on error: index access is out of bounds
     frame_bury -1
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:356
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:360
     // right = ZERO_HASHES[i];
-    bytec_3 // TMPL_ZERO_HASHES
+    bytec 5 // TMPL_ZERO_HASHES
     swap
     intc_2 // 32
     extract3 // on error: index access is out of bounds
@@ -120,18 +120,18 @@ calculateRootAndFrontier_while_top@1:
     frame_bury 0
 
 calculateRootAndFrontier_after_if_else@7:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:365
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:369
     // left.bytes.concat(right.bytes),
     frame_dig 0
     swap
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:363-366
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:367-370
     // op.mimc(
     //   op.MimcConfigurations.BLS12_381Mp111,
     //   left.bytes.concat(right.bytes),
     // ),
     mimc BLS12_381Mp111
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:362-367
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:366-371
     // currentHash = new Uint256(
     //   op.mimc(
     //     op.MimcConfigurations.BLS12_381Mp111,
@@ -139,13 +139,13 @@ calculateRootAndFrontier_after_if_else@7:
     //   ),
     // );
     frame_bury 2
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:369
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:373
     // index >>= 1;
     frame_dig -2
     intc_1 // 1
     shr
     frame_bury -2
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:352
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:356
     // for (let i: uint64 = 0; i < TREE_DEPTH; i++) {
     frame_dig 1
     intc_1 // 1
@@ -154,7 +154,7 @@ calculateRootAndFrontier_after_if_else@7:
     b calculateRootAndFrontier_while_top@1
 
 calculateRootAndFrontier_else_body@6:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:358
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:362
     // left = frontier[i];
     frame_dig 1
     intc_2 // 32
@@ -168,7 +168,7 @@ calculateRootAndFrontier_else_body@6:
     b calculateRootAndFrontier_after_if_else@7
 
 calculateRootAndFrontier_after_while@8:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:372
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:376
     // return { root: currentHash, frontier };
     frame_dig 2
     frame_dig -1
@@ -239,33 +239,50 @@ bootstrapMerkleTree:
     // this.commitmentLsigAddr.value = commitLeafLsig;
     swap
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:110
-    // ensureBudget(MIMC_OPCODE_COST);
-    intc 5 // 28860
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:112
+    // ensureBudget(MIMC_OPCODE_COST + 7000);
+    pushint 35860
     intc_0 // 0
     callsub ensure_budget
     // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:112
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:114
     // this.epochId.value = 0;
     intc_0 // 0
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:114
-    // const sentinelLeaf = new Uint256(this.epochId.value);
-    bytec 4 // 0x0000000000000000000000000000000000000000000000000000000000000000
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:49
+    // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
+    bytec_1 // "p"
     // contracts/mimc_merkle/mimc_merkle.algo.ts:115
+    // this.nextPendingLeafTreeIndex.value = 0;
+    intc_0 // 0
+    app_global_put
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:117
+    // const sentinelLeaf = new Uint256(this.epochId.value);
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
+    // epochId = GlobalState<uint64>({ key: "e" });
+    bytec_0 // "e"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:117
+    // const sentinelLeaf = new Uint256(this.epochId.value);
+    app_global_get_ex
+    assert // check GlobalState exists
+    itob
+    intc_2 // 32
+    bzero
+    b|
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:118
     // this.addPendingLeaf(sentinelLeaf, 0);
+    dup
     intc_0 // 0
     callsub addPendingLeaf
     pop
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:114
-    // const sentinelLeaf = new Uint256(this.epochId.value);
-    bytec 4 // 0x0000000000000000000000000000000000000000000000000000000000000000
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:117
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:120
     // const { root } = calculateRootAndFrontier(sentinelLeaf, 0, ZERO_HASHES);
+    dup
     intc_0 // 0
-    bytec_3 // TMPL_ZERO_HASHES
+    bytec 5 // TMPL_ZERO_HASHES
     callsub calculateRootAndFrontier
     pop
     extract 0 32
@@ -273,26 +290,26 @@ bootstrapMerkleTree:
     // pendingLeaves = BoxMap<Uint256, { index: uint64; incentive: uint64 }>({
     //   keyPrefix: "p",
     // });
-    pushbytes 0x700000000000000000000000000000000000000000000000000000000000000000
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:118
+    bytec_1 // "p"
+    dig 2
+    concat
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:121
     // assert(this.pendingLeaves(sentinelLeaf).delete(), "sentinel not pending");
     box_del
     assert // sentinel not pending
     // contracts/mimc_merkle/mimc_merkle.algo.ts:61
     // lastCommittedLeaf = GlobalState<Uint256>({ key: "ll" });
-    bytec 7 // "ll"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:114
-    // const sentinelLeaf = new Uint256(this.epochId.value);
-    bytec 4 // 0x0000000000000000000000000000000000000000000000000000000000000000
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:119
+    bytec 4 // "ll"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:122
     // this.lastCommittedLeaf.value = sentinelLeaf;
+    uncover 2
     app_global_put
     // contracts/mimc_merkle/mimc_merkle.algo.ts:90
     // rootCache = BoxMap<Uint256, uint64>({ keyPrefix: "r" });
     bytec_2 // "r"
     dig 1
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:190
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:193
     // this.rootCache(rootHash).create();
     intc_3 // 8
     box_create
@@ -300,14 +317,14 @@ bootstrapMerkleTree:
     // contracts/mimc_merkle/mimc_merkle.algo.ts:78
     // currentRoot = GlobalState<Uint256>({ key: "r" });
     bytec_2 // "r"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:191
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:194
     // this.currentRoot.value = rootHash;
     swap
     app_global_put
     // contracts/mimc_merkle/mimc_merkle.algo.ts:44
     // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
-    bytec 5 // "i"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:121
+    bytec_3 // "i"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:124
     // this.nextCommittedLeafTreeIndex.value = 1;
     intc_1 // 1
     app_global_put
@@ -319,33 +336,33 @@ bootstrapMerkleTree:
 
 // contracts/mithras/mithras.algo.ts::Mithras.rotatePendingMerkleEpoch[routing]() -> void:
 rotatePendingMerkleEpoch:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:159
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:162
     // this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     intc_0 // 0
     // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:159
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:162
     // this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:126
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:129
     // return index > maxLeafs - maxLeafs / 100;
-    intc 6 // 66437776
+    intc 5 // 66437776
     >
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:158-161
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:161-164
     // assert(
     //   this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     //   "tree not near max",
     // );
     assert // tree not near max
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:162
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:165
     // this.epochId.value += 1;
     intc_0 // 0
     // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:162
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:165
     // this.epochId.value += 1;
     app_global_get_ex
     assert // check GlobalState exists
@@ -354,41 +371,41 @@ rotatePendingMerkleEpoch:
     // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:162
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:165
     // this.epochId.value += 1;
     swap
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:163
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:166
     // this.epochEndedOnIndex.value = this.nextPendingLeafTreeIndex.value;
     intc_0 // 0
     // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:163
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:166
     // this.epochEndedOnIndex.value = this.nextPendingLeafTreeIndex.value;
     app_global_get_ex
     assert // check GlobalState exists
     // contracts/mimc_merkle/mimc_merkle.algo.ts:72
     // epochEndedOnIndex = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:163
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:166
     // this.epochEndedOnIndex.value = this.nextPendingLeafTreeIndex.value;
     swap
     app_global_put
     // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:164
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:167
     // this.nextPendingLeafTreeIndex.value = 0;
     intc_0 // 0
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:165
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:168
     // const sentinelLeaf = new Uint256(this.epochId.value);
     intc_0 // 0
     // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:165
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:168
     // const sentinelLeaf = new Uint256(this.epochId.value);
     app_global_get_ex
     assert // check GlobalState exists
@@ -396,7 +413,7 @@ rotatePendingMerkleEpoch:
     intc_2 // 32
     bzero
     b|
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:166
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:169
     // this.addPendingLeaf(sentinelLeaf, 0);
     intc_0 // 0
     callsub addPendingLeaf
@@ -409,35 +426,35 @@ rotatePendingMerkleEpoch:
 
 // contracts/mithras/mithras.algo.ts::Mithras.commitMerkleEpochSentinel[routing]() -> void:
 commitMerkleEpochSentinel:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:143
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:146
     // this.nextCommittedLeafTreeIndex.value === 0,
     intc_0 // 0
     // contracts/mimc_merkle/mimc_merkle.algo.ts:44
     // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
-    bytec 5 // "i"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:143
+    bytec_3 // "i"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:146
     // this.nextCommittedLeafTreeIndex.value === 0,
     app_global_get_ex
     assert // check GlobalState exists
     !
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:142-145
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:145-148
     // assert(
     //   this.nextCommittedLeafTreeIndex.value === 0,
     //   "sentinel already committed",
     // );
     assert // sentinel already committed
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:147
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:150
     // ensureBudget(MIMC_OPCODE_COST);
-    intc 5 // 28860
+    pushint 28860
     intc_0 // 0
     callsub ensure_budget
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:148
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:151
     // const sentinelLeaf = new Uint256(this.epochId.value);
     intc_0 // 0
     // contracts/mimc_merkle/mimc_merkle.algo.ts:55
     // epochId = GlobalState<uint64>({ key: "e" });
     bytec_0 // "e"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:148
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:151
     // const sentinelLeaf = new Uint256(this.epochId.value);
     app_global_get_ex
     assert // check GlobalState exists
@@ -445,11 +462,11 @@ commitMerkleEpochSentinel:
     intc_2 // 32
     bzero
     b|
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:149
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:152
     // const { root } = calculateRootAndFrontier(sentinelLeaf, 0, ZERO_HASHES);
     dup
     intc_0 // 0
-    bytec_3 // TMPL_ZERO_HASHES
+    bytec 5 // TMPL_ZERO_HASHES
     callsub calculateRootAndFrontier
     pop
     extract 0 32
@@ -460,14 +477,14 @@ commitMerkleEpochSentinel:
     bytec_1 // "p"
     dig 2
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:151
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:154
     // assert(this.pendingLeaves(sentinelLeaf).delete(), "sentinel not pending");
     box_del
     assert // sentinel not pending
     // contracts/mimc_merkle/mimc_merkle.algo.ts:61
     // lastCommittedLeaf = GlobalState<Uint256>({ key: "ll" });
-    bytec 7 // "ll"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:152
+    bytec 4 // "ll"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:155
     // this.lastCommittedLeaf.value = sentinelLeaf;
     uncover 2
     app_global_put
@@ -476,7 +493,7 @@ commitMerkleEpochSentinel:
     bytec_2 // "r"
     dig 1
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:190
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:193
     // this.rootCache(rootHash).create();
     intc_3 // 8
     box_create
@@ -484,14 +501,14 @@ commitMerkleEpochSentinel:
     // contracts/mimc_merkle/mimc_merkle.algo.ts:78
     // currentRoot = GlobalState<Uint256>({ key: "r" });
     bytec_2 // "r"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:191
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:194
     // this.currentRoot.value = rootHash;
     swap
     app_global_put
     // contracts/mimc_merkle/mimc_merkle.algo.ts:44
     // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
-    bytec 5 // "i"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:154
+    bytec_3 // "i"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:157
     // this.nextCommittedLeafTreeIndex.value = 1;
     intc_1 // 1
     app_global_put
@@ -501,9 +518,351 @@ commitMerkleEpochSentinel:
     return
 
 
+// contracts/mithras/mithras.algo.ts::Mithras.commitUtxo[routing]() -> void:
+commitUtxo:
+    // contracts/mithras/mithras.algo.ts:105
+    // commitUtxo(commitmentLsig: gtxn.Transaction, args: CommitLeafArgs) {
+    txn GroupIndex
+    intc_1 // 1
+    -
+    txna ApplicationArgs 1
+    dup
+    cover 2
+    dup
+    len
+    pushint 968
+    ==
+    assert // invalid number of bytes for contracts/mimc_merkle/mimc_merkle.algo.ts::CommitLeafArgs
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:238
+    // const pendingLeaf = this.pendingLeaves(args.newLeaf);
+    dup
+    pushint 896
+    intc_2 // 32
+    extract3
+    dup
+    cover 3
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:104-106
+    // pendingLeaves = BoxMap<Uint256, { index: uint64; incentive: uint64 }>({
+    //   keyPrefix: "p",
+    // });
+    bytec_1 // "p"
+    swap
+    concat
+    dup
+    cover 3
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:239
+    // assert(pendingLeaf.exists, "leaf not pending");
+    dup
+    box_len
+    bury 1
+    assert // leaf not pending
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:240
+    // const pendingLeafIndex = pendingLeaf.value.index;
+    box_get
+    pop
+    dup
+    intc_0 // 0
+    extract_uint64
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:241
+    // assert(pendingLeafIndex === args.newLeafIndex, "invalid newLeafIndex");
+    dig 2
+    pushint 928
+    extract_uint64
+    dup2
+    ==
+    assert // invalid newLeafIndex
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:243
+    // pendingLeafIndex === this.nextCommittedLeafTreeIndex.value,
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:44
+    // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
+    bytec_3 // "i"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:243
+    // pendingLeafIndex === this.nextCommittedLeafTreeIndex.value,
+    app_global_get_ex
+    assert // check GlobalState exists
+    uncover 2
+    dig 1
+    ==
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:242-245
+    // assert(
+    //   pendingLeafIndex === this.nextCommittedLeafTreeIndex.value,
+    //   "leaf commitment out of order",
+    // );
+    assert // leaf commitment out of order
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:248
+    // commitmentLsig.sender === this.commitmentLsigAddr.value,
+    uncover 4
+    gtxns Sender
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:66
+    // commitmentLsigAddr = GlobalState<Account>({ key: "a" });
+    pushbytes "a"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:248
+    // commitmentLsig.sender === this.commitmentLsigAddr.value,
+    app_global_get_ex
+    assert // check GlobalState exists
+    ==
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:247-250
+    // assert(
+    //   commitmentLsig.sender === this.commitmentLsigAddr.value,
+    //   "invalid commitment Lsig",
+    // );
+    assert // invalid commitment Lsig
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:253
+    // args.lastLeaf === this.lastCommittedLeaf.value,
+    dig 3
+    pushint 832
+    intc_2 // 32
+    extract3
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
+    // lastCommittedLeaf = GlobalState<Uint256>({ key: "ll" });
+    bytec 4 // "ll"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:253
+    // args.lastLeaf === this.lastCommittedLeaf.value,
+    app_global_get_ex
+    assert // check GlobalState exists
+    ==
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:252-255
+    // assert(
+    //   args.lastLeaf === this.lastCommittedLeaf.value,
+    //   "previous leaf mismatch",
+    // );
+    assert // previous leaf mismatch
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:258
+    // args.newLeafIndex === this.nextCommittedLeafTreeIndex.value,
+    ==
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:257-260
+    // assert(
+    //   args.newLeafIndex === this.nextCommittedLeafTreeIndex.value,
+    //   "unexpected leaf index",
+    // );
+    assert // unexpected leaf index
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:263
+    // this.currentRoot.value === args.currentRoot,
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:78
+    // currentRoot = GlobalState<Uint256>({ key: "r" });
+    bytec_2 // "r"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:263
+    // this.currentRoot.value === args.currentRoot,
+    app_global_get_ex
+    assert // check GlobalState exists
+    uncover 2
+    pushint 864
+    intc_2 // 32
+    extract3
+    ==
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:262-265
+    // assert(
+    //   this.currentRoot.value === args.currentRoot,
+    //   "current root mismatch",
+    // );
+    assert // current root mismatch
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:267
+    // if (pendingLeaf.value.incentive > 0) {
+    intc_3 // 8
+    extract_uint64
+    bz commitUtxo_after_if_else@3
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:268-273
+    // itxn
+    //   .payment({
+    //     receiver: Txn.sender,
+    //     amount: pendingLeaf.value.incentive,
+    //   })
+    //   .submit();
+    itxn_begin
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:270
+    // receiver: Txn.sender,
+    txn Sender
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:271
+    // amount: pendingLeaf.value.incentive,
+    dig 1
+    box_get
+    assert // Box must have value
+    intc_3 // 8
+    extract_uint64
+    itxn_field Amount
+    itxn_field Receiver
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:268-272
+    // itxn
+    //   .payment({
+    //     receiver: Txn.sender,
+    //     amount: pendingLeaf.value.incentive,
+    //   })
+    intc_1 // 1
+    itxn_field TypeEnum
+    intc_0 // 0
+    itxn_field Fee
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:268-273
+    // itxn
+    //   .payment({
+    //     receiver: Txn.sender,
+    //     amount: pendingLeaf.value.incentive,
+    //   })
+    //   .submit();
+    itxn_submit
+
+commitUtxo_after_if_else@3:
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:276
+    // this.commitLeafRoot(args.newLeaf, args.newRoot);
+    dig 2
+    pushint 936
+    intc_2 // 32
+    extract3
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:280
+    // assert(this.pendingLeaves(newLeaf).delete(), "leaf not pending");
+    dig 1
+    box_del
+    assert // leaf not pending
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:61
+    // lastCommittedLeaf = GlobalState<Uint256>({ key: "ll" });
+    bytec 4 // "ll"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:281
+    // this.lastCommittedLeaf.value = newLeaf;
+    dig 3
+    app_global_put
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:90
+    // rootCache = BoxMap<Uint256, uint64>({ keyPrefix: "r" });
+    bytec_2 // "r"
+    dig 1
+    concat
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:193
+    // this.rootCache(rootHash).create();
+    intc_3 // 8
+    box_create
+    pop
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:78
+    // currentRoot = GlobalState<Uint256>({ key: "r" });
+    bytec_2 // "r"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:194
+    // this.currentRoot.value = rootHash;
+    swap
+    app_global_put
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:283
+    // this.nextCommittedLeafTreeIndex.value += 1;
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:44
+    // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
+    bytec_3 // "i"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:283
+    // this.nextCommittedLeafTreeIndex.value += 1;
+    app_global_get_ex
+    assert // check GlobalState exists
+    intc_1 // 1
+    +
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:44
+    // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
+    bytec_3 // "i"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:283
+    // this.nextCommittedLeafTreeIndex.value += 1;
+    dig 1
+    app_global_put
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:286
+    // this.nextCommittedLeafTreeIndex.value === this.epochEndedOnIndex.value
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:72
+    // epochEndedOnIndex = GlobalState<uint64>({ key: "e" });
+    bytec_0 // "e"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:286
+    // this.nextCommittedLeafTreeIndex.value === this.epochEndedOnIndex.value
+    app_global_get_ex
+    assert // check GlobalState exists
+    ==
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:285-287
+    // if (
+    //   this.nextCommittedLeafTreeIndex.value === this.epochEndedOnIndex.value
+    // ) {
+    bz commitUtxo_after_if_else@5
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:134
+    // this.nextCommittedLeafTreeIndex.value === this.epochEndedOnIndex.value,
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:44
+    // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
+    bytec_3 // "i"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:134
+    // this.nextCommittedLeafTreeIndex.value === this.epochEndedOnIndex.value,
+    app_global_get_ex
+    assert // check GlobalState exists
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:72
+    // epochEndedOnIndex = GlobalState<uint64>({ key: "e" });
+    bytec_0 // "e"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:134
+    // this.nextCommittedLeafTreeIndex.value === this.epochEndedOnIndex.value,
+    app_global_get_ex
+    assert // check GlobalState exists
+    ==
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:133-136
+    // assert(
+    //   this.nextCommittedLeafTreeIndex.value === this.epochEndedOnIndex.value,
+    //   "epoch not ready to seal, not all pending leaves committed",
+    // );
+    assert // epoch not ready to seal, not all pending leaves committed
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:138
+    // this.epochRoots(this.currentRoot.value).create();
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:78
+    // currentRoot = GlobalState<Uint256>({ key: "r" });
+    bytec_2 // "r"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:138
+    // this.epochRoots(this.currentRoot.value).create();
+    app_global_get_ex
+    assert // check GlobalState exists
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:95-97
+    // epochRoots = BoxMap<Uint256, bytes<0>>({
+    //   keyPrefix: "e",
+    // });
+    bytec_0 // "e"
+    swap
+    concat
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:138
+    // this.epochRoots(this.currentRoot.value).create();
+    intc_0 // 0
+    box_create
+    pop
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:44
+    // nextCommittedLeafTreeIndex = GlobalState<uint64>({ key: "i" });
+    bytec_3 // "i"
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:141
+    // this.nextCommittedLeafTreeIndex.value = 0;
+    intc_0 // 0
+    app_global_put
+
+commitUtxo_after_if_else@5:
+    // contracts/mithras/mithras.algo.ts:109
+    // epochId: this.epochId.value,
+    intc_0 // 0
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:55
+    // epochId = GlobalState<uint64>({ key: "e" });
+    bytec_0 // "e"
+    // contracts/mithras/mithras.algo.ts:109
+    // epochId: this.epochId.value,
+    app_global_get_ex
+    assert // check GlobalState exists
+    // contracts/mithras/mithras.algo.ts:107-110
+    // emit<NewLeaf>({
+    //   leaf: args.newLeaf,
+    //   epochId: this.epochId.value,
+    // });
+    itob
+    dig 2
+    swap
+    concat
+    pushbytes 0x44f98fd8 // method "NewLeaf(uint256,uint64)"
+    swap
+    concat
+    log
+    // contracts/mithras/mithras.algo.ts:105
+    // commitUtxo(commitmentLsig: gtxn.Transaction, args: CommitLeafArgs) {
+    intc_1 // 1
+    return
+
+
 // contracts/mithras/mithras.algo.ts::Mithras.deposit[routing]() -> void:
 deposit:
-    // contracts/mithras/mithras.algo.ts:103-109
+    // contracts/mithras/mithras.algo.ts:113-119
     // deposit(
     //   signals: Uint256[],
     //   _proof: PlonkProof,
@@ -544,34 +903,30 @@ deposit:
     txn GroupIndex
     intc_1 // 1
     -
-    // contracts/mithras/mithras.algo.ts:110
+    // contracts/mithras/mithras.algo.ts:120
     // assert(verifierTxn.sender === this.depositVerifier.value.native);
     gtxns Sender
     intc_0 // 0
     // contracts/mithras/mithras.algo.ts:69
     // depositVerifier = GlobalState<Address>({ key: "d" });
     pushbytes "d"
-    // contracts/mithras/mithras.algo.ts:110
+    // contracts/mithras/mithras.algo.ts:120
     // assert(verifierTxn.sender === this.depositVerifier.value.native);
     app_global_get_ex
     assert // check GlobalState exists
     ==
     assert
-    // contracts/mithras/mithras.algo.ts:112
+    // contracts/mithras/mithras.algo.ts:122
     // const commitment = signals[0];
     dig 1
     extract 2 32
-    // contracts/mithras/mithras.algo.ts:113
+    // contracts/mithras/mithras.algo.ts:123
     // const amount = op.extractUint64(signals[1].bytes, 24);
     uncover 2
     extract 34 32
     pushint 24
     extract_uint64
-    // contracts/mithras/mithras.algo.ts:115
-    // this.addCommitment(commitment);
-    swap
-    callsub addCommitment
-    // contracts/mithras/mithras.algo.ts:117-124
+    // contracts/mithras/mithras.algo.ts:125-132
     // assertMatch(
     //   deposit,
     //   {
@@ -580,15 +935,15 @@ deposit:
     //   },
     //   "invalid deposit txn",
     // );
-    dig 1
+    dig 2
     gtxns Amount
     ==
-    swap
+    uncover 2
     gtxns Receiver
-    // contracts/mithras/mithras.algo.ts:121
+    // contracts/mithras/mithras.algo.ts:129
     // receiver: Global.currentApplicationAddress,
     global CurrentApplicationAddress
-    // contracts/mithras/mithras.algo.ts:117-124
+    // contracts/mithras/mithras.algo.ts:125-132
     // assertMatch(
     //   deposit,
     //   {
@@ -600,7 +955,10 @@ deposit:
     ==
     &&
     assert // invalid deposit txn
-    // contracts/mithras/mithras.algo.ts:103-109
+    // contracts/mithras/mithras.algo.ts:133
+    // return this.addCommitment(commitment);
+    callsub addCommitment
+    // contracts/mithras/mithras.algo.ts:113-119
     // deposit(
     //   signals: Uint256[],
     //   _proof: PlonkProof,
@@ -608,6 +966,11 @@ deposit:
     //   deposit: gtxn.PaymentTxn,
     //   verifierTxn: gtxn.Transaction,
     // ) {
+    itob
+    pushbytes 0x151f7c75
+    swap
+    concat
+    log
     intc_1 // 1
     return
 
@@ -616,7 +979,7 @@ deposit:
 spend:
     pushbytes ""
     dup
-    // contracts/mithras/mithras.algo.ts:127-133
+    // contracts/mithras/mithras.algo.ts:136-142
     // spend(
     //   signals: Uint256[],
     //   _proof: PlonkProof,
@@ -654,45 +1017,45 @@ spend:
     txn GroupIndex
     intc_1 // 1
     -
-    // contracts/mithras/mithras.algo.ts:135
+    // contracts/mithras/mithras.algo.ts:144
     // verifierTxn.sender === this.spendVerifier.value.native,
     gtxns Sender
     intc_0 // 0
     // contracts/mithras/mithras.algo.ts:70
     // spendVerifier = GlobalState<Address>({ key: "s" });
     pushbytes "s"
-    // contracts/mithras/mithras.algo.ts:135
+    // contracts/mithras/mithras.algo.ts:144
     // verifierTxn.sender === this.spendVerifier.value.native,
     app_global_get_ex
     assert // check GlobalState exists
     ==
-    // contracts/mithras/mithras.algo.ts:134-137
+    // contracts/mithras/mithras.algo.ts:143-146
     // assert(
     //   verifierTxn.sender === this.spendVerifier.value.native,
     //   "sender of verifier call must be the spend verifier lsig",
     // );
     assert // sender of verifier call must be the spend verifier lsig
-    // contracts/mithras/mithras.algo.ts:139
+    // contracts/mithras/mithras.algo.ts:148
     // const out0Commitment = signals[0];
     dup
     extract 2 32
     swap
-    // contracts/mithras/mithras.algo.ts:140
+    // contracts/mithras/mithras.algo.ts:149
     // const out1Commitment = signals[1];
     dup
     extract 34 32
     swap
-    // contracts/mithras/mithras.algo.ts:141
+    // contracts/mithras/mithras.algo.ts:150
     // const utxoRoot = signals[2];
     dup
     extract 66 32
     dup
     uncover 2
-    // contracts/mithras/mithras.algo.ts:142
+    // contracts/mithras/mithras.algo.ts:151
     // const nullifier = signals[3];
     dup
     extract 98 32
-    // contracts/mithras/mithras.algo.ts:143
+    // contracts/mithras/mithras.algo.ts:152
     // const utxoFee = op.extractUint64(signals[4].bytes, 24);
     dig 1
     extract 130 32
@@ -701,7 +1064,7 @@ spend:
     dup
     cover 3
     cover 4
-    // contracts/mithras/mithras.algo.ts:144
+    // contracts/mithras/mithras.algo.ts:153
     // const spender = signals[5];
     swap
     extract 162 32
@@ -710,66 +1073,66 @@ spend:
     pushbytes "n"
     uncover 2
     concat
-    // contracts/mithras/mithras.algo.ts:146
+    // contracts/mithras/mithras.algo.ts:155
     // assert(!this.nullifiers(nullifier).exists, "Nullifier already exists");
     dup
     box_len
     bury 1
     !
     assert // Nullifier already exists
-    // contracts/mithras/mithras.algo.ts:148
+    // contracts/mithras/mithras.algo.ts:157
     // const preMBR = Global.currentApplicationAddress.minBalance;
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
     assert // account funded
-    // contracts/mithras/mithras.algo.ts:149
+    // contracts/mithras/mithras.algo.ts:158
     // this.nullifiers(nullifier).create();
     swap
     intc_0 // 0
     box_create
     pop
-    // contracts/mithras/mithras.algo.ts:150
+    // contracts/mithras/mithras.algo.ts:159
     // const postMBR = Global.currentApplicationAddress.minBalance;
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
     assert // account funded
-    // contracts/mithras/mithras.algo.ts:152
+    // contracts/mithras/mithras.algo.ts:161
     // const nullifierMbr: uint64 = postMBR - preMBR;
     swap
     -
     dup
     cover 4
-    // contracts/mithras/mithras.algo.ts:155
+    // contracts/mithras/mithras.algo.ts:164
     // utxoFee >= nullifierMbr,
     uncover 2
     <=
-    // contracts/mithras/mithras.algo.ts:154-157
+    // contracts/mithras/mithras.algo.ts:163-166
     // assert(
     //   utxoFee >= nullifierMbr,
     //   "Fee does not cover nullifier storage cost",
     // );
     assert // Fee does not cover nullifier storage cost
-    // contracts/mithras/mithras.algo.ts:160
+    // contracts/mithras/mithras.algo.ts:169
     // BigUint(Txn.sender.bytes) % BLS12_381_SCALAR_MODULUS;
     txn Sender
     pushbytes 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
     b%
-    // contracts/mithras/mithras.algo.ts:162
+    // contracts/mithras/mithras.algo.ts:171
     // assert(BigUint(spender.bytes) === senderInScalarField, "Invalid spender");
     b==
     assert // Invalid spender
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:183
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:186
     // root === this.currentRoot.value ||
     intc_0 // 0
     // contracts/mimc_merkle/mimc_merkle.algo.ts:78
     // currentRoot = GlobalState<Uint256>({ key: "r" });
     bytec_2 // "r"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:183
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:186
     // root === this.currentRoot.value ||
     app_global_get_ex
     assert // check GlobalState exists
     ==
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:183-184
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:186-187
     // root === this.currentRoot.value ||
     // this.rootCache(root).exists ||
     bnz spend_bool_true@4
@@ -778,11 +1141,11 @@ spend:
     bytec_2 // "r"
     dig 3
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:184
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:187
     // this.rootCache(root).exists ||
     box_len
     bury 1
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:183-184
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:186-187
     // root === this.currentRoot.value ||
     // this.rootCache(root).exists ||
     bnz spend_bool_true@4
@@ -793,11 +1156,11 @@ spend:
     bytec_0 // "e"
     dig 3
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:185
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:188
     // this.epochRoots(root).exists
     box_len
     bury 1
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:183-185
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:186-188
     // root === this.currentRoot.value ||
     // this.rootCache(root).exists ||
     // this.epochRoots(root).exists
@@ -807,41 +1170,43 @@ spend_bool_true@4:
     intc_1 // 1
 
 spend_bool_merge@6:
-    // contracts/mithras/mithras.algo.ts:164
+    // contracts/mithras/mithras.algo.ts:173
     // assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
     assert // Invalid UTXO root
-    // contracts/mithras/mithras.algo.ts:166
+    // contracts/mithras/mithras.algo.ts:175
     // this.addCommitment(out0Commitment);
     dig 4
     callsub addCommitment
-    // contracts/mithras/mithras.algo.ts:167
+    pop
+    // contracts/mithras/mithras.algo.ts:176
     // this.addCommitment(out1Commitment);
     dig 3
     callsub addCommitment
-    // contracts/mithras/mithras.algo.ts:169
+    pop
+    // contracts/mithras/mithras.algo.ts:178
     // this.maybeCoverFee(utxoFee - nullifierMbr);
     dup2
     -
     dup
     bury 8
-    // contracts/mithras/mithras.algo.ts:175-177
+    // contracts/mithras/mithras.algo.ts:184-186
     // coverageAmount === 0 ||
     // // There are no more txns in the group
     // Global.groupSize <= Txn.groupIndex + 1 ||
     bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:177
+    // contracts/mithras/mithras.algo.ts:186
     // Global.groupSize <= Txn.groupIndex + 1 ||
     global GroupSize
     txn GroupIndex
     intc_1 // 1
     +
     <=
-    // contracts/mithras/mithras.algo.ts:175-177
+    // contracts/mithras/mithras.algo.ts:184-186
     // coverageAmount === 0 ||
     // // There are no more txns in the group
     // Global.groupSize <= Txn.groupIndex + 1 ||
     bnz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:179
+    // contracts/mithras/mithras.algo.ts:188
     // gtxn.Transaction(Txn.groupIndex + 1).type !== TransactionType.Payment
     txn GroupIndex
     intc_1 // 1
@@ -849,14 +1214,14 @@ spend_bool_merge@6:
     gtxns TypeEnum
     intc_1 // 1
     !=
-    // contracts/mithras/mithras.algo.ts:175-179
+    // contracts/mithras/mithras.algo.ts:184-188
     // coverageAmount === 0 ||
     // // There are no more txns in the group
     // Global.groupSize <= Txn.groupIndex + 1 ||
     // // The next txn isn't a payment
     // gtxn.Transaction(Txn.groupIndex + 1).type !== TransactionType.Payment
     bnz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:184
+    // contracts/mithras/mithras.algo.ts:193
     // const feePayment = gtxn.PaymentTxn(Txn.groupIndex + 1);
     txn GroupIndex
     intc_1 // 1
@@ -868,45 +1233,45 @@ spend_bool_merge@6:
     intc_1 // pay
     ==
     assert // transaction type is pay
-    // contracts/mithras/mithras.algo.ts:189
+    // contracts/mithras/mithras.algo.ts:198
     // feePayment.sender === Txn.sender &&
     gtxns Sender
     txn Sender
     ==
-    // contracts/mithras/mithras.algo.ts:189-191
+    // contracts/mithras/mithras.algo.ts:198-200
     // feePayment.sender === Txn.sender &&
     // // Checking the receiver is probably superfluous since we later check close, but might as well be safe
     // feePayment.receiver === Global.currentApplicationAddress &&
     bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:191
+    // contracts/mithras/mithras.algo.ts:200
     // feePayment.receiver === Global.currentApplicationAddress &&
     dig 5
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // contracts/mithras/mithras.algo.ts:189-191
+    // contracts/mithras/mithras.algo.ts:198-200
     // feePayment.sender === Txn.sender &&
     // // Checking the receiver is probably superfluous since we later check close, but might as well be safe
     // feePayment.receiver === Global.currentApplicationAddress &&
     bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:193
+    // contracts/mithras/mithras.algo.ts:202
     // feePayment.amount === 0 &&
     dig 5
     gtxns Amount
-    // contracts/mithras/mithras.algo.ts:189-193
+    // contracts/mithras/mithras.algo.ts:198-202
     // feePayment.sender === Txn.sender &&
     // // Checking the receiver is probably superfluous since we later check close, but might as well be safe
     // feePayment.receiver === Global.currentApplicationAddress &&
     // // Ensure the amount is zero so we can be sure the account is spending Mithras ALGO on anything else
     // feePayment.amount === 0 &&
     bnz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:197
+    // contracts/mithras/mithras.algo.ts:206
     // feePayment.closeRemainderTo === Global.currentApplicationAddress
     dig 5
     gtxns CloseRemainderTo
     global CurrentApplicationAddress
     ==
-    // contracts/mithras/mithras.algo.ts:189-197
+    // contracts/mithras/mithras.algo.ts:198-206
     // feePayment.sender === Txn.sender &&
     // // Checking the receiver is probably superfluous since we later check close, but might as well be safe
     // feePayment.receiver === Global.currentApplicationAddress &&
@@ -917,7 +1282,7 @@ spend_bool_merge@6:
     // // This is also important for the future when fees may be refundable
     // feePayment.closeRemainderTo === Global.currentApplicationAddress
     bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:201-207
+    // contracts/mithras/mithras.algo.ts:210-216
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -926,17 +1291,17 @@ spend_bool_merge@6:
     //   })
     //   .submit();
     itxn_begin
-    // contracts/mithras/mithras.algo.ts:203
+    // contracts/mithras/mithras.algo.ts:212
     // receiver: Txn.sender,
     txn Sender
-    // contracts/mithras/mithras.algo.ts:205
+    // contracts/mithras/mithras.algo.ts:214
     // amount: Global.minBalance + coverageAmount,
     global MinBalance
     dig 8
     +
     itxn_field Amount
     itxn_field Receiver
-    // contracts/mithras/mithras.algo.ts:201-206
+    // contracts/mithras/mithras.algo.ts:210-215
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -947,7 +1312,7 @@ spend_bool_merge@6:
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // contracts/mithras/mithras.algo.ts:201-207
+    // contracts/mithras/mithras.algo.ts:210-216
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -958,7 +1323,7 @@ spend_bool_merge@6:
     itxn_submit
 
 spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18:
-    // contracts/mithras/mithras.algo.ts:127-133
+    // contracts/mithras/mithras.algo.ts:136-142
     // spend(
     //   signals: Uint256[],
     //   _proof: PlonkProof,
@@ -976,7 +1341,7 @@ spend_bool_false@5:
 
 // contracts/mithras/mithras.algo.ts::Mithras.ensureBudget[routing]() -> void:
 ensureBudget:
-    // contracts/mithras/mithras.algo.ts:211
+    // contracts/mithras/mithras.algo.ts:220
     // ensureBudget(budget: uint64) {
     txna ApplicationArgs 1
     dup
@@ -985,21 +1350,21 @@ ensureBudget:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // contracts/mithras/mithras.algo.ts:212
+    // contracts/mithras/mithras.algo.ts:221
     // ensureBudget(budget);
     intc_0 // 0
     callsub ensure_budget
-    // contracts/mithras/mithras.algo.ts:211
+    // contracts/mithras/mithras.algo.ts:220
     // ensureBudget(budget: uint64) {
     intc_1 // 1
     return
 
 
-// contracts/mithras/mithras.algo.ts::Mithras.addCommitment(commitment: bytes) -> void:
+// contracts/mithras/mithras.algo.ts::Mithras.addCommitment(commitment: bytes) -> uint64:
 addCommitment:
     // contracts/mithras/mithras.algo.ts:93
-    // private addCommitment(commitment: Uint256) {
-    proto 1 0
+    // private addCommitment(commitment: Uint256): uint64 {
+    proto 1 1
     // contracts/mithras/mithras.algo.ts:95
     // const leafIndex = this.addPendingLeaf(commitment, 0);
     frame_dig -1
@@ -1025,19 +1390,21 @@ addCommitment:
     frame_dig -1
     swap
     concat
-    swap
+    dig 1
     itob
     concat
     pushbytes 0xf758bee0 // method "NewPendingLeaf(uint256,uint64,uint64)"
     swap
     concat
     log
+    // contracts/mithras/mithras.algo.ts:102
+    // return leafIndex;
     retsub
 
 
 // contracts/mimc_merkle/mimc_merkle.algo.ts::MimcMerkle.addPendingLeaf(leafHash: bytes, incentive: uint64) -> uint64:
 addPendingLeaf:
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:169
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:172
     // protected addPendingLeaf(leafHash: Uint256, incentive: uint64): uint64 {
     proto 2 1
     // contracts/mimc_merkle/mimc_merkle.algo.ts:104-106
@@ -1047,38 +1414,38 @@ addPendingLeaf:
     bytec_1 // "p"
     frame_dig -2
     concat
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:170
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:173
     // assert(!this.pendingLeaves(leafHash).exists, "leaf already pending");
     dup
     box_len
     bury 1
     !
     assert // leaf already pending
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:172
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:175
     // !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     intc_0 // 0
     // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:172
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:175
     // !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:126
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:129
     // return index > maxLeafs - maxLeafs / 100;
     dup
-    intc 6 // 66437776
+    intc 5 // 66437776
     >
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:172
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:175
     // !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     !
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:171-174
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:174-177
     // assert(
     //   !this.indexNearMax(this.nextPendingLeafTreeIndex.value),
     //   "tree full, call rotatePendingEpoch",
     // );
     assert // tree full, call rotatePendingEpoch
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:176
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:179
     // this.pendingLeaves(leafHash).value = { index: leafIndex, incentive };
     dup
     itob
@@ -1088,7 +1455,7 @@ addPendingLeaf:
     uncover 2
     swap
     box_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:177
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:180
     // this.nextPendingLeafTreeIndex.value += 1;
     dup
     intc_1 // 1
@@ -1096,10 +1463,10 @@ addPendingLeaf:
     // contracts/mimc_merkle/mimc_merkle.algo.ts:49
     // nextPendingLeafTreeIndex = GlobalState<uint64>({ key: "p" });
     bytec_1 // "p"
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:177
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:180
     // this.nextPendingLeafTreeIndex.value += 1;
     swap
     app_global_put
-    // contracts/mimc_merkle/mimc_merkle.algo.ts:178
+    // contracts/mimc_merkle/mimc_merkle.algo.ts:181
     // return leafIndex;
     retsub

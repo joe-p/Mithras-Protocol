@@ -23,7 +23,7 @@ import { TransactionComposer, AppCallMethodCall, AppMethodCallTransactionArgumen
 import { SendParams, SendSingleTransactionResult, SendAtomicTransactionComposerResults } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Address, encodeAddress, modelsv2, OnApplicationComplete, Transaction, TransactionSigner } from 'algosdk'
 
-export const APP_SPEC: Arc56Contract = {"name":"MimcMerkle","structs":{},"methods":[],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":3,"bytes":1},"local":{"ints":0,"bytes":0}},"keys":{"global":{"rootCounter":{"keyType":"AVMString","valueType":"AVMUint64","key":"Yw=="},"treeIndex":{"keyType":"AVMString","valueType":"AVMUint64","key":"aQ=="},"epochId":{"keyType":"AVMString","valueType":"AVMUint64","key":"ZQ=="},"lastComputedRoot":{"keyType":"AVMString","valueType":"uint256","key":"bHI="}},"local":{},"box":{"rootCache":{"keyType":"AVMString","valueType":"uint256[50]","key":"cg=="},"subtree":{"keyType":"AVMString","valueType":"uint256[20]","key":"dA=="},"zeroHashes":{"keyType":"AVMString","valueType":"uint256[20]","key":"eg=="}}},"maps":{"global":{},"local":{},"box":{"epochBoxes":{"keyType":"uint64","valueType":"uint256[32]","prefix":"ZQ=="}}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICAvLyBjb250cmFjdHMvbWltY19tZXJrbGUuYWxnby50czoyNS0yNgogICAgLy8gQGNvbnRyYWN0KHsgYXZtVmVyc2lvbjogMTEgfSkKICAgIC8vIGV4cG9ydCBjbGFzcyBNaW1jTWVya2xlIGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE51bUFwcEFyZ3MKICAgICEKICAgIGFzc2VydAogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgICEKICAgICYmCiAgICByZXR1cm4K","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEKICAgIHJldHVybgo="},"byteCode":{"approval":"CzEbFEQxGRQxGBQQQw==","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
+export const APP_SPEC: Arc56Contract = {"name":"MimcMerkle","structs":{"Object6225A739":[{"name":"index","type":"uint64"},{"name":"incentive","type":"uint64"}]},"methods":[],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":4,"bytes":3},"local":{"ints":0,"bytes":0}},"keys":{"global":{"nextCommittedLeafTreeIndex":{"keyType":"AVMString","valueType":"AVMUint64","key":"aQ==","desc":"The next index to use when committing a pending leaf to the tree."},"nextPendingLeafTreeIndex":{"keyType":"AVMString","valueType":"AVMUint64","key":"cA==","desc":"The next index to use for the next pending leaf. Should be reset to 0 when rotating epoch."},"epochId":{"keyType":"AVMString","valueType":"AVMUint64","key":"ZQ==","desc":"An epoch is the identifier for a root commitment period. When the epoch is rotated, a new sentinel leaf is added\nto the tree with the new epochId, and the previous epochId is sealed with the last root committed in that epoch."},"lastCommittedLeaf":{"keyType":"AVMString","valueType":"uint256","key":"bGw=","desc":"The last leaf that was committed to the tree. This is needed for committing a new leaf to ensure order of leaf\ncommitments"},"commitmentLsigAddr":{"keyType":"AVMString","valueType":"address","key":"YQ==","desc":"The address of the logic signature that does the computation for committing a leaf to the tree"},"epochEndedOnIndex":{"keyType":"AVMString","valueType":"AVMUint64","key":"ZQ==","desc":"The index at which the past epoch ended. This is needed to know when to seal an epoch, which happens when the\nnext committed leaf index reaches this value"},"currentRoot":{"keyType":"AVMString","valueType":"uint256","key":"cg==","desc":"The current root of the tree. This is needed to validate proofs against the current tree state\nand to ensure the order of leaf commitments"}},"local":{},"box":{}},"maps":{"global":{},"local":{},"box":{"rootCache":{"keyType":"uint256","valueType":"uint64","desc":"A cache of recent roots to validate against. This helps prevent race conditions for when a circuit proves a\nleaf against a root that has since changed within the block. The value stored is the round when the root was\nadded to the cache, which is used to ensure roots are only removed from the cache after a certain number of\nrounds have passed","prefix":"cg=="},"epochRoots":{"keyType":"uint256","valueType":"AVMBytes","desc":"When an epoch is sealed, the final root for that epoch is stored in epochRoots under the epochId.","prefix":"ZQ=="},"pendingLeaves":{"keyType":"uint256","valueType":"Object6225A739","desc":"Leaves that have been added but not yet committed to the tree\n\nThe value is the leaf index for the pending leaf and the incentive amount for committing that leaf","prefix":"cA=="}}}},"bareActions":{"create":["NoOp"],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICAvLyBjb250cmFjdHMvbWltY19tZXJrbGUvbWltY19tZXJrbGUuYWxnby50czozNS0zNgogICAgLy8gQGNvbnRyYWN0KHsgYXZtVmVyc2lvbjogMTEgfSkKICAgIC8vIGV4cG9ydCBjbGFzcyBNaW1jTWVya2xlIGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE51bUFwcEFyZ3MKICAgICEKICAgIGFzc2VydAogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgICEKICAgICYmCiAgICByZXR1cm4K","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEKICAgIHJldHVybgo="},"byteCode":{"approval":"CzEbFEQxGRQxGBQQQw==","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
 
 /**
  * A state record containing binary data
@@ -62,6 +62,21 @@ export type Expand<T> = T extends (...args: infer A) => infer R
     : never
 
 
+// Type definitions for ARC-56 structs
+
+export type Object6225A739 = {
+  index: bigint,
+  incentive: bigint
+}
+
+
+/**
+ * Converts the ABI tuple representation of a Object6225A739 to the struct representation
+ */
+export function Object6225A739FromTuple(abiTuple: [bigint, bigint]) {
+  return getABIStructFromABITuple(abiTuple, APP_SPEC.structs.Object6225A739, APP_SPEC.structs) as Object6225A739
+}
+
 /**
  * The argument types for the MimcMerkle contract
  */
@@ -98,21 +113,67 @@ export type MimcMerkleTypes = {
   state: {
     global: {
       keys: {
-        rootCounter: bigint
-        treeIndex: bigint
+        /**
+         * The next index to use when committing a pending leaf to the tree.
+         */
+        nextCommittedLeafTreeIndex: bigint
+        /**
+         * The next index to use for the next pending leaf. Should be reset to 0 when rotating epoch.
+         */
+        nextPendingLeafTreeIndex: bigint
+        /**
+        * An epoch is the identifier for a root commitment period. When the epoch is rotated, a new sentinel leaf is added
+        to the tree with the new epochId, and the previous epochId is sealed with the last root committed in that epoch.
+
+         */
         epochId: bigint
-        lastComputedRoot: bigint
+        /**
+        * The last leaf that was committed to the tree. This is needed for committing a new leaf to ensure order of leaf
+        commitments
+
+         */
+        lastCommittedLeaf: bigint
+        /**
+         * The address of the logic signature that does the computation for committing a leaf to the tree
+         */
+        commitmentLsigAddr: string
+        /**
+        * The index at which the past epoch ended. This is needed to know when to seal an epoch, which happens when the
+        next committed leaf index reaches this value
+
+         */
+        epochEndedOnIndex: bigint
+        /**
+        * The current root of the tree. This is needed to validate proofs against the current tree state
+        and to ensure the order of leaf commitments
+
+         */
+        currentRoot: bigint
       }
       maps: {}
     }
     box: {
-      keys: {
-        rootCache: [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
-        subtree: [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
-        zeroHashes: [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
-      }
+      keys: {}
       maps: {
-        epochBoxes: Map<bigint | number, [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]>
+        /**
+        * A cache of recent roots to validate against. This helps prevent race conditions for when a circuit proves a
+        leaf against a root that has since changed within the block. The value stored is the round when the root was
+        added to the cache, which is used to ensure roots are only removed from the cache after a certain number of
+        rounds have passed
+
+         */
+        rootCache: Map<bigint | number, bigint>
+        /**
+         * When an epoch is sealed, the final root for that epoch is stored in epochRoots under the epochId.
+         */
+        epochRoots: Map<bigint | number, Uint8Array>
+        /**
+        * Leaves that have been added but not yet committed to the tree
+        
+        The value is the leaf index for the pending leaf and the incentive amount for committing that leaf
+
+         */
+        pendingLeaves: Map<bigint | number, Object6225A739>
       }
     }
   }
@@ -462,28 +523,43 @@ export class MimcMerkleClient {
       getAll: async (): Promise<Partial<Expand<GlobalKeysState>>> => {
         const result = await this.appClient.state.global.getAll()
         return {
-          rootCounter: result.rootCounter,
-          treeIndex: result.treeIndex,
+          nextCommittedLeafTreeIndex: result.nextCommittedLeafTreeIndex,
+          nextPendingLeafTreeIndex: result.nextPendingLeafTreeIndex,
           epochId: result.epochId,
-          lastComputedRoot: result.lastComputedRoot,
+          lastCommittedLeaf: result.lastCommittedLeaf,
+          commitmentLsigAddr: result.commitmentLsigAddr,
+          epochEndedOnIndex: result.epochEndedOnIndex,
+          currentRoot: result.currentRoot,
         }
       },
       /**
-       * Get the current value of the rootCounter key in global state
+       * Get the current value of the nextCommittedLeafTreeIndex key in global state
        */
-      rootCounter: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("rootCounter")) as bigint | undefined },
+      nextCommittedLeafTreeIndex: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("nextCommittedLeafTreeIndex")) as bigint | undefined },
       /**
-       * Get the current value of the treeIndex key in global state
+       * Get the current value of the nextPendingLeafTreeIndex key in global state
        */
-      treeIndex: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("treeIndex")) as bigint | undefined },
+      nextPendingLeafTreeIndex: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("nextPendingLeafTreeIndex")) as bigint | undefined },
       /**
        * Get the current value of the epochId key in global state
        */
       epochId: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("epochId")) as bigint | undefined },
       /**
-       * Get the current value of the lastComputedRoot key in global state
+       * Get the current value of the lastCommittedLeaf key in global state
        */
-      lastComputedRoot: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("lastComputedRoot")) as bigint | undefined },
+      lastCommittedLeaf: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("lastCommittedLeaf")) as bigint | undefined },
+      /**
+       * Get the current value of the commitmentLsigAddr key in global state
+       */
+      commitmentLsigAddr: async (): Promise<string | undefined> => { return (await this.appClient.state.global.getValue("commitmentLsigAddr")) as string | undefined },
+      /**
+       * Get the current value of the epochEndedOnIndex key in global state
+       */
+      epochEndedOnIndex: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("epochEndedOnIndex")) as bigint | undefined },
+      /**
+       * Get the current value of the currentRoot key in global state
+       */
+      currentRoot: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("currentRoot")) as bigint | undefined },
     },
     /**
      * Methods to access box state for the current MimcMerkle app
@@ -495,35 +571,46 @@ export class MimcMerkleClient {
       getAll: async (): Promise<Partial<Expand<BoxKeysState>>> => {
         const result = await this.appClient.state.box.getAll()
         return {
-          rootCache: result.rootCache,
-          subtree: result.subtree,
-          zeroHashes: result.zeroHashes,
         }
       },
       /**
-       * Get the current value of the rootCache key in box state
+       * Get values from the rootCache map in box state
        */
-      rootCache: async (): Promise<[bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined> => { return (await this.appClient.state.box.getValue("rootCache")) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined },
-      /**
-       * Get the current value of the subtree key in box state
-       */
-      subtree: async (): Promise<[bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined> => { return (await this.appClient.state.box.getValue("subtree")) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined },
-      /**
-       * Get the current value of the zeroHashes key in box state
-       */
-      zeroHashes: async (): Promise<[bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined> => { return (await this.appClient.state.box.getValue("zeroHashes")) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined },
-      /**
-       * Get values from the epochBoxes map in box state
-       */
-      epochBoxes: {
+      rootCache: {
         /**
-         * Get all current values of the epochBoxes map in box state
+         * Get all current values of the rootCache map in box state
          */
-        getMap: async (): Promise<Map<bigint, [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]>> => { return (await this.appClient.state.box.getMap("epochBoxes")) as Map<bigint, [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]> },
+        getMap: async (): Promise<Map<bigint, bigint>> => { return (await this.appClient.state.box.getMap("rootCache")) as Map<bigint, bigint> },
         /**
-         * Get a current value of the epochBoxes map by key from box state
+         * Get a current value of the rootCache map by key from box state
          */
-        value: async (key: bigint | number): Promise<[bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined> => { return await this.appClient.state.box.getMapValue("epochBoxes", key) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] | undefined },
+        value: async (key: bigint | number): Promise<bigint | undefined> => { return await this.appClient.state.box.getMapValue("rootCache", key) as bigint | undefined },
+      },
+      /**
+       * Get values from the epochRoots map in box state
+       */
+      epochRoots: {
+        /**
+         * Get all current values of the epochRoots map in box state
+         */
+        getMap: async (): Promise<Map<bigint, Uint8Array>> => { return (await this.appClient.state.box.getMap("epochRoots")) as Map<bigint, Uint8Array> },
+        /**
+         * Get a current value of the epochRoots map by key from box state
+         */
+        value: async (key: bigint | number): Promise<Uint8Array | undefined> => { return await this.appClient.state.box.getMapValue("epochRoots", key) as Uint8Array | undefined },
+      },
+      /**
+       * Get values from the pendingLeaves map in box state
+       */
+      pendingLeaves: {
+        /**
+         * Get all current values of the pendingLeaves map in box state
+         */
+        getMap: async (): Promise<Map<bigint, Object6225A739>> => { return (await this.appClient.state.box.getMap("pendingLeaves")) as Map<bigint, Object6225A739> },
+        /**
+         * Get a current value of the pendingLeaves map by key from box state
+         */
+        value: async (key: bigint | number): Promise<Object6225A739 | undefined> => { return await this.appClient.state.box.getMapValue("pendingLeaves", key) as Object6225A739 | undefined },
       },
     },
   }

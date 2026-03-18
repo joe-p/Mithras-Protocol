@@ -15,7 +15,7 @@ import {
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
 
-import appspec from "../../mithras-contracts-and-circuits/contracts/out/Mithras.arc56.json";
+import appspec from "../../mithras-contracts-and-circuits/contracts/out/mithras/Mithras.arc56.json";
 
 const DEPOSIT_SIGNATURE =
   "deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)void";

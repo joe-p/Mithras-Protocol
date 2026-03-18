@@ -12,9 +12,12 @@ import {
   StealthKeypair,
   UtxoInputs,
   UtxoSecrets,
+  MimcMerkleTree,
 } from "../../mithras-crypto/src";
 import algosdk from "algosdk";
 import { equalBytes } from "../../mithras-subscriber/src";
+import { readFileSync } from "fs";
+import { TREE_DEPTH } from "./constants";
 
 const DEPOSIT_LSIGS = 7;
 const SPEND_LSIGS = 12;
@@ -22,7 +25,7 @@ const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
 export const SPEND_APP_FEE = 69n * 1000n;
 export const DEPOSIT_APP_FEE = 33n * 1000n;
 const APP_MBR = 1567900n;
-const BOOTSTRAP_FEE = 51n * 1000n;
+const BOOTSTRAP_FEE = 52n * 1000n;
 const NULLIFIER_MBR = 15_700n;
 const BLS12_381_SCALAR_MODULUS = BigInt(
   "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
@@ -99,7 +102,15 @@ export class MithrasProtocolClient {
       defaultSender: deployer,
     });
 
+    const zeros = MimcMerkleTree.computeZeroHashes();
+    const zerosEncoded = algosdk.ABIType.from(`uint256[${TREE_DEPTH}]`).encode(
+      zeros,
+    );
+
     const { appClient } = await factory.send.create.createApplication({
+      deployTimeParams: {
+        ZERO_HASHES: zerosEncoded,
+      },
       args: {
         depositVerifier: (
           await depositVerifier(algorand).lsigAccount()
@@ -112,16 +123,24 @@ export class MithrasProtocolClient {
 
     await appClient.appClient.fundAppAccount({ amount: microAlgos(APP_MBR) });
 
+    const commitTeal = readFileSync(
+      path.join(__dirname, "../contracts/out/mimc_merkle/CommitLeaf.teal"),
+      "utf8",
+    );
+
+    const commitCompiled = await algorand.app.compileTealTemplate(commitTeal, {
+      ZERO_HASHES: zerosEncoded,
+    });
+    const commitLsig = algorand.account.logicsig(
+      commitCompiled.compiledBase64ToBytes,
+    ).account;
+
     await appClient.send.bootstrapMerkleTree({
-      args: {},
+      args: { commitmentLsig: commitLsig.address().toString() },
       extraFee: microAlgos(BOOTSTRAP_FEE),
     });
 
     return new MithrasProtocolClient(algorand, appClient.appId);
-  }
-
-  async getZeroHashes(): Promise<bigint[]> {
-    return this._zeroHashes ?? (await this.appClient.state.box.zeroHashes())!;
   }
 
   async composeDepositGroup(
@@ -191,7 +210,7 @@ export class MithrasProtocolClient {
     out0: Output,
     out1?: Output,
   ) {
-    const contractRoot = await this.appClient.state.global.lastComputedRoot();
+    const contractRoot = await this.appClient.state.global.currentRoot();
 
     if (contractRoot !== merkleProof.root) {
       throw new Error(
