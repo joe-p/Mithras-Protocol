@@ -116,7 +116,7 @@ export class Mithras extends MimcMerkle {
     _outHpke: bytes<typeof HPKE_SIZE>,
     deposit: gtxn.PaymentTxn,
     verifierTxn: gtxn.Transaction,
-  ) {
+  ): uint64 {
     assert(verifierTxn.sender === this.depositVerifier.value.native);
 
     const commitment = signals[0];
@@ -139,7 +139,7 @@ export class Mithras extends MimcMerkle {
     _out0Hpke: bytes<typeof HPKE_SIZE>,
     _out1Hpke: bytes<typeof HPKE_SIZE>,
     verifierTxn: gtxn.Transaction,
-  ) {
+  ): [uint64, uint64] {
     assert(
       verifierTxn.sender === this.spendVerifier.value.native,
       "sender of verifier call must be the spend verifier lsig",
@@ -172,10 +172,12 @@ export class Mithras extends MimcMerkle {
 
     assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
 
-    this.addCommitment(out0Commitment);
-    this.addCommitment(out1Commitment);
+    const out0 = this.addCommitment(out0Commitment);
+    const out1 = this.addCommitment(out1Commitment);
 
     this.maybeCoverFee(utxoFee - nullifierMbr);
+
+    return [out0, out1];
   }
 
   private maybeCoverFee(coverageAmount: uint64) {

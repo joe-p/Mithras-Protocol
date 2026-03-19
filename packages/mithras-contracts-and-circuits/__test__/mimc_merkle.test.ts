@@ -79,11 +79,7 @@ describe("MiMC Merkle Contract Tests", () => {
     expect(rootCache.size).toBe(1);
     expect(rootCache.has(tree.getRoot())).toBe(true);
 
-    const currentRoot = tree.getRoot();
-    const currentFrontier = tree.getFrontier();
-
-    tree.addLeaf(newLeaf);
-    const newRoot = tree.getRoot();
+    const leafResult = tree.addLeaf(newLeaf);
 
     const extraLsig = await emptyLsig(algorand);
 
@@ -108,14 +104,7 @@ describe("MiMC Merkle Contract Tests", () => {
           amount: microAlgo(0),
           staticFee: microAlgo(0),
         }),
-        args: {
-          newRoot,
-          currentRoot,
-          currentFrontier,
-          lastLeaf: 0n,
-          newLeaf,
-          newLeafIndex: 1n,
-        },
+        args: leafResult,
       },
     });
 

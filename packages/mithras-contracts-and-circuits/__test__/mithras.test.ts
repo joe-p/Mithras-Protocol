@@ -10,8 +10,11 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { MerkleTestHelpers, MimcCalculator } from "./utils/test-utils";
 import { Address } from "algosdk";
 import {
+  commitUtxo,
+  composeCommitUtxoGroup,
   DEPOSIT_APP_FEE,
   depositVerifier,
+  getCommitLsig,
   MithrasProtocolClient,
   SPEND_APP_FEE,
   spendVerifier,
@@ -21,8 +24,10 @@ import {
   MithrasAddr,
   SpendKeypair,
   SupportedHpkeSuite,
+  MimcMerkleTree,
 } from "../../mithras-crypto/src";
 import { TREE_DEPTH } from "../src/constants";
+import { MimcMerkle } from "../contracts/mimc_merkle/mimc_merkle.algo";
 
 const SPEND_LSIGS = 12;
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
@@ -61,8 +66,13 @@ describe("Mithras App", () => {
 
   it("deposit", async () => {
     const client = new MithrasProtocolClient(algorand, appClient.appId);
+    const tree = new MimcMerkleTree();
+    tree.addLeaf(0n);
 
-    const { group } = await client.composeDepositGroup(
+    const preRoot = await appClient.state.global.currentRoot();
+    expect(preRoot).toBe(tree.getRoot());
+
+    const { group, utxoCommitment } = await client.composeDepositGroup(
       depositor,
       1n,
       MithrasAddr.fromKeys(
@@ -81,6 +91,35 @@ describe("Mithras App", () => {
     expect(
       simRes.simulateResponse.txnGroups[0].appBudgetConsumed,
     ).toMatchSnapshot("deposit app budget");
+
+    await group.send();
+
+    const commitArgs = tree.addLeaf(utxoCommitment);
+
+    // Verify the leaf was added to pendingLeaves but the root hasn't been updated yet since we haven't committed
+    const pendingLeaves = await appClient.state.box.pendingLeaves.getMap();
+    expect(pendingLeaves.size).toBe(1);
+    expect(pendingLeaves.get(utxoCommitment)).toEqual({
+      index: 1n,
+      incentive: 0n,
+    });
+    expect(await appClient.state.global.currentRoot()).toBe(preRoot);
+
+    // Now commit the leaf and ensure the root is updated and pendingLeaves is cleared
+    const commitGroup = await composeCommitUtxoGroup(
+      algorand,
+      appClient.appId,
+      depositor,
+      commitArgs,
+    );
+
+    await commitGroup.send();
+
+    const postRoot = await appClient.state.global.currentRoot();
+    expect(postRoot).not.toBe(preRoot);
+    expect(postRoot).toBe(tree.getRoot());
+
+    expect(await appClient.state.box.pendingLeaves.getMap()).toEqual(new Map());
   });
 
   it("spend", async () => {

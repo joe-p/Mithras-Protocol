@@ -157,6 +157,15 @@ export function mimcSum(msgs: bigint[]): bigint {
   return checksum(msgs, h);
 }
 
+export type CommitLeafArgs = {
+  currentFrontier: Tuple<bigint, typeof TREE_DEPTH>;
+  lastLeaf: bigint;
+  currentRoot: bigint;
+  newLeaf: bigint;
+  newLeafIndex: bigint;
+  newRoot: bigint;
+};
+
 export interface MerkleProof {
   pathElements: bigint[];
   pathSelectors: number[];
@@ -194,14 +203,26 @@ export class MimcMerkleTree {
     }
   }
 
-  addLeaf(leaf: bigint): number {
-    const index = this.leaves.length;
+  addLeaf(leaf: bigint): CommitLeafArgs {
+    const currentFrontier = this.getFrontier();
+    const lastLeaf = this.leaves.length > 0 ? this.leaves[this.leaves.length - 1] : 0n;
+    const currentRoot = this.getRoot();
+    
+    const newLeafIndex = BigInt(this.leaves.length);
     this.leaves.push(leaf);
-    this.updateTree(index, leaf);
-    return index;
+    const newRoot = this.updateTree(Number(newLeafIndex), leaf);
+    
+    return {
+      currentFrontier,
+      lastLeaf,
+      currentRoot,
+      newLeaf: leaf,
+      newLeafIndex,
+      newRoot,
+    };
   }
 
-  private updateTree(leafIndex: number, leafValue: bigint): void {
+  private updateTree(leafIndex: number, leafValue: bigint): bigint {
     let currentHash = leafValue;
     let index = BigInt(leafIndex);
 
@@ -223,6 +244,8 @@ export class MimcMerkleTree {
 
       index >>= 1n;
     }
+
+    return currentHash;
   }
 
   getFrontier(): Tuple<bigint, typeof TREE_DEPTH> {

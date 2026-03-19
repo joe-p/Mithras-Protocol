@@ -4,7 +4,7 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 32 8 250 66437776
-    bytecblock "e" "p" "r" "i" "ll" TMPL_ZERO_HASHES 0x068101
+    bytecblock "e" "p" "r" "i" "ll" TMPL_ZERO_HASHES 0x068101 0x151f7c75
     // contracts/mithras/mithras.algo.ts:67-68
     // @contract({ avmVersion: 11 })
     // export class Mithras extends MimcMerkle {
@@ -13,7 +13,7 @@ main:
     assert
     txn ApplicationID
     bz main_create_NoOp@11
-    pushbytess 0x2779ad8c 0x8718c41b 0xb790a51d 0x8d79c84c 0xce610e16 0xa8bd08dc 0x232eee10 // method "bootstrapMerkleTree(address)void", method "rotatePendingMerkleEpoch()void", method "commitMerkleEpochSentinel()void", method "commitUtxo(txn,(uint256[26],uint256,uint256,uint256,uint64,uint256))void", method "deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)uint64", method "spend(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],byte[250],txn)void", method "ensureBudget(uint64)void"
+    pushbytess 0x2779ad8c 0x8718c41b 0xb790a51d 0x8d79c84c 0xce610e16 0x41f17f19 0x232eee10 // method "bootstrapMerkleTree(address)void", method "rotatePendingMerkleEpoch()void", method "commitMerkleEpochSentinel()void", method "commitUtxo(txn,(uint256[26],uint256,uint256,uint256,uint64,uint256))void", method "deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)uint64", method "spend(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],byte[250],txn)(uint64,uint64)", method "ensureBudget(uint64)void"
     txna ApplicationArgs 0
     match bootstrapMerkleTree rotatePendingMerkleEpoch commitMerkleEpochSentinel commitUtxo deposit spend ensureBudget
     err
@@ -869,7 +869,7 @@ deposit:
     //   _outHpke: bytes<typeof HPKE_SIZE>,
     //   deposit: gtxn.PaymentTxn,
     //   verifierTxn: gtxn.Transaction,
-    // ) {
+    // ): uint64 {
     txna ApplicationArgs 1
     dup
     intc_0 // 0
@@ -965,9 +965,9 @@ deposit:
     //   _outHpke: bytes<typeof HPKE_SIZE>,
     //   deposit: gtxn.PaymentTxn,
     //   verifierTxn: gtxn.Transaction,
-    // ) {
+    // ): uint64 {
     itob
-    pushbytes 0x151f7c75
+    bytec 7 // 0x151f7c75
     swap
     concat
     log
@@ -978,7 +978,7 @@ deposit:
 // contracts/mithras/mithras.algo.ts::Mithras.spend[routing]() -> void:
 spend:
     pushbytes ""
-    dup
+    dupn 3
     // contracts/mithras/mithras.algo.ts:136-142
     // spend(
     //   signals: Uint256[],
@@ -986,7 +986,7 @@ spend:
     //   _out0Hpke: bytes<typeof HPKE_SIZE>,
     //   _out1Hpke: bytes<typeof HPKE_SIZE>,
     //   verifierTxn: gtxn.Transaction,
-    // ) {
+    // ): [uint64, uint64] {
     txna ApplicationArgs 1
     dup
     intc_0 // 0
@@ -1174,39 +1174,39 @@ spend_bool_merge@6:
     // assert(this.isValidRoot(utxoRoot), "Invalid UTXO root");
     assert // Invalid UTXO root
     // contracts/mithras/mithras.algo.ts:175
-    // this.addCommitment(out0Commitment);
+    // const out0 = this.addCommitment(out0Commitment);
     dig 4
     callsub addCommitment
-    pop
+    bury 7
     // contracts/mithras/mithras.algo.ts:176
-    // this.addCommitment(out1Commitment);
+    // const out1 = this.addCommitment(out1Commitment);
     dig 3
     callsub addCommitment
-    pop
+    bury 6
     // contracts/mithras/mithras.algo.ts:178
     // this.maybeCoverFee(utxoFee - nullifierMbr);
     dup2
     -
     dup
-    bury 8
-    // contracts/mithras/mithras.algo.ts:184-186
+    bury 10
+    // contracts/mithras/mithras.algo.ts:186-188
     // coverageAmount === 0 ||
     // // There are no more txns in the group
     // Global.groupSize <= Txn.groupIndex + 1 ||
     bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:186
+    // contracts/mithras/mithras.algo.ts:188
     // Global.groupSize <= Txn.groupIndex + 1 ||
     global GroupSize
     txn GroupIndex
     intc_1 // 1
     +
     <=
-    // contracts/mithras/mithras.algo.ts:184-186
+    // contracts/mithras/mithras.algo.ts:186-188
     // coverageAmount === 0 ||
     // // There are no more txns in the group
     // Global.groupSize <= Txn.groupIndex + 1 ||
     bnz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:188
+    // contracts/mithras/mithras.algo.ts:190
     // gtxn.Transaction(Txn.groupIndex + 1).type !== TransactionType.Payment
     txn GroupIndex
     intc_1 // 1
@@ -1214,64 +1214,64 @@ spend_bool_merge@6:
     gtxns TypeEnum
     intc_1 // 1
     !=
-    // contracts/mithras/mithras.algo.ts:184-188
+    // contracts/mithras/mithras.algo.ts:186-190
     // coverageAmount === 0 ||
     // // There are no more txns in the group
     // Global.groupSize <= Txn.groupIndex + 1 ||
     // // The next txn isn't a payment
     // gtxn.Transaction(Txn.groupIndex + 1).type !== TransactionType.Payment
     bnz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:193
+    // contracts/mithras/mithras.algo.ts:195
     // const feePayment = gtxn.PaymentTxn(Txn.groupIndex + 1);
     txn GroupIndex
     intc_1 // 1
     +
     dup
-    bury 7
+    bury 9
     dup
     gtxns TypeEnum
     intc_1 // pay
     ==
     assert // transaction type is pay
-    // contracts/mithras/mithras.algo.ts:198
+    // contracts/mithras/mithras.algo.ts:200
     // feePayment.sender === Txn.sender &&
     gtxns Sender
     txn Sender
     ==
-    // contracts/mithras/mithras.algo.ts:198-200
-    // feePayment.sender === Txn.sender &&
-    // // Checking the receiver is probably superfluous since we later check close, but might as well be safe
-    // feePayment.receiver === Global.currentApplicationAddress &&
-    bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:200
-    // feePayment.receiver === Global.currentApplicationAddress &&
-    dig 5
-    gtxns Receiver
-    global CurrentApplicationAddress
-    ==
-    // contracts/mithras/mithras.algo.ts:198-200
+    // contracts/mithras/mithras.algo.ts:200-202
     // feePayment.sender === Txn.sender &&
     // // Checking the receiver is probably superfluous since we later check close, but might as well be safe
     // feePayment.receiver === Global.currentApplicationAddress &&
     bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
     // contracts/mithras/mithras.algo.ts:202
+    // feePayment.receiver === Global.currentApplicationAddress &&
+    dig 7
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    // contracts/mithras/mithras.algo.ts:200-202
+    // feePayment.sender === Txn.sender &&
+    // // Checking the receiver is probably superfluous since we later check close, but might as well be safe
+    // feePayment.receiver === Global.currentApplicationAddress &&
+    bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
+    // contracts/mithras/mithras.algo.ts:204
     // feePayment.amount === 0 &&
-    dig 5
+    dig 7
     gtxns Amount
-    // contracts/mithras/mithras.algo.ts:198-202
+    // contracts/mithras/mithras.algo.ts:200-204
     // feePayment.sender === Txn.sender &&
     // // Checking the receiver is probably superfluous since we later check close, but might as well be safe
     // feePayment.receiver === Global.currentApplicationAddress &&
     // // Ensure the amount is zero so we can be sure the account is spending Mithras ALGO on anything else
     // feePayment.amount === 0 &&
     bnz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:206
+    // contracts/mithras/mithras.algo.ts:208
     // feePayment.closeRemainderTo === Global.currentApplicationAddress
-    dig 5
+    dig 7
     gtxns CloseRemainderTo
     global CurrentApplicationAddress
     ==
-    // contracts/mithras/mithras.algo.ts:198-206
+    // contracts/mithras/mithras.algo.ts:200-208
     // feePayment.sender === Txn.sender &&
     // // Checking the receiver is probably superfluous since we later check close, but might as well be safe
     // feePayment.receiver === Global.currentApplicationAddress &&
@@ -1282,7 +1282,7 @@ spend_bool_merge@6:
     // // This is also important for the future when fees may be refundable
     // feePayment.closeRemainderTo === Global.currentApplicationAddress
     bz spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18
-    // contracts/mithras/mithras.algo.ts:210-216
+    // contracts/mithras/mithras.algo.ts:212-218
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -1291,17 +1291,17 @@ spend_bool_merge@6:
     //   })
     //   .submit();
     itxn_begin
-    // contracts/mithras/mithras.algo.ts:212
+    // contracts/mithras/mithras.algo.ts:214
     // receiver: Txn.sender,
     txn Sender
-    // contracts/mithras/mithras.algo.ts:214
+    // contracts/mithras/mithras.algo.ts:216
     // amount: Global.minBalance + coverageAmount,
     global MinBalance
-    dig 8
+    dig 10
     +
     itxn_field Amount
     itxn_field Receiver
-    // contracts/mithras/mithras.algo.ts:210-215
+    // contracts/mithras/mithras.algo.ts:212-217
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -1312,7 +1312,7 @@ spend_bool_merge@6:
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // contracts/mithras/mithras.algo.ts:210-216
+    // contracts/mithras/mithras.algo.ts:212-218
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -1323,6 +1323,13 @@ spend_bool_merge@6:
     itxn_submit
 
 spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18:
+    // contracts/mithras/mithras.algo.ts:180
+    // return [out0, out1];
+    dig 6
+    itob
+    dig 6
+    itob
+    concat
     // contracts/mithras/mithras.algo.ts:136-142
     // spend(
     //   signals: Uint256[],
@@ -1330,7 +1337,11 @@ spend_after_inlined_contracts/mithras/mithras.algo.ts::Mithras.maybeCoverFee@18:
     //   _out0Hpke: bytes<typeof HPKE_SIZE>,
     //   _out1Hpke: bytes<typeof HPKE_SIZE>,
     //   verifierTxn: gtxn.Transaction,
-    // ) {
+    // ): [uint64, uint64] {
+    bytec 7 // 0x151f7c75
+    swap
+    concat
+    log
     intc_1 // 1
     return
 
@@ -1341,7 +1352,7 @@ spend_bool_false@5:
 
 // contracts/mithras/mithras.algo.ts::Mithras.ensureBudget[routing]() -> void:
 ensureBudget:
-    // contracts/mithras/mithras.algo.ts:220
+    // contracts/mithras/mithras.algo.ts:222
     // ensureBudget(budget: uint64) {
     txna ApplicationArgs 1
     dup
@@ -1350,11 +1361,11 @@ ensureBudget:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // contracts/mithras/mithras.algo.ts:221
+    // contracts/mithras/mithras.algo.ts:223
     // ensureBudget(budget);
     intc_0 // 0
     callsub ensure_budget
-    // contracts/mithras/mithras.algo.ts:220
+    // contracts/mithras/mithras.algo.ts:222
     // ensureBudget(budget: uint64) {
     intc_1 // 1
     return

@@ -1,6 +1,14 @@
-import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
+import {
+  AlgorandClient,
+  microAlgo,
+  microAlgos,
+} from "@algorandfoundation/algokit-utils";
 import { PlonkLsigVerifier } from "snarkjs-algorand";
-import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
+import {
+  CommitLeafArgs,
+  MithrasClient,
+  MithrasFactory,
+} from "../contracts/clients/Mithras";
 import path from "path";
 
 import {
@@ -14,10 +22,11 @@ import {
   UtxoSecrets,
   MimcMerkleTree,
 } from "../../mithras-crypto/src";
-import algosdk from "algosdk";
+import algosdk, { LogicSig, LogicSigAccount } from "algosdk";
 import { equalBytes } from "../../mithras-subscriber/src";
 import { readFileSync } from "fs";
 import { TREE_DEPTH } from "./constants";
+import { AppClient } from "@algorandfoundation/algokit-utils/types/app-client";
 
 const DEPOSIT_LSIGS = 7;
 const SPEND_LSIGS = 12;
@@ -30,6 +39,12 @@ const NULLIFIER_MBR = 15_700n;
 const BLS12_381_SCALAR_MODULUS = BigInt(
   "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
 );
+
+async function emptyLsig(algorand: AlgorandClient): Promise<LogicSigAccount> {
+  const lsigTeal = "#pragma version 12\nint 1";
+  const compiled = await algorand.app.compileTealTemplate(lsigTeal, {});
+  return algorand.account.logicsig(compiled.compiledBase64ToBytes).account;
+}
 
 export function addressInScalarField(addr: Uint8Array): bigint {
   const asBigint = BigInt("0x" + Buffer.from(addr).toString("hex"));
@@ -68,6 +83,29 @@ export function spendVerifier(algorand: AlgorandClient): PlonkLsigVerifier {
     totalLsigs: SPEND_LSIGS,
     appOffset: 1,
   });
+}
+
+export async function getCommitLsig(
+  algorand: AlgorandClient,
+): Promise<LogicSigAccount> {
+  const commitTeal = readFileSync(
+    path.join(__dirname, "../contracts/out/mimc_merkle/CommitLeaf.teal"),
+    "utf8",
+  );
+
+  const zeros = MimcMerkleTree.computeZeroHashes();
+  const zerosEncoded = algosdk.ABIType.from(`uint256[${TREE_DEPTH}]`).encode(
+    zeros,
+  );
+
+  const commitCompiled = await algorand.app.compileTealTemplate(commitTeal, {
+    ZERO_HASHES: zerosEncoded,
+  });
+  const commitLsig = algorand.account.logicsig(
+    commitCompiled.compiledBase64ToBytes,
+  ).account;
+
+  return commitLsig;
 }
 
 type Output = {
@@ -123,20 +161,12 @@ export class MithrasProtocolClient {
 
     await appClient.appClient.fundAppAccount({ amount: microAlgos(APP_MBR) });
 
-    const commitTeal = readFileSync(
-      path.join(__dirname, "../contracts/out/mimc_merkle/CommitLeaf.teal"),
-      "utf8",
-    );
-
-    const commitCompiled = await algorand.app.compileTealTemplate(commitTeal, {
-      ZERO_HASHES: zerosEncoded,
-    });
-    const commitLsig = algorand.account.logicsig(
-      commitCompiled.compiledBase64ToBytes,
-    ).account;
+    const commitLsig = await getCommitLsig(algorand);
 
     await appClient.send.bootstrapMerkleTree({
-      args: { commitmentLsig: commitLsig.address().toString() },
+      args: {
+        commitmentLsig: commitLsig.address().toString(),
+      },
       extraFee: microAlgos(BOOTSTRAP_FEE),
     });
 
@@ -161,6 +191,8 @@ export class MithrasProtocolClient {
     );
     const inputs = await UtxoInputs.generate(txnMetadata, amount, receiver);
 
+    let utxoCommitment: bigint;
+
     await this.depositVerifier.verificationParams({
       composer: group,
       inputs: {
@@ -171,6 +203,7 @@ export class MithrasProtocolClient {
       },
       paramsCallback: async (params) => {
         const { lsigParams, lsigsFee, args } = params;
+        utxoCommitment = args.signals[0];
 
         const verifierTxn = this.algorand.createTransaction.payment({
           ...lsigParams,
@@ -199,7 +232,7 @@ export class MithrasProtocolClient {
       },
     });
 
-    return { group, txnMetadata };
+    return { group, txnMetadata, utxoCommitment: utxoCommitment! };
   }
 
   async composeSpendGroup(
@@ -358,4 +391,48 @@ export class MithrasProtocolClient {
 
     return spendGroup;
   }
+}
+
+export async function composeCommitUtxoGroup(
+  algorand: AlgorandClient,
+  appId: bigint,
+  sender: algosdk.Address,
+  commitArgs: CommitLeafArgs,
+) {
+  const appClient = algorand.client.getTypedAppClientById(MithrasClient, {
+    appId,
+  });
+
+  const group = appClient.newGroup();
+
+  const extraLsig = await emptyLsig(algorand);
+
+  for (let i = 0; i < 2; i++) {
+    group.addTransaction(
+      await algorand.createTransaction.payment({
+        sender: extraLsig.address(),
+        receiver: extraLsig.address(),
+        amount: microAlgos(0),
+        staticFee: microAlgos(0),
+        note: new Uint8Array([i]), // to make the transactions different
+      }),
+    );
+  }
+
+  const commitmentLsig = await getCommitLsig(algorand);
+
+  const commitPay = await algorand.createTransaction.payment({
+    sender: commitmentLsig.address(),
+    receiver: appClient.appAddress,
+    amount: microAlgos(0),
+    staticFee: microAlgos(0),
+  });
+
+  group.commitUtxo({
+    sender,
+    args: { args: commitArgs, commitmentLsig: commitPay },
+    extraFee: microAlgos(3n * 1000n),
+  });
+
+  return group;
 }
