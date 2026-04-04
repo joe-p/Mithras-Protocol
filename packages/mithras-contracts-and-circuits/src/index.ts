@@ -232,7 +232,12 @@ export class MithrasProtocolClient {
       },
     });
 
-    return { group, txnMetadata, utxoCommitment: utxoCommitment! };
+    return {
+      group,
+      txnMetadata,
+      utxoCommitment: utxoCommitment!,
+      utxoInputs: inputs,
+    };
   }
 
   async composeSpendGroup(

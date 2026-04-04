@@ -38,7 +38,7 @@ describe("Mithras App", () => {
       { receiver: receiver.address, amount },
     );
 
-    // NOTE: There seems to be a bug with the signer for the lsig, for some reason the lsig txn is getting a ed25519 sig
+    // NOTE: There seems to be a bug with the signer for the lsig, for some reason the lsig txn is getting an ed25519 sig
     const innerComposer = await spendGroup.composer();
     const { atc } = await innerComposer.build();
     const txnsWithSigners = atc.buildGroup();
@@ -115,7 +115,7 @@ describe("Mithras App", () => {
 
     expect(secrets.amount).toBe(initialAmount);
 
-    const contractRoot = await appClient.state.global.lastComputedRoot();
+    const contractRoot = await appClient.state.global.currentRoot();
 
     expect(contractRoot).toEqual(subscriber.merkleTree.getRoot());
 
