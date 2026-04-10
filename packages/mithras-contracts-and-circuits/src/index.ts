@@ -386,7 +386,7 @@ export class MithrasProtocolClient {
       },
     });
 
-    return spendGroup;
+    return { group: spendGroup, out0Inputs: inputs0, out1Inputs: inputs1 };
   }
 }
 

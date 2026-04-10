@@ -135,7 +135,11 @@ describe("Mithras App", () => {
 
     expect(await appClient.state.box.pendingLeaves.getMap()).toEqual(new Map());
 
-    const spendGroup = await client.composeSpendGroup(
+    const {
+      group: spendGroup,
+      out0Inputs,
+      out1Inputs,
+    } = await client.composeSpendGroup(
       spender.address,
       spender.spendKeypair,
       utxoInputs.secrets,
@@ -158,5 +162,28 @@ describe("Mithras App", () => {
     composer.addAtc(atc);
 
     await composer.send();
+
+    // Verify the nullifier of the spent UTXO was recorded
+    const nullifier = utxoInputs.secrets.computeNullifier();
+    const nullifiers = await appClient.state.box.nullifiers.getMap();
+    expect(nullifiers.has(nullifier)).toBe(true);
+
+    // Verify both output commitments were added to pendingLeaves
+    const pendingSpendLeaves = await appClient.state.box.pendingLeaves.getMap();
+    expect(pendingSpendLeaves.size).toBe(2);
+
+    const out0Commitment = out0Inputs.secrets.computeCommitment();
+    const out1Commitment = out1Inputs.secrets.computeCommitment();
+
+    expect(pendingSpendLeaves.has(out0Commitment)).toBe(true);
+    expect(pendingSpendLeaves.has(out1Commitment)).toBe(true);
+
+    // Verify indices are sequential (2 and 3, since index 1 was used by the deposit)
+    expect(pendingSpendLeaves.get(out0Commitment)?.index).toBe(2n);
+    expect(pendingSpendLeaves.get(out1Commitment)?.index).toBe(3n);
+
+    // Verify root remains unchanged (leaves are pending, not committed yet)
+    const postSpendRoot = await appClient.state.global.currentRoot();
+    expect(postSpendRoot).toBe(postRoot);
   });
 });
