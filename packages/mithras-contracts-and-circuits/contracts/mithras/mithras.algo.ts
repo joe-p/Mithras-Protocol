@@ -5,7 +5,6 @@ import {
   GlobalState,
   contract,
   bytes,
-  ensureBudget,
   op,
   Global,
   assertMatch,
@@ -217,9 +216,5 @@ export class Mithras extends MimcMerkle {
         })
         .submit();
     }
-  }
-
-  ensureBudget(budget: uint64) {
-    ensureBudget(budget);
   }
 }

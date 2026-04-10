@@ -1,8 +1,4 @@
-import {
-  AlgorandClient,
-  microAlgo,
-  microAlgos,
-} from "@algorandfoundation/algokit-utils";
+import { AlgorandClient, microAlgos } from "@algorandfoundation/algokit-utils";
 import { PlonkLsigVerifier } from "snarkjs-algorand";
 import {
   CommitLeafArgs,
@@ -12,7 +8,6 @@ import {
 import path from "path";
 
 import {
-  bytesToNumberBE,
   MerkleProof,
   MithrasAddr,
   SpendKeypair,
@@ -22,17 +17,14 @@ import {
   UtxoSecrets,
   MimcMerkleTree,
 } from "../../mithras-crypto/src";
-import algosdk, { LogicSig, LogicSigAccount } from "algosdk";
+import algosdk, { LogicSigAccount } from "algosdk";
 import { equalBytes } from "../../mithras-subscriber/src";
 import { readFileSync } from "fs";
 import { TREE_DEPTH } from "./constants";
-import { AppClient } from "@algorandfoundation/algokit-utils/types/app-client";
 
 const DEPOSIT_LSIGS = 7;
 const SPEND_LSIGS = 12;
 const LSIGS_FEE = BigInt(SPEND_LSIGS) * 1000n;
-export const SPEND_APP_FEE = 69n * 1000n;
-export const DEPOSIT_APP_FEE = 33n * 1000n;
 const APP_MBR = 1567900n;
 const BOOTSTRAP_FEE = 52n * 1000n;
 const NULLIFIER_MBR = 15_700n;
@@ -227,7 +219,7 @@ export class MithrasProtocolClient {
               amount: microAlgos(amount),
             }),
           },
-          extraFee: microAlgos(DEPOSIT_APP_FEE + lsigsFee.microAlgos + 1000n),
+          extraFee: microAlgos(lsigsFee.microAlgos + 1000n),
         });
       },
     });
@@ -294,7 +286,7 @@ export class MithrasProtocolClient {
       ...senderSigner,
       receiver: this.appClient.appAddress,
       amount: microAlgos(0),
-      extraFee: microAlgos(SPEND_APP_FEE + LSIGS_FEE + 1000n),
+      extraFee: microAlgos(LSIGS_FEE + 2000n),
       closeRemainderTo: this.appClient.appAddress,
     });
 
