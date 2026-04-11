@@ -30,7 +30,7 @@ describe("Mithras App", () => {
 
     const receiver = MithrasAccount.generate();
 
-    const spendGroup = await client.composeSpendGroup(
+    const { group: spendGroup } = await client.composeSpendGroup(
       spender.address,
       spenderKeypair,
       secrets,
@@ -60,7 +60,7 @@ describe("Mithras App", () => {
 
     await receiversSubscriber.subscriber.pollOnce();
 
-    expect(receiversSubscriber.amount).toBe(amount);
+    expect(receiversSubscriber.pendingAmount).toBe(amount);
 
     return { receiver, receiversSubscriber };
   };
@@ -99,11 +99,11 @@ describe("Mithras App", () => {
       spendPubkey: initialReceiver.spendKeypair.publicKey,
     });
 
-    expect(subscriber.amount).toBe(0n);
+    expect(subscriber.pendingAmount).toBe(0n);
 
     await subscriber.subscriber.pollOnce();
 
-    expect(subscriber.amount).toBe(initialAmount);
+    expect(subscriber.pendingAmount).toBe(initialAmount);
 
     const utxo = subscriber.utxos.entries().next().value;
 
@@ -114,6 +114,8 @@ describe("Mithras App", () => {
     );
 
     expect(secrets.amount).toBe(initialAmount);
+
+    // TODO: commit here
 
     const contractRoot = await appClient.state.global.currentRoot();
 

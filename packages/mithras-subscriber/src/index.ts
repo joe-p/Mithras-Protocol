@@ -17,15 +17,20 @@ import base32 from "hi-base32";
 
 import appspec from "../../mithras-contracts-and-circuits/contracts/out/mithras/Mithras.arc56.json";
 
-const DEPOSIT_SIGNATURE =
-  "deposit(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],pay,txn)void";
-const SPEND_SIGNATURE =
-  "spend(uint256[],(byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],byte[96],uint256,uint256,uint256,uint256,uint256,uint256),byte[250],byte[250],txn)void";
+function getMethod(name: string): algosdk.ABIMethod {
+  const methodSpec = appspec.methods.find((m) => m.name == name)!;
+  const method = new algosdk.ABIMethod(methodSpec);
+  return method;
+}
 
-const DEPOSIT_SELECTOR =
-  algosdk.ABIMethod.fromSignature(DEPOSIT_SIGNATURE).getSelector();
-const SPEND_SELECTOR =
-  algosdk.ABIMethod.fromSignature(SPEND_SIGNATURE).getSelector();
+const DEPOSIT_METHOD = getMethod("deposit");
+const SPEND_METHOD = getMethod("spend");
+
+const DEPOSIT_SIGNATURE = DEPOSIT_METHOD.getSignature();
+const SPEND_SIGNATURE = SPEND_METHOD.getSignature();
+
+const DEPOSIT_SELECTOR = DEPOSIT_METHOD.getSelector();
+const SPEND_SELECTOR = SPEND_METHOD.getSelector();
 
 export function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
@@ -152,7 +157,7 @@ export async function algodUtxoLookup(
   );
 
   const delta = transaction?.signedTxn.applyData.evalDelta?.globalDelta;
-  const key = new TextEncoder().encode("i");
+  const key = new TextEncoder().encode("p");
 
   let treeIndex: number | null = null;
 
@@ -273,7 +278,7 @@ async function resolveStartRound(config: {
 class BaseMithrasSubscriber {
   public subscriber: AlgorandSubscriber;
   protected merkleTree?: MimcMerkleTree;
-  protected balanceState?: BalanceState;
+  protected pendingBalanceState?: BalanceState;
 
   protected constructor(options: BaseSubscriberOptions) {
     const {
@@ -288,16 +293,16 @@ class BaseMithrasSubscriber {
     let watermark = startRound;
 
     this.merkleTree = merkleTree;
-    this.balanceState = balanceState;
+    this.pendingBalanceState = balanceState;
 
-    const filter: TransactionFilter = {
+    const pendingFilter: TransactionFilter = {
       appId,
       methodSignature: [DEPOSIT_SIGNATURE, SPEND_SIGNATURE],
-      arc28Events: [{ groupName: "mithras", eventName: "NewLeaf" }],
+      arc28Events: [{ groupName: "mithras", eventName: "NewPendingLeaf" }],
     };
 
     const config: AlgorandSubscriberConfig = {
-      filters: [{ name: "mithras", filter }],
+      filters: [{ name: "pending utxos", filter: pendingFilter }],
       syncBehaviour: "sync-oldest",
       watermarkPersistence: {
         get: async () => {
@@ -316,7 +321,7 @@ class BaseMithrasSubscriber {
     };
     this.subscriber = new AlgorandSubscriber(config, algod);
 
-    this.subscriber.on("mithras", async (txn) => {
+    this.subscriber.on("pending utxos", async (txn) => {
       console.debug(
         `Processing transaction ${txn.id} in round ${txn.confirmedRound}`,
       );
@@ -467,19 +472,19 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
       spendPubkey: spendPubkey,
       balanceState,
     });
-    this.balanceState = balanceState;
+    this.pendingBalanceState = balanceState;
   }
 
   public get amount(): bigint {
-    return this.balanceState!.amount;
+    return this.pendingBalanceState!.amount;
   }
 
   public set amount(value: bigint) {
-    this.balanceState!.amount = value;
+    this.pendingBalanceState!.amount = value;
   }
 
   public get utxos(): Map<bigint, UtxoInfo> {
-    return this.balanceState!.utxos;
+    return this.pendingBalanceState!.utxos;
   }
 }
 
@@ -564,19 +569,19 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       merkleTree,
       balanceState,
     });
-    this.balanceState = balanceState;
+    this.pendingBalanceState = balanceState;
     this.merkleTree = merkleTree;
   }
 
-  public get amount(): bigint {
-    return this.balanceState!.amount;
+  public get pendingAmount(): bigint {
+    return this.pendingBalanceState!.amount;
   }
 
-  public set amount(value: bigint) {
-    this.balanceState!.amount = value;
+  public set pendingAmount(value: bigint) {
+    this.pendingBalanceState!.amount = value;
   }
 
   public get utxos(): Map<bigint, UtxoInfo> {
-    return this.balanceState!.utxos;
+    return this.pendingBalanceState!.utxos;
   }
 }
