@@ -3,7 +3,7 @@ import {
   AlgorandSubscriberConfig,
   TransactionFilter,
 } from "@algorandfoundation/algokit-subscriber/types/subscription";
-import algosdk from "algosdk";
+import algosdk, { ABIMethod } from "algosdk";
 import {
   ViewKeypair,
   HpkeEnvelope,
@@ -12,6 +12,7 @@ import {
   UtxoSecrets,
   deriveStealthPubkey,
   bytesToNumberBE,
+  CommitLeafArgs,
 } from "../../mithras-crypto/src";
 import base32 from "hi-base32";
 
@@ -25,14 +26,18 @@ function getMethod(name: string): algosdk.ABIMethod {
 
 const DEPOSIT_METHOD = getMethod("deposit");
 const SPEND_METHOD = getMethod("spend");
+const COMMIT_METHOD = getMethod("commitUtxo");
 
 const DEPOSIT_SIGNATURE = DEPOSIT_METHOD.getSignature();
 const SPEND_SIGNATURE = SPEND_METHOD.getSignature();
+const COMMIT_SIGNATURE = COMMIT_METHOD.getSignature();
 
 const DEPOSIT_SELECTOR = DEPOSIT_METHOD.getSelector();
 const SPEND_SELECTOR = SPEND_METHOD.getSelector();
+const COMMIT_SELECTOR = COMMIT_METHOD.getSelector();
 
-export function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
+export function equalBytes(a?: Uint8Array, b?: Uint8Array): boolean {
+  if (!a || !b) return false;
   if (a.length !== b.length) return false;
 
   for (let i = 0; i < a.length; i++) {
@@ -279,6 +284,7 @@ class BaseMithrasSubscriber {
   public subscriber: AlgorandSubscriber;
   protected merkleTree?: MimcMerkleTree;
   protected pendingBalanceState?: BalanceState;
+  protected _pendingCommitArgs: CommitLeafArgs[] = [];
 
   protected constructor(options: BaseSubscriberOptions) {
     const {
@@ -301,8 +307,16 @@ class BaseMithrasSubscriber {
       arc28Events: [{ groupName: "mithras", eventName: "NewPendingLeaf" }],
     };
 
+    const commitFilter: TransactionFilter = {
+      appId,
+      methodSignature: [COMMIT_SIGNATURE],
+    };
+
     const config: AlgorandSubscriberConfig = {
-      filters: [{ name: "pending utxos", filter: pendingFilter }],
+      filters: [
+        { name: "pending utxos", filter: pendingFilter },
+        { name: "commit", filter: commitFilter },
+      ],
       syncBehaviour: "sync-oldest",
       watermarkPersistence: {
         get: async () => {
@@ -321,6 +335,44 @@ class BaseMithrasSubscriber {
     };
     this.subscriber = new AlgorandSubscriber(config, algod);
 
+    if (this._pendingCommitArgs) {
+      this.subscriber.on("commit", async (txn) => {
+        if (
+          equalBytes(
+            txn.applicationTransaction?.applicationArgs?.[0],
+            COMMIT_SELECTOR,
+          )
+        ) {
+          console.debug(
+            "Pre commit",
+            this._pendingCommitArgs.map((a) => a.newLeafIndex),
+          );
+
+          let index: bigint | undefined = undefined;
+          for (const gd of txn.globalStateDelta ?? []) {
+            if (atob(gd.key) == "i") {
+              index = gd.value.uint;
+            }
+          }
+
+          if (index === undefined) {
+            throw Error("Could not find index delta");
+          }
+
+          this._pendingCommitArgs = this._pendingCommitArgs.filter(
+            (a) => a.newLeafIndex >= index,
+          );
+
+          console.debug(
+            "Post commit",
+            this._pendingCommitArgs.map((a) => a.newLeafIndex),
+          );
+
+          return;
+        }
+      });
+    }
+
     this.subscriber.on("pending utxos", async (txn) => {
       console.debug(
         `Processing transaction ${txn.id} in round ${txn.confirmedRound}`,
@@ -329,7 +381,7 @@ class BaseMithrasSubscriber {
       if (this.merkleTree) {
         for (const event of txn.arc28Events!) {
           const { leaf } = event.argsByName;
-          this.merkleTree.addLeaf(leaf as bigint);
+          this._pendingCommitArgs.push(this.merkleTree.addLeaf(leaf as bigint));
         }
       }
 
@@ -491,6 +543,10 @@ export class BalanceSubscriber extends BaseMithrasSubscriber {
 export class TreeSubscriber extends BaseMithrasSubscriber {
   public merkleTree: MimcMerkleTree;
 
+  get pendingCommitArgs() {
+    return this._pendingCommitArgs;
+  }
+
   public static async fromAppId(
     config: BaseSubscriberConfig & MerkleTreeSubscriberConfig,
   ) {
@@ -527,6 +583,9 @@ export class TreeSubscriber extends BaseMithrasSubscriber {
 
 export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
   public merkleTree: MimcMerkleTree;
+  get pendingCommitArgs() {
+    return this._pendingCommitArgs;
+  }
 
   public static async fromAppId(
     config: BaseSubscriberConfig & BalanceAndTreeSubscriberConfig,
@@ -538,12 +597,19 @@ export class BalanceAndTreeSubscriber extends BaseMithrasSubscriber {
       merkleTree: config.merkleTree,
     });
 
+    let merkleTree = config.merkleTree;
+    if (merkleTree === undefined) {
+      merkleTree = new MimcMerkleTree();
+      // TODO: handle epoch changes
+      merkleTree.addLeaf(0n);
+    }
+
     return new BalanceAndTreeSubscriber(
       config.algod,
       config.appId,
       startRound,
       config.viewKeypair,
-      config.merkleTree ?? new MimcMerkleTree(),
+      merkleTree,
       config.spendPubkey,
     );
   }

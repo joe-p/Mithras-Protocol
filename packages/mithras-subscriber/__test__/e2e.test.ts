@@ -3,7 +3,11 @@ import { MithrasClient } from "../../mithras-contracts-and-circuits/contracts/cl
 
 import { beforeAll, describe, expect, it } from "vitest";
 import { Address } from "algosdk";
-import { MithrasProtocolClient } from "../../mithras-contracts-and-circuits/src";
+import {
+  composeCommitUtxoGroup,
+  MithrasProtocolClient,
+  sendCommitUtxo,
+} from "../../mithras-contracts-and-circuits/src";
 import { MithrasAccount } from "../../mithras-crypto/src";
 import { algodUtxoLookup, BalanceAndTreeSubscriber } from "../src";
 
@@ -58,7 +62,19 @@ describe("Mithras App", () => {
       spendPubkey: receiver.spendKeypair.publicKey,
     });
 
+    console.debug("PRE poll");
     await receiversSubscriber.subscriber.pollOnce();
+    console.debug("POST poll");
+
+    for (let i = 0; i < 2; i++) {
+      const commitArgs = receiversSubscriber.pendingCommitArgs.shift();
+      console.debug(`Commiting ${commitArgs}`);
+      if (commitArgs === undefined) {
+        throw new Error(`No pending commit args (${i})`);
+      }
+
+      await sendCommitUtxo(algorand, appClient.appId, depositor, commitArgs);
+    }
 
     expect(receiversSubscriber.pendingAmount).toBe(amount);
 
@@ -115,7 +131,14 @@ describe("Mithras App", () => {
 
     expect(secrets.amount).toBe(initialAmount);
 
-    // TODO: commit here
+    const commitGroup = await composeCommitUtxoGroup(
+      algorand,
+      appClient.appId,
+      depositor,
+      subscriber.pendingCommitArgs.pop()!,
+    );
+
+    await commitGroup.send();
 
     const contractRoot = await appClient.state.global.currentRoot();
 

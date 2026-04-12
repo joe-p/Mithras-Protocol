@@ -433,3 +433,57 @@ export async function composeCommitUtxoGroup(
 
   return group;
 }
+
+export async function sendCommitUtxo(
+  algorand: AlgorandClient,
+  appId: bigint,
+  sender: algosdk.Address,
+  commitArgs: CommitLeafArgs,
+) {
+  const group = await composeCommitUtxoGroup(
+    algorand,
+    appId,
+    sender,
+    commitArgs,
+  );
+
+  try {
+    await group.send();
+  } catch (e: any) {
+    if (typeof e.message === "string") {
+      const msg = e.message as string;
+      const pcMatch = msg.match(/pc=(\d+)/);
+      if (pcMatch && pcMatch[1]) {
+        const pc = Number(pcMatch[1]);
+        if (pc === 902) {
+          throw Error(
+            'Commit lsig error: assert failed - assert(currentRoot === args.currentRoot, "old root mismatch")',
+          );
+        }
+        const commitLsig = await getCommitLsig(algorand);
+        const logic = commitLsig.lsig.logic;
+        const disRes = await algorand.client.algod.disassemble(logic).do();
+        const teal = disRes.result;
+        const compRes = await algorand.client.algod
+          .compile(teal)
+          .sourcemap(true)
+          .do();
+
+        const data = Object.fromEntries(
+          compRes.sourcemap!.data?.valueOf()! as any,
+        ) as any;
+        data.version = 3;
+
+        const srcMap = new algosdk.ProgramSourceMap(data);
+        const line = srcMap.getLocationForPc(pc);
+        console.debug(
+          teal
+            .split("\n")
+            .map((l, i) => `${i}: ${l}`)
+            .join("\n"),
+        );
+        throw Error(`Commit lsig error on line ${line?.line}`);
+      }
+    }
+  }
+}

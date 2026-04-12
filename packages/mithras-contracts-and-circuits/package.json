@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run --testTimeout=60000 --no-file-parallelism",
-    "build:contracts": "algokit compile ts contracts",
+    "build:contracts": "puya-ts contracts --output-assembly-report",
     "build:clients": "algokit generate client contracts/out --output contracts/clients/{contract_name}.ts",
     "build": "pnpm build:zkey && pnpm build:contracts && pnpm build:clients && pnpm build:test",
     "build:test-contracts": "algokit compile ts __test__/contracts",
@@ -19,8 +19,8 @@
   "packageManager": "pnpm@10.9.0",
   "devDependencies": {
     "@algorandfoundation/algokit-utils": "^9.1.2",
-    "@algorandfoundation/algorand-typescript": "1.2.0-beta.12",
-    "@algorandfoundation/puya-ts": "1.2.0-beta.12",
+    "@algorandfoundation/algorand-typescript": "1.2.0-beta.26",
+    "@algorandfoundation/puya-ts": "1.2.0-beta.26",
     "@types/node": "^24.10.13",
     "algosdk": "^3.5.2",
     "circom_tester": "^0.0.24",
