@@ -4,7 +4,6 @@ import { MithrasClient, MithrasFactory } from "../contracts/clients/Mithras";
 import path from "path";
 
 import {
-  bytesToNumberBE,
   MerkleProof,
   MithrasAddr,
   SpendKeypair,
@@ -76,7 +75,6 @@ export class MithrasProtocolClient {
   depositVerifier: PlonkLsigVerifier;
   spendVerifier: PlonkLsigVerifier;
   appClient: MithrasClient;
-  private _zeroHashes?: bigint[];
 
   constructor(
     public algorand: AlgorandClient,
@@ -118,10 +116,6 @@ export class MithrasProtocolClient {
     });
 
     return new MithrasProtocolClient(algorand, appClient.appId);
-  }
-
-  async getZeroHashes(): Promise<bigint[]> {
-    return this._zeroHashes ?? (await this.appClient.state.box.zeroHashes())!;
   }
 
   async composeDepositGroup(
@@ -180,7 +174,11 @@ export class MithrasProtocolClient {
       },
     });
 
-    return { group, txnMetadata };
+    return {
+      group,
+      txnMetadata,
+      utxoInputs: inputs,
+    };
   }
 
   async composeSpendGroup(
@@ -337,6 +335,10 @@ export class MithrasProtocolClient {
       },
     });
 
-    return spendGroup;
+    return {
+      group: spendGroup,
+      out0Inputs: inputs0,
+      out1Inputs: inputs1,
+    };
   }
 }

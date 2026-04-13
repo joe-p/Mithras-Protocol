@@ -30,7 +30,7 @@ describe("Mithras App", () => {
 
     const receiver = MithrasAccount.generate();
 
-    const spendGroup = await client.composeSpendGroup(
+    const { group: spendGroup } = await client.composeSpendGroup(
       spender.address,
       spenderKeypair,
       secrets,
