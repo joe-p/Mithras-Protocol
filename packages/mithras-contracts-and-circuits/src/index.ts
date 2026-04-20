@@ -139,7 +139,7 @@ export class MithrasProtocolClient {
     await this.depositVerifier.verificationParams({
       composer: group,
       inputs: {
-        spending_secret: inputs.secrets.spendingSecret,
+        blinding_secret: inputs.secrets.spendingSecret,
         nullifier_secret: inputs.secrets.nullifierSecret,
         amount,
         receiver: addressInScalarField(inputs.secrets.stealthPubkey),
@@ -289,18 +289,18 @@ export class MithrasProtocolClient {
     const inputSignals: Record<string, bigint | bigint[]> = {
       fee,
       utxo_spender: addressInScalarField(utxoSecrets.stealthPubkey),
-      utxo_spending_secret: utxoSecrets.spendingSecret,
+      utxo_blinding_secret: utxoSecrets.spendingSecret,
       utxo_nullifier_secret: utxoSecrets.nullifierSecret,
       utxo_amount: utxoSecrets.amount,
       path_selectors: merkleProof.pathSelectors.map((b) => BigInt(b)),
       utxo_path: merkleProof.pathElements,
       out0_amount: out0.amount,
       out0_receiver: addressInScalarField(inputs0.secrets.stealthPubkey),
-      out0_spending_secret: inputs0.secrets.spendingSecret,
+      out0_blinding_secret: inputs0.secrets.spendingSecret,
       out0_nullifier_secret: inputs0.secrets.nullifierSecret,
       out1_amount: out1Amount,
       out1_receiver: addressInScalarField(inputs1.secrets.stealthPubkey),
-      out1_spending_secret: inputs1.secrets.spendingSecret,
+      out1_blinding_secret: inputs1.secrets.spendingSecret,
       out1_nullifier_secret: inputs1.secrets.nullifierSecret,
     };
 

@@ -19,13 +19,13 @@ describe("Deposit Circuit", () => {
   }
 
   it("computes commitment = MiMC_Sum(spend,null,amount,receiver)", async () => {
-    const spending_secret = 111n;
+    const blinding_secret = 111n;
     const nullifier_secret = 222n;
     const amount = 333n;
     const receiver = 444n;
 
     const expected = await sum4Commit(
-      spending_secret,
+      blinding_secret,
       nullifier_secret,
       amount,
       receiver,
@@ -34,7 +34,7 @@ describe("Deposit Circuit", () => {
     const witness = await circuit.calculateWitness({
       amount,
       receiver,
-      spending_secret,
+      blinding_secret,
       nullifier_secret,
     });
     await circuit.checkConstraints(witness);
@@ -44,13 +44,13 @@ describe("Deposit Circuit", () => {
   });
 
   it("handles zeros", async () => {
-    const spending_secret = 0n;
+    const blinding_secret = 0n;
     const nullifier_secret = 0n;
     const amount = 0n;
     const receiver = 0n;
 
     const expected = await sum4Commit(
-      spending_secret,
+      blinding_secret,
       nullifier_secret,
       amount,
       receiver,
@@ -59,7 +59,7 @@ describe("Deposit Circuit", () => {
     const witness = await circuit.calculateWitness({
       amount,
       receiver,
-      spending_secret,
+      blinding_secret,
       nullifier_secret,
     });
     await circuit.checkConstraints(witness);
@@ -81,14 +81,14 @@ describe("Deposit Circuit", () => {
       debugLogging: false,
     });
 
-    const spending_secret = 111n;
+    const blinding_secret = 111n;
     const nullifier_secret = 222n;
     const amount = 333n;
     const receiver = 444n;
 
     const simRes = await verifier.simulateVerification(
       {
-        spending_secret,
+        blinding_secret,
         nullifier_secret,
         amount,
         receiver,

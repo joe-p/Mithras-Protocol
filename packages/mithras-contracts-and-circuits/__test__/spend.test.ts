@@ -21,7 +21,7 @@ describe("Spend Circuit", () => {
   it("verifies merkle path, outputs, balance, nullifier", async () => {
     const fee = 7n;
     const utxo_spender = 999n;
-    const utxo_spending_secret = 111n;
+    const utxo_blinding_secret = 111n;
     const utxo_nullifier_secret = 222n;
     const utxo_amount = 1000n;
 
@@ -29,13 +29,13 @@ describe("Spend Circuit", () => {
     const out1_amount = 493n; // 500 + 493 + 7 = 1000
     const out0_receiver = 1234n;
     const out1_receiver = 5678n;
-    const out0_spending_secret = 333n;
+    const out0_blinding_secret = 333n;
     const out0_nullifier_secret = 444n;
-    const out1_spending_secret = 555n;
+    const out1_blinding_secret = 555n;
     const out1_nullifier_secret = 666n;
 
     const utxo_commitment = await mimc.sum4Commit([
-      utxo_spending_secret,
+      utxo_blinding_secret,
       utxo_nullifier_secret,
       utxo_amount,
       utxo_spender,
@@ -51,13 +51,13 @@ describe("Spend Circuit", () => {
     );
 
     const out0_commitment = await mimc.sum4Commit([
-      out0_spending_secret,
+      out0_blinding_secret,
       out0_nullifier_secret,
       out0_amount,
       out0_receiver,
     ]);
     const out1_commitment = await mimc.sum4Commit([
-      out1_spending_secret,
+      out1_blinding_secret,
       out1_nullifier_secret,
       out1_amount,
       out1_receiver,
@@ -66,18 +66,18 @@ describe("Spend Circuit", () => {
     const witness = await circuit.calculateWitness({
       fee,
       utxo_spender,
-      utxo_spending_secret,
+      utxo_blinding_secret,
       utxo_nullifier_secret,
       utxo_amount,
       path_selectors: pathSelectors,
       utxo_path: pathElements,
       out0_amount,
       out0_receiver,
-      out0_spending_secret,
+      out0_blinding_secret,
       out0_nullifier_secret,
       out1_amount,
       out1_receiver,
-      out1_spending_secret,
+      out1_blinding_secret,
       out1_nullifier_secret,
     });
     await circuit.checkConstraints(witness);
@@ -98,7 +98,7 @@ describe("Spend Circuit", () => {
   it("fails when balance doesn't add up", async () => {
     const fee = 1n;
     const utxo_spender = 1n;
-    const utxo_spending_secret = 2n;
+    const utxo_blinding_secret = 2n;
     const utxo_nullifier_secret = 3n;
     const utxo_amount = 10n;
 
@@ -106,7 +106,7 @@ describe("Spend Circuit", () => {
     const out1_amount = 5n; // 5 + 5 + 1 != 10
 
     const utxo_commitment = await mimc.sum4Commit([
-      utxo_spending_secret,
+      utxo_blinding_secret,
       utxo_nullifier_secret,
       utxo_amount,
       utxo_spender,
@@ -119,18 +119,18 @@ describe("Spend Circuit", () => {
       const witness = await circuit.calculateWitness({
         fee,
         utxo_spender,
-        utxo_spending_secret,
+        utxo_blinding_secret,
         utxo_nullifier_secret,
         utxo_amount,
         path_selectors: pathSelectors,
         utxo_path: pathElements,
         out0_amount,
         out0_receiver: 0n,
-        out0_spending_secret: 0n,
+        out0_blinding_secret: 0n,
         out0_nullifier_secret: 0n,
         out1_amount,
         out1_receiver: 0n,
-        out1_spending_secret: 0n,
+        out1_blinding_secret: 0n,
         out1_nullifier_secret: 0n,
       });
       await circuit.checkConstraints(witness);
@@ -140,7 +140,7 @@ describe("Spend Circuit", () => {
   it("verifies on chain", async () => {
     const fee = 7n;
     const utxo_spender = 999n;
-    const utxo_spending_secret = 111n;
+    const utxo_blinding_secret = 111n;
     const utxo_nullifier_secret = 222n;
     const utxo_amount = 1000n;
 
@@ -148,9 +148,9 @@ describe("Spend Circuit", () => {
     const out1_amount = 493n; // 500 + 493 + 7 = 1000
     const out0_receiver = 1234n;
     const out1_receiver = 5678n;
-    const out0_spending_secret = 333n;
+    const out0_blinding_secret = 333n;
     const out0_nullifier_secret = 444n;
-    const out1_spending_secret = 555n;
+    const out1_blinding_secret = 555n;
     const out1_nullifier_secret = 666n;
 
     // Build a trivial path: all zeros to compute root
@@ -173,18 +173,18 @@ describe("Spend Circuit", () => {
     const inputs = {
       fee,
       utxo_spender,
-      utxo_spending_secret,
+      utxo_blinding_secret,
       utxo_nullifier_secret,
       utxo_amount,
       path_selectors: pathSelectors,
       utxo_path: pathElements,
       out0_amount,
       out0_receiver,
-      out0_spending_secret,
+      out0_blinding_secret,
       out0_nullifier_secret,
       out1_amount,
       out1_receiver,
-      out1_spending_secret,
+      out1_blinding_secret,
       out1_nullifier_secret,
     };
 

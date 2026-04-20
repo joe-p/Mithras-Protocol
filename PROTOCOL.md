@@ -53,7 +53,7 @@
 ### Spend Secret
 
 - **Type:** 64-byte secret encrypted via HPKE.
-- **Purpose:** Contains the `spending_secret` and `nullifier_secret` used as private inputs to the ZK circuit for spending the UTXO.
+- **Purpose:** Contains the `blinding_secret` and `nullifier_secret` used as private inputs to the ZK circuit for spending the UTXO.
 - **Security:** Cannot be used to spend the UTXO without the corresponding one-time spend private key `s'`; signature verification is enforced by the smart contract.
 - **Privacy:** Leakage can enable transaction graph and nullifier linkability, and may allow pre-computation of nullifiers for future spends.
 
@@ -85,12 +85,12 @@
 
 #### Private Input Signals
 
-- `utxo_spending_secret`: Secret needed to spend the deposited amount
+- `utxo_blinding_secret`: Secret needed to spend the deposited amount
 - `utxo_nullifier_secret`: Second secret needed to spend the deposited amount. Used in nullifier generation
 
 #### Public Output Signals
 
-- `commitment`: `Hash(spending_secret || nullifier_secret || amount || receiver)`
+- `commitment`: `Hash(blinding_secret || nullifier_secret || amount || receiver)`
 
 ### Spend Circuit
 
@@ -101,7 +101,7 @@
 
 #### Private Input Signals
 
-- `utxo_spending_secret`: Secret needed to spend the UTXO
+- `utxo_blinding_secret`: Secret needed to spend the UTXO
 
 - `utxo_nullifier_secret`: Second secret needed to spend the UTXO. Used in nullifier generation
 
@@ -115,7 +115,7 @@
 
 - `out0_receiver`: The public key of the tweaked one-time spend keypair that can spend `out0_amount`
 
-- `out0_spending_secret`: Secret needed to spend `out0_amount`
+- `out0_blinding_secret`: Secret needed to spend `out0_amount`
 
 - `out0_nullifier_secret`: Second secret needed to spend `out0_amount`. Used in nullifier generation
 
@@ -123,14 +123,14 @@
 
 - `out1_receiver`: The public key of the tweaked one-time spend keypair that can spend `out1_amount`
 
-- `out1_spending_secret`: Secret needed to spend `out1_amount`
+- `out1_blinding_secret`: Secret needed to spend `out1_amount`
 
 - `out1_nullifier_secret`: Second secret needed to spend `out1_amount`. Used in nullifier generation
 
 #### Public Output Signals
 
-- `out0_commitment`: `Hash(out0_spending_secret || out0_nullifier_secret || out0_amount || out0_receiver)`
-- `out1_commitment`: `Hash(out1_spending_secret || out1_nullifier_secret || out1_amount || out1_receiver)`
+- `out0_commitment`: `Hash(out0_blinding_secret || out0_nullifier_secret || out0_amount || out0_receiver)`
+- `out1_commitment`: `Hash(out1_blinding_secret || out1_nullifier_secret || out1_amount || out1_receiver)`
 - `utxo_root`: The root of the Merkle tree that contains the UTXO
 - `utxo_nullifier`: `Hash(utxo_commitment || utxo_nullifier_secret)`
 

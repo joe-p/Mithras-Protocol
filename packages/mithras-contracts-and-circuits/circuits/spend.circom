@@ -17,7 +17,7 @@ template Spend(DEPTH) {
     signal input utxo_spender; // P' (receiver of UTXO)
 
     // Private inputs
-    signal input utxo_spending_secret;
+    signal input utxo_blinding_secret;
     signal input utxo_nullifier_secret;
     signal input utxo_amount;
 
@@ -26,12 +26,12 @@ template Spend(DEPTH) {
 
     signal input out0_amount;
     signal input out0_receiver;
-    signal input out0_spending_secret;
+    signal input out0_blinding_secret;
     signal input out0_nullifier_secret;
 
     signal input out1_amount;
     signal input out1_receiver;
-    signal input out1_spending_secret;
+    signal input out1_blinding_secret;
     signal input out1_nullifier_secret;
 
 
@@ -40,7 +40,7 @@ template Spend(DEPTH) {
 
     // Compute the UTXO commitment leaf
     component H_utxo = MiMC_Sum(4);
-    H_utxo.msgs[0] <== utxo_spending_secret;
+    H_utxo.msgs[0] <== utxo_blinding_secret;
     H_utxo.msgs[1] <== utxo_nullifier_secret;
     H_utxo.msgs[2] <== utxo_amount;
     H_utxo.msgs[3] <== utxo_spender;
@@ -65,14 +65,14 @@ template Spend(DEPTH) {
 
     // Compute output commitments
     component H_out0 = MiMC_Sum(4);
-    H_out0.msgs[0] <== out0_spending_secret;
+    H_out0.msgs[0] <== out0_blinding_secret;
     H_out0.msgs[1] <== out0_nullifier_secret;
     H_out0.msgs[2] <== out0_amount;
     H_out0.msgs[3] <== out0_receiver;
     out0_commitment <== H_out0.out;
 
     component H_out1 = MiMC_Sum(4);
-    H_out1.msgs[0] <== out1_spending_secret;
+    H_out1.msgs[0] <== out1_blinding_secret;
     H_out1.msgs[1] <== out1_nullifier_secret;
     H_out1.msgs[2] <== out1_amount;
     H_out1.msgs[3] <== out1_receiver;
