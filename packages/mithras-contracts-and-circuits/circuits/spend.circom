@@ -34,10 +34,6 @@ template Spend(DEPTH) {
     signal input out1_blinding_secret;
     signal input out1_nullifier_secret;
 
-
-
-
-
     // Compute the UTXO commitment leaf
     component H_utxo = MiMC_Sum(4);
     H_utxo.msgs[0] <== utxo_blinding_secret;

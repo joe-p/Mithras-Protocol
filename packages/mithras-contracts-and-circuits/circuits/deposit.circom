@@ -14,7 +14,6 @@ template Deposit() {
     signal input nullifier_secret;
     signal input receiver;
 
-
     // Hash the 4-tuple in order using MiMC_Sum(4)
     component H = MiMC_Sum(4);
     H.msgs[0] <== blinding_secret;
